@@ -37,3 +37,7 @@ clean:
 	rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT) $(GRUBCFG)
 
 include $(TESTING_DIR)/Makefile
+
+distclean:
+	make clean
+	rm -rf $(SYSROOT_DIR) $(DISK) qemu.log
