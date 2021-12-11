@@ -10,6 +10,11 @@
 
 #include <kernel/debug.h>
 
+/*
+ * Need this defined somewhere in the architecture dependent files.
+ */
+void cpu_stop(void);
+
 enum signedness {
 	SIGNED,
 	UNSIGNED,
@@ -30,6 +35,13 @@ printk(const char *fmt, ...)
 	nr = vsprintf(buf, fmt, args);
 	va_end(args);
 	return tty_write(DEBUG_TTY, buf, nr);
+}
+
+void
+panic(const char *msg)
+{
+	printk("Kernel panic: %s\r\n", msg);
+	cpu_stop();
 }
 
 static char *
