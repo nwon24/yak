@@ -39,7 +39,7 @@ pic_set_mask(uint8_t line)
 	}
 	mask = inb(port) | (1 << l);
 	outb(mask, port);
-	return (mask);
+	return mask;
 }
 
 /*
@@ -62,7 +62,7 @@ pic_clear_mask(uint8_t line)
 	}
 	mask = inb(port) & ~(1 << l);
 	outb(mask, port);
-	return (mask);
+	return mask;
 }
 
 /*
@@ -100,19 +100,19 @@ pic_read_reg(uint8_t cmd)
 		return (0);
 	outb(cmd, PIC1_CMD);
 	outb(cmd, PIC2_CMD);
-	return ((inb(PIC2_CMD) << 8) | inb(PIC1_CMD));
+	return (inb(PIC2_CMD) << 8) | inb(PIC1_CMD);
 }
 
 /* Return the value of the PICs' IRR. */
 uint16_t
 pic_read_irr(void)
 {
-	return (pic_read_reg(PIC_READ_IRR));
+	return pic_read_reg(PIC_READ_IRR);
 }
 
 /* Return the value of the PICs' ISR */
 uint16_t
 pic_read_isr(void)
 {
-	return (pic_read_reg(PIC_READ_ISR));
+	return pic_read_reg(PIC_READ_ISR);
 }
