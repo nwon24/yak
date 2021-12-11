@@ -5,7 +5,19 @@
 
 #include <asm/8259_pic.h>
 
+#include <drivers/driver.h>	
+
 	.section .text
+	.global enable_intr
+enable_intr:
+	sti
+	ret
+
+	.global disable_intr
+disable_intr:
+	cli
+	ret
+
 	.global	ignore_interrupt
 ignore_interrupt:
 	pusha
@@ -25,3 +37,19 @@ acknowledge_int:
 	movb	$PIC_EOI, %al
 	outb	%al, $PIC1_CMD
 1:	ret
+
+/*
+ * Start of actual IRQ handlers.
+ */
+	.global	com_2_4_irq, com_1_3_irq
+com_2_4_irq:
+com_1_3_irq:
+	pusha
+	pushl	%ds
+	call	acknowledge_int
+	pushl	$_DRIVERS_UART8250_DRIVER
+	call	driver_irq
+	addl	$4, %esp
+	popl	%ds
+	popa
+	iret
