@@ -4,11 +4,12 @@
  */
 
 #include <multiboot.h>
+#include <asm/segment.h>
 #include <asm/paging.h>
 
 /* Constants for multiboot header. */
 #define MB_MAGIC	MULTIBOOT_HEADER_MAGIC
-#define MB_FLAGS	(MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO)
+#define MB_FLAGS	(MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE)
 #define MB_CHECKSUM	-(MB_MAGIC + MB_FLAGS)
 
 /* Size of initial kernel stack. */
@@ -20,6 +21,7 @@ multiboot_header:
 	.long	MB_MAGIC
 	.long	MB_FLAGS
 	.long	MB_CHECKSUM
+	.fill	9, 4, 0
 
 	.section .bss, "aw", @nobits
 	.align	16
@@ -37,7 +39,7 @@ init_page_table:
 	 */
 	.section .low_text, "a"
 	.global	_start
-	.extern	main, gdt_init, _init
+	.extern	kernel_main, gdt_init, _init
 	.type	_start, @function
 _start:
 	movl	$ASM_PHYS_ADDR(boot_stack), %esp	/* Set up stack */
@@ -115,8 +117,22 @@ higher_half:
 	movl	%cr3, %eax
 	movl	%eax, %cr3
 	calll	_init
+	/* Initialise and load GDT */
 	calll	gdt_init
-	calll	main
+	lgdtl	gdt_desc
+	ljmpl	$KERNEL_CS_SELECTOR, $1f
+1:	movl	$KERNEL_DS_SELECTOR, %eax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %ss
+	movw	%ax, %gs
+	calll	kernel_main
 	cli
 1:	hlt
 	jmp	1b	
+
+	.section .data
+gdt_desc:
+	.word	GDT_ENTRIES * GDT_ENTRY_SIZE - 1
+	.long	gdt
