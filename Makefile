@@ -2,6 +2,8 @@
 
 include config.mk
 
+KERNEL_TAR := kernel.tar
+
 OBJ_FILES :=
 DEP_FILES :=
 
@@ -40,4 +42,6 @@ include $(TESTING_DIR)/Makefile
 
 distclean:
 	make clean
-	rm -rf $(SYSROOT_DIR) $(DISK) qemu.log
+	rm -rf $(SYSROOT_DIR) $(DISK) qemu.log $(KERNEL_TAR)
+dist: distclean
+	./dist.sh $(KERNEL_TAR)
