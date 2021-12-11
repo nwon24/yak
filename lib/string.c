@@ -13,7 +13,7 @@ memcpy(void *dst, const void *src, size_t count)
 
 	while (count--)
 		*dstp++ = *srcp++;
-	return (dst);
+	return dst;
 }
 
 void *
@@ -29,7 +29,7 @@ memmove(void *dst, const void *src, size_t count)
 		while (count--)
 			*(dstp + count) = *(srcp + count);
 	}
-	return (dst);
+	return dst;
 }
 
 int
@@ -40,11 +40,11 @@ memcmp(const void *str1, const void *str2, size_t count)
 
 	while (count--) {
 		if (*p1 < *p2)
-			return (-1);
+			return -1;
 		else if (*p2 < *p1)
-			return (1);
+			return 1;
 	}
-	return (0);
+	return 0;
 }
 
 void *
@@ -54,5 +54,15 @@ memset(void *bufp, int c, size_t count)
 
 	while (count--)
 		*p++ = (unsigned char)c;
-	return (bufp);
+	return bufp;
+}
+
+size_t
+strlen(const char *str)
+{
+	const char *p = str;
+
+	while (*p)
+		p++;
+	return p - str;
 }
