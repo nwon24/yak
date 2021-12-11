@@ -4,7 +4,10 @@
  */
 
 #include <asm/idt.h>
+#include <asm/interrupts.h>
 #include <asm/segment.h>
+
+void fatal_exception(void);
 
 struct idt_entry {
 	uint16_t offset_low;
@@ -47,7 +50,9 @@ idt_init(void)
 {
 	int i;
 
-	for (i = 0; i < IDT_ENTRIES; i++)
+	for (i = IRQ_BASE; i < IDT_ENTRIES; i++)
 		set_idt_entry(i, (uint32_t)ignore_interrupt, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
+	for (i = 0; i < IRQ_BASE; i++)
+		set_idt_entry(i, (uint32_t)fatal_exception, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
 	load_idt((void *)idt);
 }
