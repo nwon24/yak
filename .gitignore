@@ -4,4 +4,4 @@
 *.ld
 *.img
 bochsrc.txt
-kernel
+kimage
