@@ -2,4 +2,6 @@
 *.d
 *.log
 *.ld
+*.img
+bochsrc.txt
 kernel
