@@ -8,9 +8,12 @@ DEP_FILES :=
 LIB_DIR := lib
 INC_DIR := include
 KERNEL_DIR := kernel
+DRIVERS_DIR := drivers
+TESTING_DIR := testing
 
 include $(ARCH_DIR)/Makefile
 include $(KERNEL_DIR)/Makefile
+include $(DRIVERS_DIR)/Makefile
 include $(LIB_DIR)/Makefile
 
 DEP_FILES += ${OBJ_FILES:.o=.d} ${LIB_OBJ:.o=.d}
@@ -31,4 +34,6 @@ $(LIBK): $(LIB_OBJ)
 $(LDSCRIPT): $(LDSCRIPT_SRC)
 	$(CPP) $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(CPPFLAGS)
 clean:
-	rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ)
+	rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT) $(GRUBCFG)
+
+include $(TESTING_DIR)/Makefile
