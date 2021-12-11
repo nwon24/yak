@@ -94,26 +94,6 @@ uint32_t *set_dt_entry(enum desc_table table,
 		       uint8_t attr);
 void gdt_init(void);
 
-static inline void *
-load_gdt(void *base)
-{
-	struct {
-		uint16_t limit;
-		uint32_t base;
-	}__attribute__((packed)) gdt_desc = { GDT_ENTRIES * GDT_ENTRY_SIZE - 1, (uint32_t)base };
-	__asm__ volatile("lgdtl %0\n\t"
-			 "ljmp %1, $1f\n\t"
-			 "1:\tmovw %2, %%ax\n\t"
-		       	 "movw %%ax, %%ds\n\t"
-			 "movw %%ax, %%es\n\t"
-			 "movw %%ax, %%fs\n\t"
-			 "movw %%ax, %%gs\n\t"
-			 "movw %%ax, %%ss\n\t" : : "m" (gdt_desc),
-	                                           "i" (KERNEL_CS_SELECTOR),
-						   "i" (KERNEL_DS_SELECTOR));
-	return (base);
-}
-
 #endif /* _ASSEMBLY_ */
 
 #endif /* _SEGMENT_H */
