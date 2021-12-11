@@ -7,7 +7,7 @@ OBJ_FILES += $(ARCH_DIR)/boot.o \
              $(ARCH_DIR)/driver_irq.o \
              $(ARCH_DIR)/exceptions.o
 
-KERNEL_BIN := $(ARCH_DIR)/kernel
+KERNEL_BIN := $(ARCH_DIR)/kimage
 LDSCRIPT := $(ARCH_DIR)/kernel.ld
 LDSCRIPT_SRC := $(ARCH_DIR)/kernel.ld.S
 
