@@ -16,6 +16,8 @@ struct mmap_bitmap {
 	struct mmap_entry *mmap_entry;
 	uint32_t base;
 	uint32_t size;
+	uint32_t next_free;
+	uint32_t free_pages;
 };
 
 extern struct mmap_entry mmap[];
