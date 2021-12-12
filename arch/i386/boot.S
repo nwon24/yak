@@ -3,7 +3,7 @@
  * Assembly bootstrap code.
  */
 
-#include <multiboot.h>
+#include <generic/multiboot.h>
 #include <asm/segment.h>
 #include <asm/paging.h>
 
@@ -44,6 +44,21 @@ init_page_table:
 _start:
 	movl	$ASM_PHYS_ADDR(boot_stack), %esp	/* Set up stack */
 
+	/*
+	 * Save %ebx and %eax (with multiboot struct and magic)
+	 * Change the multiboot struct to its virtual address.
+	 */
+	addl	$KERNEL_VIRT_BASE, %ebx
+	movl	%eax, ASM_PHYS_ADDR(_mb_magic_saved)
+	movl	%ebx, ASM_PHYS_ADDR(_mb_info_ptr_saved)
+
+	/* First map low memory <1MiB */
+	movl	$0, %edx
+	movl	$0x100000, %esi
+	movl	$(PAGE_PRESENT | PAGE_WRITABLE), %ecx
+	call	map_section
+
+	/* Now map sections of our kernel */
 	movl	$_start_low_text, %edx
 	movl	$_end_low_text, %esi
 	movl	$(PAGE_PRESENT), %ecx
@@ -105,7 +120,7 @@ map_section:
 2:	ret
 
 	.section .text
-higher_half:	
+higher_half:
 	/*
 	 * First, set stack to its proper virtual address.
 	 * Must be done before identity mapping is removed, as that would cause a page fault.
@@ -127,12 +142,18 @@ higher_half:
 	movw	%ax, %fs
 	movw	%ax, %ss
 	movw	%ax, %gs
+	pushl	_mb_magic_saved
+	pushl	_mb_info_ptr_saved
 	calll	kernel_main
 	cli
 1:	hlt
-	jmp	1b	
+	jmp	1b
 
 	.section .data
 gdt_desc:
 	.word	GDT_ENTRIES * GDT_ENTRY_SIZE - 1
 	.long	gdt
+_mb_magic_saved:
+	.long	0
+_mb_info_ptr_saved:
+	.long	0
