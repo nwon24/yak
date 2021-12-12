@@ -133,6 +133,8 @@ reserve_bitmaps(void)
 			break;
 		bmap->base = base;
 		bmap->size = bmap->mmap_entry->size / PAGE_SIZE / 8 + 1;
+		bmap->next_free = 0;
+		bmap->free_pages = bmap->size << 3;
 		base += bmap->size;
 	}
 	/* Set up bitmaps to free */
