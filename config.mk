@@ -12,3 +12,14 @@ ASFLAGS := -ffreestanding -D_ASSEMBLY_ -MMD -MP
 LDFLAGS := -nostdlib -O2 -lgcc
 
 ARCH_DIR := arch/$(TARGET_ARCH)
+
+# Makefile build options
+V =
+ifeq ($(strip $(V)),)
+	E = @echo
+	Q = @
+else
+	E =
+	Q =
+endif
+export E Q

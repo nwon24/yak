@@ -27,23 +27,31 @@ OBJ_LINK_LIST := $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJ_FILES) $(CRTEND_OBJ) $(CRTN_O
 all: $(KERNEL_BIN)
 -include $(DEP_FILES)
 $(KERNEL_BIN): $(OBJ_LINK_LIST) $(LDSCRIPT) $(LIBK)
-	$(CC) $(OBJ_LINK_LIST) -o $@ -T$(LDSCRIPT) $(LDFLAGS) -L$(LIB_DIR) -lk
+	$(Q)$(CC) $(OBJ_LINK_LIST) -o $@ -T$(LDSCRIPT) $(LDFLAGS) -L$(LIB_DIR) -lk
+	$(E) " LD	" $@
 $(LIBK): $(LIB_OBJ)
-	$(AR) rcs $@ $^
+	$(Q)$(AR) rcs $@ $^
+	$(E) " AR	" $@
 %.o: %.c
-	$(CC) -c $< -o $@ $(CFLAGS) -I$(INC_DIR) -I$(ARCH_INC_DIR)
+	$(Q)$(CC) -c $< -o $@ $(CFLAGS) -I$(INC_DIR) -I$(ARCH_INC_DIR)
+	$(E) " CC	" $@
 
 %.o: %.S
-	$(CC) -c $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(ASFLAGS)
+	$(Q)$(CC) -c $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(ASFLAGS)
+	$(E) " AS	" $@
 $(LDSCRIPT): $(LDSCRIPT_SRC)
-	$(CPP) $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(CPPFLAGS)
+	$(Q)$(CPP) $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(CPPFLAGS)
+	$(E) " CPP	" $@
 clean:
-	rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT) $(GRUBCFG)
+	$(Q)rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT) $(GRUBCFG)
+	$(E) " CLEAN"
 
 include $(TESTING_DIR)/Makefile
 
 distclean:
-	make clean
-	rm -rf $(SYSROOT_DIR) $(DISK) qemu.log $(KERNEL_TAR)
+	$(Q)make clean
+	$(Q)rm -rf $(SYSROOT_DIR) $(DISK) qemu.log $(KERNEL_TAR)
+	$(E) " DISTCLEAN"
 dist: distclean
-	./dist.sh $(KERNEL_TAR)
+	$(Q)./dist.sh $(KERNEL_TAR)
+	$(E) " ./dist.sh	$@"

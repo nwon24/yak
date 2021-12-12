@@ -4,12 +4,16 @@ GRUBCFG := $(TESTING_DIR)/grub.cfg
 DISK := $(TESTING_DIR)/disk.img
 
 $(SYSROOT_DIR): $(GRUBCFG) $(KERNEL_BIN)
-	mkdir -p $@/boot/grub
-	cp $(GRUBCFG) $@/boot/grub/
-	cp $(KERNEL_BIN) $@/boot/
+	$(Q)mkdir -p $@/boot/grub
+	$(Q)cp $(GRUBCFG) $@/boot/grub/
+	$(Q)cp $(KERNEL_BIN) $@/boot/
+	$(E) " GEN	" $@
 $(GRUBCFG):
-	$(TESTING_DIR)/gen_grubcfg.sh $@ $(notdir $(KERNEL_BIN))
+	$(Q)$(TESTING_DIR)/gen_grubcfg.sh $@ $(notdir $(KERNEL_BIN))
+	$(E) " GEN	" $@
 $(DISK):
-	$(TESTING_DIR)/grub_disk.sh $@ 40960
+	$(Q)$(TESTING_DIR)/grub_disk.sh $@ 40960
+	$(E) " GEN	" $@
 run: $(SYSROOT_DIR) $(DISK)
-	$(TESTING_DIR)/disk_run.sh  $(DISK) $(SYSROOT_DIR)
+	$(E) " RUN	" $(DISK)
+	$(Q)$(TESTING_DIR)/disk_run.sh  $(DISK) $(SYSROOT_DIR)
