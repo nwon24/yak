@@ -13,8 +13,10 @@ SECTIONS
 	. = KERNEL_LOAD_PHYS_ADDR;
 
 	_start_kernel = .;
-	.multiboot_header : {
+	.multiboot_header : ALIGN(PAGE_SIZE) {
+		_start_multiboot_header = .;
 		*(.multiboot_header)
+		_end_multiboot_header = .;
 	}
 
 	.low_text : ALIGN(PAGE_SIZE) {
