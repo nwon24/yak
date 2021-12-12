@@ -49,5 +49,6 @@ SECTIONS
 		*(.bss)
 		_end_bss = .;
 	}
+	. = ALIGN(PAGE_SIZE);
 	_end_kernel = .;
 }
