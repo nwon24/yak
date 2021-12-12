@@ -3,12 +3,16 @@
  * Main kernel file.
  */
 
+#include <generic/multiboot.h>
+
 #include <asm/interrupts.h>
 
 #include <kernel/debug.h>
 #include <kernel/init.h>
 
 #include <drivers/8250_uart.h>
+
+#include <mm/mm.h>
 
 /*
  * Why isn't this called main()?
@@ -18,10 +22,18 @@
  * sections.
  */
 void
-kernel_main(void)
+kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 {
+	multiboot_mmap_entry_t *entry;
+	char *p;
+
 	interrupts_init();
 	run_init_functions();
 	printk("Hello, world!\r\n");
+	if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
+		printk("Invalid multiboot magic number %x\r\n", mb_magic);
+		panic("");
+	}
+	mm_init(mb_info);
 	while (1);
 }
