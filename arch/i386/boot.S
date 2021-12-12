@@ -32,6 +32,7 @@ init_page_directory:
 	.space	PAGE_SIZE
 init_page_table:
 	.space	PAGE_SIZE
+	.global	init_page_directory, init_page_table
 
 	/*
 	 * 'low_text' section has physical address in low memory, so it can actually run
@@ -59,6 +60,10 @@ _start:
 	call	map_section
 
 	/* Now map sections of our kernel */
+	movl	$_start_multiboot_header, %edx
+	movl	$_end_multiboot_header, %esi
+	movl	$(PAGE_PRESENT), %ecx
+	call	map_section
 	movl	$_start_low_text, %edx
 	movl	$_end_low_text, %esi
 	movl	$(PAGE_PRESENT), %ecx
