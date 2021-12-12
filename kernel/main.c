@@ -24,9 +24,6 @@
 void
 kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 {
-	multiboot_mmap_entry_t *entry;
-	char *p;
-
 	interrupts_init();
 	run_init_functions();
 	printk("Hello, world!\r\n");
