@@ -8,6 +8,8 @@
 extern uint32_t _start_kernel;
 extern uint32_t _end_kernel;
 
+uint32_t kernel_virt_map_page(uint32_t page_frame);
+
 #endif /* _KERNEL */
 
 #include <kernel/config.h>
