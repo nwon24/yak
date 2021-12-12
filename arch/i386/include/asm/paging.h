@@ -3,6 +3,11 @@
 
 #ifdef _KERNEL_
 #include <stdint.h>
+
+/* External symbols from linker script. */
+extern uint32_t _start_kernel;
+extern uint32_t _end_kernel;
+
 #endif /* _KERNEL */
 
 #include <kernel/config.h>
@@ -14,6 +19,7 @@
 #define ASM_PHYS_ADDR(x)	(x - KERNEL_VIRT_BASE)
 #else
 #define PHYS_ADDR(x)		(((uint32_t)(x)) - KERNEL_VIRT_BASE)
+#define VIRT_ADDR(x)		(((uint32_t)(x)) + KERNEL_VIRT_BASE)
 #endif /* _ASSEMBLY_ */
 
 #define PAGE_SIZE		4096
@@ -38,5 +44,9 @@
 #define VIRT_ADDR_PG_DIR_INDEX(x)	((x) >> VIRT_ADDR_PG_DIR_SHIFT)
 #define VIRT_ADDR_PG_TAB_INDEX(x)	(((x) >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK)
 #define VIRT_ADDR_FRAME_OFFSET(x)	((x) & VIRT_ADDR_FRAME_MASK)
+
+#ifndef _ASSEMBLY_
+#define IS_PAGE_ALIGNED(x)	(!((x) & VIRT_ADDR_FRAME_MASK))
+#endif /* _ASSEMBLY_ */
 
 #endif /* _PAGING_H */
