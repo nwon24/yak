@@ -3,5 +3,6 @@
 *.log
 *.ld
 *.img
+*.a
 bochsrc.txt
 kimage
