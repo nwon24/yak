@@ -20,4 +20,7 @@
 /* Should be enough for now, right? */
 #define _CONFIG_DRIVER_NR_DRIVERS	100
 
+/* Compiled in font */
+#define _CONFIG_FONT_8X16_PSFU
+
 #endif /* _CONFIG_H */
