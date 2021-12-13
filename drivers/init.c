@@ -1,13 +1,13 @@
 /*
  * init.c
- * Contains table of init functions.
+ * Contains table of driver init functions.
  */
 
 #include <stddef.h>
 
 #include <kernel/config.h>
-#include <kernel/init.h>
 
+#include <drivers/init.h>
 #include <drivers/tty.h>
 
 #ifdef _CONFIG_DRIVER_8250_UART
@@ -22,7 +22,7 @@ init_function init_func_table[] = {
 	NULL,
 };
 
-void run_init_functions(void)
+void run_driver_init_functions(void)
 {
 	init_function *func;
 

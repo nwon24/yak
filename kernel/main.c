@@ -9,9 +9,8 @@
 #include <asm/paging.h>
 
 #include <kernel/debug.h>
-#include <kernel/init.h>
 
-#include <drivers/8250_uart.h>
+#include <drivers/init.h>
 
 #include <mm/mm.h>
 #include <mm/vm.h>
@@ -27,7 +26,7 @@ void
 kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 {
 	interrupts_init();
-	run_init_functions();
+	run_driver_init_functions();
 	printk("Hello, world!\r\n");
 	if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
 		printk("Invalid multiboot magic number %x\r\n", mb_magic);
