@@ -57,7 +57,7 @@ kernel_virt_map_page(uint32_t page)
 		p = (uint32_t *)page_frame_alloc();
 		if ((uint32_t)p == NO_FREE_PAGE)
 			panic("Out of physical memory");
-		tlb_flush(get_tmp_page());
+		tlb_flush(VIRT_ADDR_TMP_PAGE);
 		tmp_map_page((uint32_t)p);
 		tmp = (uint32_t *)(char *)init_page_directory + (KERNEL_VIRT_BASE >> VIRT_ADDR_PG_DIR_SHIFT);
 		while ((*tmp & PAGE_PRESENT) && tmp < init_page_directory + (PAGE_SIZE / sizeof(*p) - 1))
