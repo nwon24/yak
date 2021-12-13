@@ -14,12 +14,12 @@ LDFLAGS := -nostdlib -O2 -lgcc
 ARCH_DIR := arch/$(TARGET_ARCH)
 
 # Makefile build options
-V =
+V = 0
 ifeq ($(strip $(V)),)
 	E = @echo
 	Q = @
 else
-	E =
+	E = @\#
 	Q =
 endif
 export E Q
