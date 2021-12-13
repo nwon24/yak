@@ -4,6 +4,8 @@
 #ifdef _KERNEL_
 #include <stdint.h>
 
+#include <kernel/config.h>
+
 #include <mm/mmap.h>
 
 /* External symbols from linker script. */
@@ -11,8 +13,23 @@ extern uint32_t _start_kernel;
 extern uint32_t _end_kernel;
 
 uint32_t kernel_virt_map_page(uint32_t page_frame);
+uint32_t virt_map_fb(uint32_t fb);
 
 #define kernel_virt_put_page()	(kernel_virt_map_page(page_frame_alloc()))
+
+#ifdef __GNUC__
+static inline void tlb_flush(uint32_t page)
+{
+#ifdef _CONFIG_X86_ISA_I686
+        __asm__("invlpg (%0)" : : "r" (page) : "memory");
+#else
+        __asm__("movl %%cr3, %%eax\r\n"
+                "movl %%eax, %%cr3\r\n" : :);
+#endif /* _CONFIG_X86_ISA_I686 */
+}
+#else
+#error "You are not using GCC. Please write some assembler in .S files to replace the inline assembly used."
+#endif /* _GNUC_ */
 
 #endif /* _KERNEL */
 
