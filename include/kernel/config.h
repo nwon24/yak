@@ -10,6 +10,11 @@
 
 #define _CONFIG_ARCH_X86
 
+/* If it is ever needed */
+#ifdef _CONFIG_ARCH_X86
+#define _CONFIG_X86_ISA_I686
+#endif /* _CONFIG_ARCH_X86 */
+
 #define _CONFIG_DRIVER_8250_UART
 
 /* Should be enough for now, right? */
