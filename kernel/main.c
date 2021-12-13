@@ -15,6 +15,9 @@
 #include <mm/mm.h>
 #include <mm/vm.h>
 
+/* Internal version of multiboot struct. */
+multiboot_info_t __mb_info;
+
 /*
  * Why isn't this called main()?
  * Because at -O2 GCC puts this in .text.startup, which messes with the paging.
@@ -33,7 +36,8 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 		panic("");
 	}
 	printk("Multiboot info structure at %p\r\n", (void *)mb_info);
-	mm_init(mb_info);
+	__mb_info = *mb_info;
+	mm_init();
 	vm_init();
 	while (1);
 }

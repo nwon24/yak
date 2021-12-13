@@ -144,6 +144,7 @@ struct multiboot_info {
 	} color_info;
 };
 typedef struct multiboot_info multiboot_info_t;
+extern multiboot_info_t __mb_info;
 
 struct multiboot_color {
 	uint8_t red;

@@ -5,7 +5,7 @@
 
 #include <generic/multiboot.h>
 
-void mm_init(multiboot_info_t *mb_info);
+void mm_init(void);
 
 uint32_t page_frame_alloc(void);
 void page_frame_free(uint32_t page);

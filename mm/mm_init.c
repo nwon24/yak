@@ -30,14 +30,14 @@ static void reserve_bitmaps(void);
  * Calculate the total memory available.
  */
 void
-mm_init(multiboot_info_t *mb_info)
+mm_init(void)
 {
 	multiboot_mmap_entry_t *entry, *end;
 	struct mmap_entry *mep;
 	uint32_t kernel_size;
 
-	entry = (multiboot_mmap_entry_t *)VIRT_ADDR(mb_info->mmap_addr);
-	end = (multiboot_mmap_entry_t *)VIRT_ADDR(mb_info->mmap_addr + mb_info->mmap_length);
+	entry = (multiboot_mmap_entry_t *)VIRT_ADDR(__mb_info.mmap_addr);
+	end = (multiboot_mmap_entry_t *)VIRT_ADDR(__mb_info.mmap_addr +__mb_info.mmap_length);
 	while (entry < end) {
 		if (entry->type == MULTIBOOT_MEMORY_AVAILABLE) {
 			total_mem += entry->len_low;
