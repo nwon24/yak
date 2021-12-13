@@ -78,7 +78,6 @@ kvmfree(void *p)
 	}
 	tmp = (struct vm_chunk_header *)p - 1;
 	ptr->next = tmp;
-	printk("Here\r\n");
 	merge_blocks(ptr);
 }
 
