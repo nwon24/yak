@@ -35,6 +35,10 @@ static inline void vc_tab_stop(struct virtual_console *vc);
 static inline void vc_save_state(struct virtual_console *vc);
 static inline void vc_restore_state(struct virtual_console *vc);
 
+static void vc_insert_blanks(struct virtual_console *vc, int count);
+static void vc_clear_screen(struct virtual_console *vc, int par);
+static void vc_clear_line(struct virtual_console *vc, int par);
+
 static struct tty_driver vc_tty_driver = {
         .driver_out = vc_write,
         .driver_id = _DRIVERS_VIRTUAL_CONSOLE_DRIVER
@@ -117,7 +121,10 @@ vc_flush(struct virtual_console *vc, struct virtual_console_driver *vcd)
         p2 = vc->vc_cur_buf;
         while ((uint32_t)(p1 - vc->vc_scr_buf) < vc->vc_last_pos) {
                 if (*p1 != *p2) {
-                        vcd->vc_putc(VC_XPOS(vc, p1 - vc->vc_scr_buf), VC_YPOS(vc, p1 - vc->vc_scr_buf), *p1);
+                        if (!*p1)
+                                vcd->vc_blank(VC_XPOS(vc, p1 - vc->vc_scr_buf), VC_YPOS(vc, p1 - vc->vc_scr_buf));
+                        else
+                                vcd->vc_putc(VC_XPOS(vc, p1 - vc->vc_scr_buf), VC_YPOS(vc, p1 - vc->vc_scr_buf), *p1);
                         *p2 = *p1;
                 }
                 p2++;
@@ -219,6 +226,9 @@ loop:
 
         }
         switch (*p) {
+        case '@':
+                vc_insert_blanks(vc, par[0]);
+                return p;
         case 'A':
                 if (vc->vc_cy >= par[0])
                         vc->vc_cy -= par[0];
@@ -270,7 +280,80 @@ loop:
                 if (par[1] >= 1 && par[1] <= vc->vc_width)
                         vc->vc_cx = par[1] - 1;
                 return p;
+        case 'J':
+                vc_clear_screen(vc, par[0]);
+                return p;
+        case 'K':
+                vc_clear_line(vc, par[0]);
+                return p;
         default:
                 return p;
         }
+}
+
+static void
+vc_insert_blanks(struct virtual_console *vc, int count)
+{
+        char *start;
+
+        start = vc->vc_scr_buf + SCR_POS(vc);
+        if (vc->vc_cx + count >= vc->vc_width) {
+                memset(start, 0, vc->vc_width - vc->vc_cx);
+        } else {
+                memmove(start + count, start, vc->vc_width - vc->vc_cx);
+                memset(start, 0, count);
+                vc->vc_last_pos += count;
+        }
+}
+
+static void
+vc_clear_screen(struct virtual_console *vc, int par)
+{
+        char *start;
+        uint32_t count;
+        int pos = SCR_POS(vc);
+
+        switch (par) {
+        case 0: /* Clear from cursor to end of screen */
+                start = vc->vc_scr_buf + pos;
+                count = vc->vc_scr_size - pos;
+                break;
+        case 1: /* Clear from cursor to beginning of screen */
+                start = vc->vc_scr_buf;
+                count = pos;
+                break;
+        case 2: /* Clear entire screen */
+                start = vc->vc_scr_buf;
+                count = vc->vc_scr_size;
+                break;
+        default:
+                return;
+        }
+        memset(start, 0, count);
+}
+
+static void
+vc_clear_line(struct virtual_console *vc, int par)
+{
+        char *start;
+        uint32_t count;
+        int pos = SCR_POS(vc);
+
+        switch (par) {
+        case 0: /* Clear from cursor to end of line */
+                start = vc->vc_scr_buf + pos;
+                count = vc->vc_width - vc->vc_cx;
+                break;
+        case 1: /* Clear from cursor to start of line */
+                start = vc->vc_scr_buf + pos - vc->vc_cx;
+                count = vc->vc_cx;
+                break;
+        case 2: /* Clear entire line */
+                start = vc->vc_scr_buf + pos - vc->vc_cx;
+                count = vc->vc_width;
+                break;
+        default:
+                return;
+        }
+        memset(start, 0, count);
 }
