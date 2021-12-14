@@ -37,6 +37,7 @@ struct virtual_console {
 
 struct virtual_console_driver {
         int (*vc_putc)(uint32_t cx, uint32_t cy, int c);
+        void (*vc_blank)(uint32_t cx, uint32_t cy);
         void (*vc_get_dimensions)(uint32_t *width, uint32_t *height);
 };
 
