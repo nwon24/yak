@@ -10,6 +10,7 @@
 #include <drivers/init.h>
 #include <drivers/tty.h>
 #include <drivers/fb.h>
+#include <drivers/virtual_console.h>
 
 #ifdef _CONFIG_DRIVER_8250_UART
 #include <drivers/8250_uart.h>
@@ -29,6 +30,7 @@ init_function init_func_table[] = {
 #ifdef _CONFIG_DRIVER_FBDEV
 	fb_init,
 #endif /* _CONFIG_DRIVER_FBDEV */
+	vc_init,
 	NULL,
 };
 
