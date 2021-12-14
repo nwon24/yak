@@ -127,8 +127,8 @@ fbcon_putc(struct virtual_console *vc, int c)
         if (c < 0 || (uint32_t)c >= font->nr_glpyh)
                 c = 0;
         data = font->data + c * font->bytes_per_glpyh;
-        off = (vc->vc_cy * font->height * mode_info->pitch)
-              + (vc->vc_cx * (font->width + 1) * sizeof(uint32_t));
+        off = (vc->vc_old_cy * font->height * mode_info->pitch)
+              + (vc->vc_old_cx * (font->width + 1) * sizeof(uint32_t));
         dst = info->fb_virt_addr + off;
         if (mode_info->bpp == 32)
                 fbcon_putc_32bpp(font, data, mode_info->pitch, current_fbcon->fbcon_bg, current_fbcon->fbcon_fg, dst);
