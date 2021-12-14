@@ -10,7 +10,7 @@
  * Structure of a virtual console.
  * @vc_cx: Current virtual x coordinate after a write.
  * @vc_cy: Current virtual y coordinate after a wrie
- * After vc_flush(), all the above variables should be the same.
+ * @vc_last_pos: Final position in our buffer where a character is actually stored.
  * @vc_width: Width of console in characters (fbcon works this out)
  * @vc_height: Same, but for height
  * @vc_scr_buf: Internal buffer of characters to be written to the screen.
@@ -25,6 +25,8 @@ struct virtual_console {
 
         uint32_t vc_saved_cx;
         uint32_t vc_saved_cy;
+
+        uint32_t vc_last_pos;
 
         uint32_t vc_width;
         uint32_t vc_height;

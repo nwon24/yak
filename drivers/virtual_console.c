@@ -12,7 +12,6 @@
 #include <generic/string.h>
 
 #define SCR_POS(vc)	((vc)->vc_cy * (vc)->vc_width + (vc)->vc_cx)
-#define OLD_SCR_POS(vc)	((vc)->vc_old_cy * (vc)->vc_width + (vc)->vc_old_cx)
 
 #define VC_XPOS(vc, pos)	((pos) % (vc)->vc_width)
 #define VC_YPOS(vc, pos)	((pos) / (vc)->vc_width)
@@ -99,6 +98,7 @@ vc_init(void)
                 vc->vc_scr_size = vc->vc_width * vc->vc_height;
                 vc->vc_scr_buf = kvmalloc(vc->vc_scr_size);
                 vc->vc_cur_buf = kvmalloc(vc->vc_scr_size);
+                vc->vc_last_pos = 0;
                 memset(vc->vc_scr_buf, 0, vc->vc_scr_size);
                 vc->vc_cx = vc->vc_saved_cx = 0;
                 vc->vc_cy = vc->vc_saved_cy = 0;
@@ -115,7 +115,7 @@ vc_flush(struct virtual_console *vc, struct virtual_console_driver *vcd)
 
         p1 = vc->vc_scr_buf;
         p2 = vc->vc_cur_buf;
-        while (p1 < vc->vc_scr_buf + vc->vc_scr_size) {
+        while ((uint32_t)(p1 - vc->vc_scr_buf) < vc->vc_last_pos) {
                 if (*p1 != *p2) {
                         vcd->vc_putc(VC_XPOS(vc, p1 - vc->vc_scr_buf), VC_YPOS(vc, p1 - vc->vc_scr_buf), *p1);
                         *p2 = *p1;
@@ -160,6 +160,8 @@ vc_write(int n, struct tty_queue *tq)
                 }
                 p++;
         }
+        if (SCR_POS(vc) > vc->vc_last_pos)
+                vc->vc_last_pos = SCR_POS(vc);
         vc_flush(vc, vcd);
         return i;
 }
