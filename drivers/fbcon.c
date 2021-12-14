@@ -16,8 +16,7 @@
 static struct fbcon fb_console;
 static struct fbcon *current_fbcon;
 
-static int fbcon_putc(struct virtual_console *vc, int c);
-static int fbcon_puts(struct virtual_console *vc, char *s, int len);
+static int fbcon_putc(uint32_t cx, uint32_t cy, int c);
 static void fbcon_putc_32bpp(struct bitmap_font *font, unsigned char *data, uint32_t pitch, uint32_t bg, uint32_t fg, uint32_t dst);
 static void fbcon_putc_16bpp(struct bitmap_font *font, unsigned char *data, uint32_t pitch, uint16_t bg, uint16_t fg, uint32_t dst);
 static void fbcon_get_dimensions(uint32_t *width, uint32_t *height);
@@ -74,7 +73,6 @@ static uint16_t ansi_colors_fg_16rgb[] = {
 
 static struct virtual_console_driver vc_fbcon_driver = {
         .vc_putc = fbcon_putc,
-        .vc_puts = fbcon_puts,
         .vc_get_dimensions = fbcon_get_dimensions,
 };
 
@@ -102,18 +100,7 @@ fbcon_init(struct fb_info *info)
 }
 
 static int
-fbcon_puts(struct virtual_console *vc, char *s, int len)
-{
-        char *p;
-
-        p = s;
-        while (len-- && *s)
-                fbcon_putc(vc, *s++);
-        return p - s;
-}
-
-static int
-fbcon_putc(struct virtual_console *vc, int c)
+fbcon_putc(uint32_t cx, uint32_t cy, int c)
 {
         unsigned char *data;
         struct bitmap_font *font;
@@ -127,8 +114,8 @@ fbcon_putc(struct virtual_console *vc, int c)
         if (c < 0 || (uint32_t)c >= font->nr_glpyh)
                 c = 0;
         data = font->data + c * font->bytes_per_glpyh;
-        off = (vc->vc_old_cy * font->height * mode_info->pitch)
-              + (vc->vc_old_cx * (font->width + 1) * sizeof(uint32_t));
+        off = (cy * font->height * mode_info->pitch)
+              + (cx * (font->width + 1) * sizeof(uint32_t));
         dst = info->fb_virt_addr + off;
         if (mode_info->bpp == 32)
                 fbcon_putc_32bpp(font, data, mode_info->pitch, current_fbcon->fbcon_bg, current_fbcon->fbcon_fg, dst);
