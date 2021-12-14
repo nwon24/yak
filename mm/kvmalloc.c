@@ -44,6 +44,7 @@ kvmalloc(size_t bytes)
 	struct vm_chunk_header *ptr, *tmp;
 	void *p;
 
+loop:
 	for (ptr = free_list; ptr != NULL; ptr = ptr->next) {
 		if (ptr->size >= bytes) {
 			if (ptr->size == bytes) {
@@ -58,8 +59,19 @@ kvmalloc(size_t bytes)
 			}
 			return p;
 		}
+		if (ptr->next == NULL)
+			break;
 	}
-	return NULL;
+	/*
+	 * If expand_head() returns, we are guaranteed to have more memory since the kernel would
+	 * panic if the heap were not able to be expanded.
+	 */
+	ptr->next = expand_heap();
+	ptr->next->size = HEAP_SIZE - sizeof(*ptr);
+	ptr->next->base = (uint32_t)ptr->next + sizeof(*ptr);
+	ptr->next->next = NULL;
+	ptr->next->prev = ptr;
+	goto loop;
 }
 
 void
