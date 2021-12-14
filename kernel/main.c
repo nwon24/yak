@@ -29,9 +29,6 @@ multiboot_info_t __mb_info;
 void
 kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 {
-	uint32_t fb;
-	int i;
-
 	__mb_info = *mb_info;
 	interrupts_init();
 	run_critical_driver_init_functions();
@@ -43,6 +40,7 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 		printk("Invalid multiboot magic number %x\r\n", mb_magic);
 		panic("");
 	}
-	fbcon_puts("Hello", 5);
+	tty_write(0, "Hello\r\n", 7);
+	tty_write(0, "New line?", 9);
 	while (1);
 }
