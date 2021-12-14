@@ -19,6 +19,9 @@ static struct fbcon *current_fbcon;
 static int fbcon_putc(uint32_t cx, uint32_t cy, int c);
 static void fbcon_putc_32bpp(struct bitmap_font *font, unsigned char *data, uint32_t pitch, uint32_t bg, uint32_t fg, uint32_t dst);
 static void fbcon_putc_16bpp(struct bitmap_font *font, unsigned char *data, uint32_t pitch, uint16_t bg, uint16_t fg, uint32_t dst);
+static void fbcon_blank(uint32_t cx, uint32_t cy);
+static void fbcon_blank_16bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst);
+static void fbcon_blank_32bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst);
 static void fbcon_get_dimensions(uint32_t *width, uint32_t *height);
 
 static uint32_t ansi_colors_fg_32rgb[] = {
@@ -73,6 +76,7 @@ static uint16_t ansi_colors_fg_16rgb[] = {
 
 static struct virtual_console_driver vc_fbcon_driver = {
         .vc_putc = fbcon_putc,
+        .vc_blank = fbcon_blank,
         .vc_get_dimensions = fbcon_get_dimensions,
 };
 
@@ -115,7 +119,7 @@ fbcon_putc(uint32_t cx, uint32_t cy, int c)
                 c = 0;
         data = font->data + c * font->bytes_per_glpyh;
         off = (cy * font->height * mode_info->pitch)
-              + (cx * (font->width + 1) * sizeof(uint32_t));
+              + (cx * (font->width) * sizeof(uint32_t));
         dst = info->fb_virt_addr + off;
         if (mode_info->bpp == 32)
                 fbcon_putc_32bpp(font, data, mode_info->pitch, current_fbcon->fbcon_bg, current_fbcon->fbcon_fg, dst);
@@ -168,4 +172,54 @@ fbcon_get_dimensions(uint32_t *width, uint32_t *height)
         info = fb_console.fbcon_info;
         *width = info->mode_info.width / fb_console.fbcon_font->width;
         *height = info->mode_info.height / fb_console.fbcon_font->height;
+}
+
+static void
+fbcon_blank(uint32_t cx, uint32_t cy)
+{
+        uint32_t dst, off;
+        struct bitmap_font *font;
+        struct vbe_mode_info *mode_info;
+        struct fb_info *info;
+
+        font = current_fbcon->fbcon_font;
+        info = current_fbcon->fbcon_info;
+        mode_info = &info->mode_info;
+        off = (cy * font->height * mode_info->pitch)
+              + (cx * (font->width) * sizeof(uint32_t));
+        dst = info->fb_virt_addr + off;
+        if (mode_info->bpp == 32)
+                fbcon_blank_32bpp(font, mode_info->pitch, dst);
+        else if (mode_info->bpp == 16)
+                fbcon_blank_16bpp(font, mode_info->pitch, dst);
+}
+
+static void
+fbcon_blank_32bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst)
+{
+        uint32_t i, j;
+
+        for (i = 0; i < font->height; i++) {
+                for (j = 0; j < font->width; j++) {
+                        *(uint32_t *)(dst) = 0;
+                        dst += sizeof(uint32_t);
+
+                }
+                dst += pitch - font->width * sizeof(uint32_t);
+        }
+}
+
+static void
+fbcon_blank_16bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst)
+{
+        uint32_t i, j;
+
+        for (i = 0; i < font->height; i++) {
+                for (j = 0; j < font->width; j++) {
+                        *(uint16_t *)(dst) = 0;
+                        dst += sizeof(uint16_t);
+
+                }
+                dst += pitch - font->width * sizeof(uint16_t);
+        }
 }
