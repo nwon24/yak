@@ -1,7 +1,9 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
-#define DEBUG_TTY	0
+#include <drivers/tty.h>
+
+#define DEBUG_TTY	SERIAL_TTY_START
 
 int printk(const char *fmt, ...);
 void panic(const char *msg);
