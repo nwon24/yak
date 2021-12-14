@@ -6,11 +6,11 @@
 
 #include <drivers/tty.h>
 
-#define NR_TTY	2
+#define NR_TTY	6
 
 static struct tty tty_tab[NR_TTY];
 
-#define TTY_NUM(tp)	(tp - tty_tab)
+#define TTY_NUM(tp)	((tp) - tty_tab >= SERIAL_TTY_START ? (tp) - tty_tab - SERIAL_TTY_START : (tp) - tty_tab)
 
 static inline int
 tty_queue_empty(struct tty_queue *tq)
