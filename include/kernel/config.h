@@ -17,6 +17,8 @@
 
 #define _CONFIG_DRIVER_8250_UART
 
+#define _CONFIG_DRIVER_FBDEV
+
 /* Should be enough for now, right? */
 #define _CONFIG_DRIVER_NR_DRIVERS	100
 

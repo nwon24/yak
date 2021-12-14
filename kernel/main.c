@@ -11,6 +11,7 @@
 #include <kernel/debug.h>
 
 #include <drivers/init.h>
+#include <drivers/fbcon.h>
 
 #include <mm/mm.h>
 #include <mm/vm.h>
@@ -28,16 +29,20 @@ multiboot_info_t __mb_info;
 void
 kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 {
+	uint32_t fb;
+	int i;
+
+	__mb_info = *mb_info;
 	interrupts_init();
+	run_critical_driver_init_functions();
+	mm_init();
+	vm_init();
 	run_driver_init_functions();
 	printk("Hello, world!\r\n");
 	if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
 		printk("Invalid multiboot magic number %x\r\n", mb_magic);
 		panic("");
 	}
-	printk("Multiboot info structure at %p\r\n", (void *)mb_info);
-	__mb_info = *mb_info;
-	mm_init();
-	vm_init();
+	fbcon_puts("Hello", 5);
 	while (1);
 }

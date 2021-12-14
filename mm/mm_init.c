@@ -138,8 +138,6 @@ reserve_bitmaps(void)
 		base += bmap->size;
 	}
 	/* Set up bitmaps to free */
-	for (bmap = mmap_bitmaps; bmap->mmap_entry->next != NULL; bmap++) {
+	for (bmap = mmap_bitmaps; bmap->mmap_entry->next != NULL; bmap++)
 		memset((void *)VIRT_ADDR(bmap->base), 0, bmap->size);
-		printk("bitmap base %x, size %x\r\n", bmap->base, bmap->size);
-	}
 }
