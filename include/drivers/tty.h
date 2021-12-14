@@ -1,7 +1,12 @@
 #ifndef _TTY_H
 #define _TTY_H
 
+#include <drivers/virtual_console.h>
+
 #define TTY_BUF_SIZE	512
+
+/* Serial ttys begin right after virtual consoles */
+#define SERIAL_TTY_START	NR_VIRTUAL_CONSOLES
 
 struct tty_queue {
 	char tq_buf[TTY_BUF_SIZE];
