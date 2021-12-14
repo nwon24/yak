@@ -86,7 +86,6 @@ virt_map_fb(uint32_t fb)
 	int pg_dir_entry;
 
 	old = get_tmp_page();
-	printk("old %x\r\n", old);
 	if ((fb_pg_table = page_frame_alloc()) == NO_FREE_PAGE)
 		return 0;
 	tmp_map_page(fb_pg_table);
