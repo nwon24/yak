@@ -23,6 +23,9 @@ static void fbcon_blank(uint32_t cx, uint32_t cy);
 static void fbcon_blank_16bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst);
 static void fbcon_blank_32bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst);
 static void fbcon_get_dimensions(uint32_t *width, uint32_t *height);
+static void fbcon_set_attr(struct vc_attr *attr, enum vc_attr_type type);
+static void fbcon_set_attr_32bpp(struct vc_attr *attr, enum vc_attr_type type);
+static void fbcon_set_attr_16bpp(struct vc_attr *attr, enum vc_attr_type type);
 
 static uint32_t ansi_colors_bright_fg_32rgb[] = {
         0x181818,	/* Black */
@@ -133,6 +136,7 @@ static struct virtual_console_driver vc_fbcon_driver = {
         .vc_putc = fbcon_putc,
         .vc_blank = fbcon_blank,
         .vc_get_dimensions = fbcon_get_dimensions,
+        .vc_set_attr = fbcon_set_attr,
 };
 
 void
@@ -144,15 +148,8 @@ fbcon_init(struct fb_info *info)
         printk("bpp %d, height %d width %d\r\n", info->mode_info.bpp, info->mode_info.height, info->mode_info.width);
         if ((fb_console.fbcon_font = load_default_font()) == NULL)
                 panic("Unable to load bitmap font");
-        if (info->mode_info.bpp == 32) {
-                fb_console.fbcon_fg = ansi_colors_fg_32rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
-                fb_console.fbcon_bg = ansi_colors_bg_32rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
-        } else if (info->mode_info.bpp == 16) {
-                fb_console.fbcon_fg = ansi_colors_fg_16rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
-                fb_console.fbcon_bg = ansi_colors_bg_16rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
-        } else {
+        if (info->mode_info.bpp != 32 && info->mode_info.bpp != 16)
                 panic("fbcon_init: Unrecognised bits per pixel");
-        }
         for (i = 0; i < NR_VIRTUAL_CONSOLES; i++)
                 register_vc_driver(i, &vc_fbcon_driver);
         current_fbcon = &fb_console;
@@ -277,4 +274,83 @@ fbcon_blank_16bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst)
                 }
                 dst += pitch - font->width * sizeof(uint16_t);
         }
+}
+
+static void
+fbcon_set_attr(struct vc_attr *attr, enum vc_attr_type type)
+{
+        struct fb_info *info;
+
+        info = current_fbcon->fbcon_info;
+        if (info->mode_info.bpp == 16)
+                fbcon_set_attr_16bpp(attr, type);
+        else if (info->mode_info.bpp == 32)
+                fbcon_set_attr_32bpp(attr, type);
+}
+
+static void
+fbcon_set_attr_32bpp(struct vc_attr *attr, enum vc_attr_type type)
+{
+        if (type == INDEXED_COLOR) {
+                if ((attr->fg_indexed >= ANSI_FG_COLOR_BASE && attr->fg_indexed <= ANSI_FG_DEFAULT))
+                        current_fbcon->fbcon_fg = ansi_colors_fg_32rgb[attr->fg_indexed - ANSI_FG_COLOR_BASE];
+                else if ((attr->fg_indexed >= ANSI_FG_BRIGHT_COLOR_BASE && attr->fg_indexed <= ANSI_FG_BRIGHT_WHITE))
+                        current_fbcon->fbcon_fg = ansi_colors_bright_bg_32rgb[attr->fg_indexed - ANSI_FG_BRIGHT_COLOR_BASE];
+
+                if ((attr->bg_indexed >= ANSI_BG_COLOR_BASE && attr->bg_indexed <= ANSI_BG_DEFAULT))
+                        current_fbcon->fbcon_bg = ansi_colors_bg_32rgb[attr->bg_indexed - ANSI_BG_COLOR_BASE];
+                else if ((attr->bg_indexed >= ANSI_BG_BRIGHT_COLOR_BASE && attr->bg_indexed <= ANSI_BG_BRIGHT_WHITE))
+                        current_fbcon->fbcon_bg = ansi_colors_bright_bg_32rgb[attr->bg_indexed - ANSI_BG_BRIGHT_COLOR_BASE];
+        } else if (type == RGB) {
+                current_fbcon->fbcon_fg = attr->fg_rgb;
+                current_fbcon->fbcon_bg = attr->bg_rgb;
+        }
+        /* For now, ignore all attributes except bold, reverse and dim mode */
+        if ((attr->attr & VC_BOLD) && (type == INDEXED_COLOR) && (type <= ANSI_FG_WHITE))
+                /* Only works with indexed color */
+                current_fbcon->fbcon_fg = ansi_colors_bright_fg_32rgb[attr->fg_indexed - ANSI_FG_COLOR_BASE];
+        if ((attr->attr & VC_DIM))
+                current_fbcon->fbcon_fg = ansi_colors_bright_fg_32rgb[ANSI_FG_BLACK];
+        if ((attr->attr & VC_REVERSE)) {
+                uint32_t tmp;
+
+                tmp = current_fbcon->fbcon_fg;
+                current_fbcon->fbcon_fg = current_fbcon->fbcon_bg;
+                current_fbcon->fbcon_bg = tmp;
+        }
+}
+
+static void
+fbcon_set_attr_16bpp(struct vc_attr *attr, enum vc_attr_type type)
+{
+        if (type == INDEXED_COLOR) {
+                if ((attr->fg_indexed >= ANSI_FG_COLOR_BASE && attr->fg_indexed <= ANSI_FG_DEFAULT))
+                        current_fbcon->fbcon_fg = ansi_colors_fg_16rgb[attr->fg_indexed - ANSI_FG_COLOR_BASE];
+                else if ((attr->fg_indexed >= ANSI_FG_BRIGHT_COLOR_BASE && attr->fg_indexed <= ANSI_FG_BRIGHT_WHITE))
+                        current_fbcon->fbcon_fg = ansi_colors_bright_bg_16rgb[attr->fg_indexed - ANSI_FG_BRIGHT_COLOR_BASE];
+
+                if ((attr->bg_indexed >= ANSI_BG_COLOR_BASE && attr->bg_indexed <= ANSI_BG_DEFAULT))
+                        current_fbcon->fbcon_bg = ansi_colors_bg_16rgb[attr->bg_indexed - ANSI_BG_COLOR_BASE];
+                else if ((attr->bg_indexed >= ANSI_BG_BRIGHT_COLOR_BASE && attr->bg_indexed <= ANSI_BG_BRIGHT_WHITE))
+                        current_fbcon->fbcon_bg = ansi_colors_bright_bg_16rgb[attr->bg_indexed - ANSI_BG_BRIGHT_COLOR_BASE];
+        } else if (type == RGB) {
+                /* Just check that it is actually 16 bit RGB */
+                if (attr->fg_rgb <= (1 << 16) - 1)
+                        current_fbcon->fbcon_fg = attr->fg_rgb;
+                if (attr->bg_rgb <= (1 << 16) - 1)
+                        current_fbcon->fbcon_bg = attr->bg_rgb;
+        }
+        /* See above comments */
+        if ((attr->attr & VC_BOLD) && (type == INDEXED_COLOR) && (type <= ANSI_FG_WHITE))
+                current_fbcon->fbcon_fg = ansi_colors_bright_fg_16rgb[attr->fg_indexed - ANSI_FG_COLOR_BASE];
+        if ((attr->attr & VC_DIM))
+                current_fbcon->fbcon_fg = ansi_colors_bright_fg_16rgb[ANSI_FG_BLACK];
+        if ((attr->attr & VC_REVERSE)) {
+                uint32_t tmp;
+
+                tmp = current_fbcon->fbcon_fg;
+                current_fbcon->fbcon_fg = current_fbcon->fbcon_bg;
+                current_fbcon->fbcon_bg = tmp;
+        }
+
 }
