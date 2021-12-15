@@ -148,19 +148,14 @@ fbcon_init(struct fb_info *info)
                 fb_console.fbcon_fg = ansi_colors_fg_32rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
                 fb_console.fbcon_bg = ansi_colors_bg_32rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
         } else if (info->mode_info.bpp == 16) {
-                fb_console.fbcon_fg = ansi_colors_bright_fg_16rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
-                fb_console.fbcon_bg = ansi_colors_bright_bg_16rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
-                printk("16 bg %x, fg %x\r\n", fb_console.fbcon_fg, fb_console.fbcon_bg);
+                fb_console.fbcon_fg = ansi_colors_fg_16rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
+                fb_console.fbcon_bg = ansi_colors_bg_16rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
         } else {
                 panic("fbcon_init: Unrecognised bits per pixel");
         }
         for (i = 0; i < NR_VIRTUAL_CONSOLES; i++)
                 register_vc_driver(i, &vc_fbcon_driver);
         current_fbcon = &fb_console;
-        printk("red mask %d, red pos %d, green mask %d, green pos %d, blue mask %d, blue pos %d\r\n",
-               info->mode_info.red_mask, info->mode_info.red_position,
-               info->mode_info.green_mask, info->mode_info.green_position,
-               info->mode_info.blue_mask, info->mode_info.blue_position);
 }
 
 static int
