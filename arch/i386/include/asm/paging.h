@@ -17,8 +17,9 @@ uint32_t virt_map_fb(uint32_t fb);
 
 #define kernel_virt_put_page()	(kernel_virt_map_page(page_frame_alloc()))
 
-#ifdef __GNUC__
-static inline void tlb_flush(uint32_t page)
+#ifdef _CONFIG_USE_INLINE_ASM
+static inline void
+tlb_flush(uint32_t page)
 {
 #ifdef _CONFIG_X86_ISA_I686
         __asm__("invlpg (%0)" : : "r" (page) : "memory");
@@ -28,8 +29,8 @@ static inline void tlb_flush(uint32_t page)
 #endif /* _CONFIG_X86_ISA_I686 */
 }
 #else
-#error "You are not using GCC. Please write some assembler in .S files to replace the inline assembly used."
-#endif /* _GNUC_ */
+void tlb_flush(void);
+#endif /* _CONFIG_USE_INLINE_ASM */
 
 #endif /* _KERNEL */
 
