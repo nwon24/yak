@@ -24,8 +24,8 @@ static void fbcon_blank_16bpp(struct bitmap_font *font, uint32_t pitch, uint32_t
 static void fbcon_blank_32bpp(struct bitmap_font *font, uint32_t pitch, uint32_t dst);
 static void fbcon_get_dimensions(uint32_t *width, uint32_t *height);
 
-static uint32_t ansi_colors_fg_32rgb[] = {
-        0x000000,	/* Black */
+static uint32_t ansi_colors_bright_fg_32rgb[] = {
+        0x181818,	/* Black */
         0xFF0000,	/* Red */
         0x00FF00,	/* Green */
         0xFFFF00,	/* Yellow */
@@ -37,8 +37,8 @@ static uint32_t ansi_colors_fg_32rgb[] = {
         0xD3D3D3,	/* Default */
 };
 
-static uint32_t ansi_colors_bg_32rgb[] = {
-        0x000000,
+static uint32_t ansi_colors_bright_bg_32rgb[] = {
+        0x181818,
         0xFF0000,
         0x00FF00,
         0xFFFF00,
@@ -50,10 +50,38 @@ static uint32_t ansi_colors_bg_32rgb[] = {
         0x000000,
 };
 
-static uint16_t ansi_colors_bg_16rgb[] = {
-        0x0000,
+
+static uint32_t ansi_colors_fg_32rgb[] = {
+        0x000000,
+        0xAA0000,
+        0x00AA00,
+        0xAAAA00,
+        0x0000AA,
+        0xAA00AA,
+        0x00AAAA,
+        0xAAAAAA,
+        0x000000,
+        0xA9A9A9,
+};
+
+static uint32_t ansi_colors_bg_32rgb[] = {
+        0x000000,
+        0xAA0000,
+        0x00AA00,
+        0xAAAA00,
+        0x0000AA,
+        0xAA00AA,
+        0x00AAAA,
+        0xAAAAAA,
+        0x000000,
+        0x000000,
+};
+
+static uint16_t ansi_colors_bright_bg_16rgb[] = {
+        0x10A2,
         0xF800,
         0x07E0,
+        0xFFE0,
         0x001F,
         0xF81F,
         0x07FF,
@@ -62,16 +90,43 @@ static uint16_t ansi_colors_bg_16rgb[] = {
         0x0000,
 };
 
-static uint16_t ansi_colors_fg_16rgb[] = {
-        0x0000,
+static uint16_t ansi_colors_bright_fg_16rgb[] = {
+        0x10A2,
         0xF800,
         0x07E0,
+        0xFFE0,
         0x001F,
         0xF81F,
         0x07FF,
         0xFFFF,
         0x0000,
         0xD69A,
+};
+
+static uint16_t ansi_colors_fg_16rgb[] = {
+        0x0000,
+        0xA000,
+        0x0540,
+        0xA540,
+        0x0014,
+        0xA014,
+        0x0554,
+        0xFFFF,
+        0x0000,
+        0xA534,
+};
+
+static uint16_t ansi_colors_bg_16rgb[] = {
+        0x0000,
+        0xA000,
+        0x0540,
+        0xA540,
+        0x0014,
+        0xA014,
+        0x0554,
+        0xFFFF,
+        0x0000,
+        0x0000,
 };
 
 static struct virtual_console_driver vc_fbcon_driver = {
@@ -93,14 +148,19 @@ fbcon_init(struct fb_info *info)
                 fb_console.fbcon_fg = ansi_colors_fg_32rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
                 fb_console.fbcon_bg = ansi_colors_bg_32rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
         } else if (info->mode_info.bpp == 16) {
-                fb_console.fbcon_fg = ansi_colors_fg_16rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
-                fb_console.fbcon_bg = ansi_colors_bg_16rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
+                fb_console.fbcon_fg = ansi_colors_bright_fg_16rgb[ANSI_FG_DEFAULT - ANSI_FG_COLOR_BASE];
+                fb_console.fbcon_bg = ansi_colors_bright_bg_16rgb[ANSI_BG_DEFAULT - ANSI_BG_COLOR_BASE];
+                printk("16 bg %x, fg %x\r\n", fb_console.fbcon_fg, fb_console.fbcon_bg);
         } else {
                 panic("fbcon_init: Unrecognised bits per pixel");
         }
         for (i = 0; i < NR_VIRTUAL_CONSOLES; i++)
                 register_vc_driver(i, &vc_fbcon_driver);
         current_fbcon = &fb_console;
+        printk("red mask %d, red pos %d, green mask %d, green pos %d, blue mask %d, blue pos %d\r\n",
+               info->mode_info.red_mask, info->mode_info.red_position,
+               info->mode_info.green_mask, info->mode_info.green_position,
+               info->mode_info.blue_mask, info->mode_info.blue_position);
 }
 
 static int
