@@ -3,7 +3,7 @@
  * Generic versions of memory functions for freestanding C environment.
  */
 
-#include <generic/string.h>
+#include <stddef.h>
 
 void *
 memcpy(void *dst, const void *src, size_t count)
