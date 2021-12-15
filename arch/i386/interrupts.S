@@ -63,6 +63,8 @@
 	.endm
 
 	.section .text
+	/* Some stuff if we don't want to use the inline assembly equivalents. */
+#ifndef _CONFIG_USE_INLINE_ASM
 	.global enable_intr
 enable_intr:
 	sti
@@ -72,6 +74,26 @@ enable_intr:
 disable_intr:
 	cli
 	ret
+
+	.global load_idt
+load_idt:
+	movl	4(%ebp), %eax
+	lidt	%eax
+	ret
+
+	/* Shouldn't reall be in this file, but... */
+	.global tlb_flush
+tlb_flush:
+#ifdef _CONFIG_X86_ISA_I686
+	movl	4(%esp), %eax
+	invlpg	(%eax)
+	ret
+#else
+	movl	%cr3, %eax
+	movl	%eax, %cr3
+	ret
+#endif /* _CONFIG_X86_ISA_I686 */
+#endif /* _CONFIG_USE_INLINE_ASM */
 
 	.global	ignore_interrupt
 ignore_interrupt:
