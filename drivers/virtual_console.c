@@ -4,6 +4,7 @@
  * Handles a subset of VT102 escape sequences.
  */
 
+#include <drivers/ansi_vt.h>
 #include <drivers/driver.h>
 #include <drivers/tty.h>
 #include <drivers/virtual_console.h>
@@ -46,6 +47,11 @@ static void vc_clear_screen(struct virtual_console *vc, int par);
 static void vc_clear_line(struct virtual_console *vc, int par);
 static void vc_scroll_up(struct virtual_console *vc);
 static void vc_scroll_down(struct virtual_console *vc);
+static void vc_set_attr(struct virtual_console *vc, uint32_t *par, int len);
+static void vc_set_default_attr(struct virtual_console *vc);
+static uint32_t *vc_set_256_rgb(struct virtual_console *vc, uint32_t *par, enum vc_attr_type *type, int fg);
+static uint32_t *vc_set_256(struct virtual_console *vc, uint32_t *par, enum vc_attr_type *type, int fg);
+static uint32_t *vc_set_rgb(struct virtual_console *vc, uint32_t *par, int fg);
 
 static struct tty_driver vc_tty_driver = {
         .driver_out = vc_write,
@@ -116,6 +122,7 @@ vc_init(void)
                 vc->vc_cy = vc->vc_saved_cy = 0;
                 vc->vc_scroll_top = 0;
                 vc->vc_scroll_bottom = vc->vc_height - 1;
+                vc_set_default_attr(vc);
         }
         for (i = 0; i < NR_VIRTUAL_CONSOLES; i++)
                 tty_driver_register(i, &vc_tty_driver);
@@ -315,6 +322,9 @@ loop:
                 if (par[0] < vc->vc_height)
                         vc->vc_cy = par[0];
                 return p;
+        case 'm':
+                vc_set_attr(vc, par, i + 1);
+                return p;
         case 'r':
                 vc->vc_scroll_top = par[0];
                 vc->vc_scroll_bottom = par[1];
@@ -482,4 +492,163 @@ vc_delete_lines(struct virtual_console *vc, int count)
                 vc_scroll_up(vc);
         vc->vc_scroll_top = old_scroll_top;
         vc->vc_scroll_bottom = old_scroll_bottom;
+}
+
+static void
+vc_set_attr(struct virtual_console *vc, uint32_t *par, int len)
+{
+        uint32_t *p;
+        struct vc_attr *attr;
+        struct virtual_console_driver *vcd;
+        enum vc_attr_type type;
+
+        type = NONE;
+        vcd = *(vc_driver_table + (vc - vc_table));
+        attr = &vc->vc_attr;
+        for (p = par; p < par + len; p++) {
+                if (*p == 38) {
+                        p = vc_set_256_rgb(vc, par, &type, 1);
+                        continue;
+                }
+                if (*p == 48) {
+                        p = vc_set_256_rgb(vc, par, &type, 0);
+                        continue;
+                }
+                if ((*p >= ANSI_FG_COLOR_BASE && *p <= ANSI_FG_DEFAULT)
+                    || (*p >= ANSI_FG_BRIGHT_COLOR_BASE && *p <= ANSI_FG_BRIGHT_WHITE)) {
+                        attr->fg_indexed = *par;
+                        type = INDEXED_COLOR;
+                        continue;
+                }
+                if ((*p >= ANSI_BG_COLOR_BASE && *p <= ANSI_BG_DEFAULT)
+                    || (*p >= ANSI_BG_BRIGHT_COLOR_BASE && *p <= ANSI_BG_BRIGHT_WHITE)) {
+                        attr->bg_indexed = *par;
+                        type = INDEXED_COLOR;
+                        continue;
+                }
+                switch (*p) {
+                case 0:
+                        vc_set_default_attr(vc);
+                        break;
+                case 1:
+                        attr->attr |= VC_BOLD;
+                        break;
+                case 2:
+                        attr->attr |= VC_DIM;
+                        break;
+                case 3:
+                        attr->attr |= VC_ITALIC;
+                        break;
+                case 4:
+                        attr->attr |= VC_UNDERLINE;
+                        break;
+                case 5:
+                        attr->attr |= VC_BLINKING;
+                        break;
+                case 7:
+                        attr->attr |= VC_REVERSE;
+                        break;
+                case 8:
+                        attr->attr |= VC_HIDDEN;
+                        break;
+                case 9:
+                        attr->attr |= VC_STRIKETHROUGH;
+                        break;
+                case 22:
+                        attr->attr &= ~VC_BOLD;
+                        attr->attr &= ~VC_DIM;
+                        break;
+                case 23:
+                        attr->attr &= ~VC_ITALIC;
+                        break;
+                case 24:
+                        attr->attr &= ~VC_UNDERLINE;
+                        break;
+                case 25:
+                        attr->attr &= ~VC_BLINKING;
+                        break;
+                case 27:
+                        attr->attr &= ~VC_REVERSE;
+                        break;
+                case 28:
+                        attr->attr &= ~VC_HIDDEN;
+                        break;
+                case 29:
+                        attr->attr &= ~VC_STRIKETHROUGH;
+                        break;
+                default:
+                        /* Unrecognised parameter */
+                        return;
+                }
+        }
+        vcd->vc_set_attr(attr, type);
+}
+
+static uint32_t *
+vc_set_256_rgb(struct virtual_console *vc, uint32_t *par, enum vc_attr_type *type, int fg)
+{
+        uint32_t *p = par;
+
+        if (*++p == 5) {
+                return vc_set_256(vc, ++p, type, fg);
+        } else if (*p == 2) {
+                *type = RGB;
+                return vc_set_rgb(vc, ++p, fg);
+        }
+        return p;
+}
+
+static uint32_t *
+vc_set_256(struct virtual_console *vc, uint32_t *par, enum vc_attr_type *type, int fg)
+{
+        uint8_t r, g, b;
+        uint32_t *ptr;
+
+        printk("par %d\r\n", *par);
+        if (*par < 8) {
+                ptr = fg ? &vc->vc_attr.fg_indexed : &vc->vc_attr.bg_indexed;
+                *ptr = (fg ? ANSI_FG_COLOR_BASE : ANSI_BG_COLOR_BASE) + *par;
+                *type = INDEXED_COLOR;
+                goto out;
+        } else if (*par < 16) {
+                ptr = fg ? &vc->vc_attr.fg_indexed : &vc->vc_attr.bg_indexed;
+                *ptr = (fg ? ANSI_FG_BRIGHT_COLOR_BASE : ANSI_BG_BRIGHT_COLOR_BASE) + *par - 8;
+                *type = INDEXED_COLOR;
+                goto out;
+                goto out;
+        } else if (*par < 232) {
+                /* Magic. */
+                r = (*par - 16) / 36 * 85 / 2;
+                g = (*par - 16) / 6 % 6 * 85 / 2;
+                b = (*par - 16) % 6 * 85 / 2;
+        } else {
+                /* Greyscale. More magic. */
+                r = g = b = *par * 10 - 2312;
+        }
+        *type = RGB;
+        ptr = fg ? &vc->vc_attr.fg_rgb : &vc->vc_attr.bg_rgb;
+        *ptr = (r << 16) | (g << 8) | b;
+out:
+        return ++par;
+}
+
+static uint32_t *
+vc_set_rgb(struct virtual_console *vc, uint32_t *par, int fg)
+{
+        uint8_t r, g, b;
+
+        r = *par++;
+        g = *par++;
+        b = *par++;
+        *(fg ? &vc->vc_attr.fg_rgb : &vc->vc_attr.bg_rgb) = (r << 16) | (g << 8) | b;
+        return par;
+}
+
+static void
+vc_set_default_attr(struct virtual_console *vc)
+{
+        vc->vc_attr.attr = 0;
+        vc->vc_attr.fg_indexed = ANSI_FG_DEFAULT;
+        vc->vc_attr.bg_indexed = ANSI_BG_DEFAULT;
+        (*(vc_driver_table + (vc - vc_table)))->vc_set_attr(&vc->vc_attr, INDEXED_COLOR);
 }
