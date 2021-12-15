@@ -6,6 +6,29 @@
 /* I think Linux has 63... */
 #define NR_VIRTUAL_CONSOLES	4
 
+#define VC_BOLD	(1 << 0)
+#define VC_DIM		(1 << 1)
+#define VC_ITALIC	(1 << 2)
+#define VC_UNDERLINE	(1 << 4)
+#define VC_BLINKING	(1 << 5)
+#define VC_REVERSE	(1 << 6)
+#define VC_HIDDEN	(1 << 7)
+#define VC_STRIKETHROUGH	(1 << 8)
+
+enum vc_attr_type {
+        NONE,		/* Do not set any colour */
+        RGB,
+        INDEXED_COLOR
+};
+
+struct vc_attr {
+        uint32_t attr;		/* VC_* attributes above */
+        uint32_t fg_rgb;	/* Set RGB directly */
+        uint32_t bg_rgb;	/* "" */
+        uint32_t fg_indexed;	/* 16 colour pallete index (see ANSI escape sequences) */
+        uint32_t bg_indexed;	/* "" */
+};
+
 /*
  * Structure of a virtual console.
  * @vc_cx: Current virtual x coordinate after a write.
@@ -39,12 +62,15 @@ struct virtual_console {
 
         uint32_t vc_scroll_top;
         uint32_t vc_scroll_bottom;
+
+        struct vc_attr vc_attr;
 };
 
 struct virtual_console_driver {
         int (*vc_putc)(uint32_t cx, uint32_t cy, int c);
         void (*vc_blank)(uint32_t cx, uint32_t cy);
         void (*vc_get_dimensions)(uint32_t *width, uint32_t *height);
+        void (*vc_set_attr)(struct vc_attr *attr, enum vc_attr_type type);
 };
 
 int vc_init(void);
