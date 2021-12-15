@@ -1,6 +1,7 @@
 /*
  * virtual_console.c
  * Virtual console driver, built on top of low level console drivers (such as the framebuffer console driver)
+ * Handles a subset of VT102 escape sequences.
  */
 
 #include <drivers/driver.h>
@@ -35,9 +36,16 @@ static inline void vc_tab_stop(struct virtual_console *vc);
 static inline void vc_save_state(struct virtual_console *vc);
 static inline void vc_restore_state(struct virtual_console *vc);
 
+static void vc_calc_last_pos(struct virtual_console *vc);
 static void vc_insert_blanks(struct virtual_console *vc, int count);
+static void vc_clear_chars(struct virtual_console *vc, int count);
+static void vc_insert_lines(struct virtual_console *vc, int count);
+static void vc_delete_lines(struct virtual_console *vc, int count);
+static void vc_delete_chars(struct virtual_console *vc, int count);
 static void vc_clear_screen(struct virtual_console *vc, int par);
 static void vc_clear_line(struct virtual_console *vc, int par);
+static void vc_scroll_up(struct virtual_console *vc);
+static void vc_scroll_down(struct virtual_console *vc);
 
 static struct tty_driver vc_tty_driver = {
         .driver_out = vc_write,
@@ -106,6 +114,8 @@ vc_init(void)
                 memset(vc->vc_scr_buf, 0, vc->vc_scr_size);
                 vc->vc_cx = vc->vc_saved_cx = 0;
                 vc->vc_cy = vc->vc_saved_cy = 0;
+                vc->vc_scroll_top = 0;
+                vc->vc_scroll_bottom = vc->vc_height - 1;
         }
         for (i = 0; i < NR_VIRTUAL_CONSOLES; i++)
                 tty_driver_register(i, &vc_tty_driver);
@@ -119,7 +129,9 @@ vc_flush(struct virtual_console *vc, struct virtual_console_driver *vcd)
 
         p1 = vc->vc_scr_buf;
         p2 = vc->vc_cur_buf;
-        while ((uint32_t)(p1 - vc->vc_scr_buf) < vc->vc_last_pos) {
+        if (vc->vc_new_last_pos > vc->vc_last_pos)
+                vc->vc_last_pos = vc->vc_new_last_pos;
+        while ((uint32_t)(p1 - vc->vc_scr_buf) <= vc->vc_last_pos) {
                 if (*p1 != *p2) {
                         if (!*p1)
                                 vcd->vc_blank(VC_XPOS(vc, p1 - vc->vc_scr_buf), VC_YPOS(vc, p1 - vc->vc_scr_buf));
@@ -130,6 +142,8 @@ vc_flush(struct virtual_console *vc, struct virtual_console_driver *vcd)
                 p2++;
                 p1++;
         }
+	if (vc->vc_new_last_pos < vc->vc_last_pos)
+                vc->vc_last_pos = vc->vc_new_last_pos;
 }
 
 static int
@@ -167,8 +181,7 @@ vc_write(int n, struct tty_queue *tq)
                 }
                 p++;
         }
-        if (SCR_POS(vc) > vc->vc_last_pos)
-                vc->vc_last_pos = SCR_POS(vc);
+        vc_calc_last_pos(vc);
         vc_flush(vc, vcd);
         return i;
 }
@@ -286,6 +299,22 @@ loop:
         case 'K':
                 vc_clear_line(vc, par[0]);
                 return p;
+        case 'L':
+                vc_insert_lines(vc, par[0]);
+                return p;
+        case 'M':
+                vc_delete_lines(vc, par[0]);
+                return p;
+        case 'P':
+                vc_delete_chars(vc, par[0]);
+                return p;
+        case 'X':
+                vc_clear_chars(vc, par[0]);
+                return p;
+        case 'd':
+                if (par[0] < vc->vc_height)
+                        vc->vc_cy = par[0];
+                return p;
         default:
                 return p;
         }
@@ -294,16 +323,39 @@ loop:
 static void
 vc_insert_blanks(struct virtual_console *vc, int count)
 {
-        char *start;
+        char *p;
 
-        start = vc->vc_scr_buf + SCR_POS(vc);
+        p = vc->vc_scr_buf + SCR_POS(vc);
         if (vc->vc_cx + count >= vc->vc_width) {
-                memset(start, 0, vc->vc_width - vc->vc_cx);
+                memset(p, 0, vc->vc_width - vc->vc_cx);
         } else {
-                memmove(start + count, start, vc->vc_width - vc->vc_cx);
-                memset(start, 0, count);
-                vc->vc_last_pos += count;
+                memmove(p + count, p, vc->vc_width - vc->vc_cx - count);
+                memset(p, 0, count);
         }
+}
+
+static void
+vc_clear_chars(struct virtual_console *vc, int count)
+{
+        char *p;
+
+        p = vc->vc_scr_buf + SCR_POS(vc);
+        if ((uint32_t)count > vc->vc_width - vc->vc_cx)
+                count = vc->vc_width - vc->vc_cx;
+        while (count--)
+                *p++ = 0;
+}
+
+static void
+vc_delete_chars(struct virtual_console *vc, int count)
+{
+        char *p;
+
+        p = vc->vc_scr_buf + SCR_POS(vc);
+        if ((uint32_t)count > vc->vc_width - vc->vc_cx)
+                count = vc->vc_width - vc->vc_cx;
+        memmove(p, p + count, vc->vc_width - vc->vc_cx - count);
+        memset(p + count, 0, vc->vc_width - vc->vc_cx - count);
 }
 
 static void
@@ -356,4 +408,74 @@ vc_clear_line(struct virtual_console *vc, int par)
                 return;
         }
         memset(start, 0, count);
+}
+
+static void
+vc_calc_last_pos(struct virtual_console *vc)
+{
+        char *p;
+
+        vc->vc_new_last_pos = 0;
+        for (p = vc->vc_scr_buf; p < vc->vc_scr_buf + vc->vc_scr_size; p++) {
+                if (*p)
+                        vc->vc_new_last_pos = p - vc->vc_scr_buf;
+        }
+}
+
+static void
+vc_scroll_up(struct virtual_console *vc)
+{
+        char *dst, *src;
+        int count;
+
+        dst = vc->vc_scr_buf + vc->vc_scroll_top * vc->vc_width;
+        src = dst + vc->vc_width;
+        count = (vc->vc_scroll_bottom - vc->vc_scroll_top) * vc->vc_width;
+        memmove(dst, src, count);
+        memset(vc->vc_scr_buf + vc->vc_scroll_bottom * vc->vc_width, 0, vc->vc_width);
+}
+
+static void
+vc_scroll_down(struct virtual_console *vc)
+{
+        char *dst, *src;
+        int count;
+
+        dst = vc->vc_scr_buf + vc->vc_scroll_bottom * vc->vc_width + vc->vc_width - 1;
+        src = dst - vc->vc_width;
+        count = (vc->vc_scroll_bottom - vc->vc_scroll_top) * vc->vc_width;
+        /* We need to copy backwards so memmove() cannot be used. */
+        while (count--)
+                *dst-- = *src--;
+        memset(vc->vc_scr_buf + vc->vc_scroll_top * vc->vc_width, 0, vc->vc_width);
+}
+
+static void
+vc_insert_lines(struct virtual_console *vc, int count)
+{
+        uint32_t old_scroll_top, old_scroll_bottom;
+
+        old_scroll_top = vc->vc_scroll_top;
+        old_scroll_bottom = vc->vc_scroll_bottom;
+        vc->vc_scroll_top = vc->vc_cy;
+        vc->vc_scroll_bottom = vc->vc_height - 1;
+        while (count--)
+                vc_scroll_down(vc);
+        vc->vc_scroll_top = old_scroll_top;
+        vc->vc_scroll_bottom = old_scroll_bottom;
+}
+
+static void
+vc_delete_lines(struct virtual_console *vc, int count)
+{
+        uint32_t old_scroll_top, old_scroll_bottom;
+
+        old_scroll_top = vc->vc_scroll_top;
+        old_scroll_bottom = vc->vc_scroll_bottom;
+        vc->vc_scroll_top = vc->vc_cy;
+        vc->vc_scroll_bottom = vc->vc_height - 1;
+        while (count--)
+                vc_scroll_up(vc);
+        vc->vc_scroll_top = old_scroll_top;
+        vc->vc_scroll_bottom = old_scroll_bottom;
 }
