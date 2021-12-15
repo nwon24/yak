@@ -15,9 +15,12 @@
 
 #include <asm/paging.h>
 
+#include <kernel/config.h>
+
 void set_idt_entry(int n, uint32_t offset, uint16_t selector, uint8_t dpl, uint8_t type);
 void idt_init(void);
 
+#ifdef _CONFIG_USE_INLINE_ASM
 static inline void
 load_idt(void *idt_ptr)
 {
@@ -27,6 +30,9 @@ load_idt(void *idt_ptr)
 	}__attribute__((packed)) idt_desc = { IDT_LIMIT, (uint32_t)idt_ptr };
 	__asm__ volatile("lidt %0" : : "m" (idt_desc));
 }
+#else
+void load_idt(void *idt_ptr);
+#endif /* _CONFIG_USE_INLINE_ASM */
 
 #endif /* _ASSEMBLY_ */
 
