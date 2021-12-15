@@ -25,4 +25,14 @@
 /* Compiled in font */
 #define _CONFIG_FONT_8X16_PSFU
 
+#ifdef __GNUC__
+/* A little bit of inline assembly doesn't hurt. As long as it is all in the arch/ directory. */
+#define _CONFIG_USE_INLINE_ASM
+#endif /* __GNUC__ */
+
+/* Optimised string functions are done using inline assembly. */
+#ifdef _CONFIG_USE_INLINE_ASM
+#define _CONFIG_USE_ARCH_STRING_H
+#endif
+
 #endif /* _CONFIG_H */
