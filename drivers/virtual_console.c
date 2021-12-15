@@ -604,7 +604,6 @@ vc_set_256(struct virtual_console *vc, uint32_t *par, enum vc_attr_type *type, i
         uint8_t r, g, b;
         uint32_t *ptr;
 
-        printk("par %d\r\n", *par);
         if (*par < 8) {
                 ptr = fg ? &vc->vc_attr.fg_indexed : &vc->vc_attr.bg_indexed;
                 *ptr = (fg ? ANSI_FG_COLOR_BASE : ANSI_BG_COLOR_BASE) + *par;
