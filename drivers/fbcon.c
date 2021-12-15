@@ -145,7 +145,6 @@ fbcon_init(struct fb_info *info)
         int i;
 
         fb_console.fbcon_info = info;
-        printk("bpp %d, height %d width %d\r\n", info->mode_info.bpp, info->mode_info.height, info->mode_info.width);
         if ((fb_console.fbcon_font = load_default_font()) == NULL)
                 panic("Unable to load bitmap font");
         if (info->mode_info.bpp != 32 && info->mode_info.bpp != 16)

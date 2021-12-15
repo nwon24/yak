@@ -28,6 +28,5 @@ vm_init(void)
 		else
 			kernel_virt_put_page();
 	}
-	printk("Kernel heap begins at %x\r\n", kernel_heap_start);
 	kvmalloc_init(kernel_heap_start, HEAP_SIZE);
 }

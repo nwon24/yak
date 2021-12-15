@@ -46,7 +46,6 @@ mm_init(void)
 		}
 		entry = (multiboot_mmap_entry_t *)((char *)entry + entry->size + sizeof(entry->size));
 	}
-	printk("Total mem: %x\r\n", total_mem);
 	/*
 	 * _end_kernel and _start_kernel have no value. It is their address
 	 * we want.
@@ -72,8 +71,6 @@ mm_init(void)
 			panic("Bizzare: there doesn't seem to be enough memory for the kernel to be running!");
 		}
 	}
-	for (mep = mmap; mep->next != NULL; mep = mep->next)
-		printk("Base %x, size %x\r\n", mep->base, mep->size);
 	reserve_bitmaps();
 }
 
