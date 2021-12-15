@@ -315,6 +315,10 @@ loop:
                 if (par[0] < vc->vc_height)
                         vc->vc_cy = par[0];
                 return p;
+        case 'r':
+                vc->vc_scroll_top = par[0];
+                vc->vc_scroll_bottom = par[1];
+                return p;
         default:
                 return p;
         }
