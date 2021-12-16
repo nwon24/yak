@@ -10,6 +10,7 @@
 
 #include <kernel/debug.h>
 
+#include <drivers/acpi.h>
 #include <drivers/init.h>
 #include <drivers/fbcon.h>
 
@@ -32,6 +33,7 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 	__mb_info = *mb_info;
 	interrupts_init();
 	run_critical_driver_init_functions();
+	acpi_init();
 	mm_init();
 	vm_init();
 	run_driver_init_functions();
