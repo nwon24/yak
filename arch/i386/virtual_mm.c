@@ -73,30 +73,33 @@ kernel_virt_map_page(uint32_t page)
 }
 
 /*
- * A special function called to map video memory.
- * It maps a 4 MiB block of memory into the upper 4 MiB of the virtual address space
- * The argument it takes is the physical address of the framebuffer.
- * Tricky thing is to make sure we preserve the temporary mapping of the current page table.
+ * A special function called to map a physical address somewhere.
+ * It is used when some driver has some data address in physical memory
+ * that it has to access (i.e., ACPI tables).
+ * 4 MiB is maped at a type for convienience, starting from the upper limit of virtual memory.
+ * Each successive call to virt_map_phys moves down the kernel page directory.
+ * This makes it as unlikely as possible that this will coincided with the expanding
+ * kernel heap, which begins right after the kernel (around 3 GiB).
+ * TODO: Write a function to free the virtual memory mapped here.
  * /
  */
 uint32_t
-virt_map_fb(uint32_t fb)
+virt_map_phys(uint32_t phys)
 {
-	uint32_t old, fb_pg_table, *p, i;
-	int pg_dir_entry;
+	static int entry = 1023;
+
+	uint32_t old, pg_table, *p, i;
 
 	old = get_tmp_page();
-	if ((fb_pg_table = page_frame_alloc()) == NO_FREE_PAGE)
+	if ((pg_table = page_frame_alloc()) == NO_FREE_PAGE)
 		return 0;
-	tmp_map_page(fb_pg_table);
+	tmp_map_page(pg_table);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	p = (uint32_t *)VIRT_ADDR_TMP_PAGE;
-	for (i = fb ; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + (PAGE_SIZE / sizeof(*p)); p++, i += PAGE_SIZE)
+	for (i = phys ; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + (PAGE_SIZE / sizeof(*p)); p++, i += PAGE_SIZE)
 		*p = i | PAGE_PRESENT | PAGE_WRITABLE;
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
-	/* Map it to the last page table entry (i.e., last 4 MiB of address space) */
-	pg_dir_entry = PAGE_SIZE / sizeof(*p) - 1;
-	init_page_directory[pg_dir_entry] = fb_pg_table | PAGE_PRESENT | PAGE_WRITABLE;
-	return pg_dir_entry << VIRT_ADDR_PG_DIR_SHIFT;
+	init_page_directory[entry] = pg_table | PAGE_PRESENT | PAGE_WRITABLE;
+	return entry-- << VIRT_ADDR_PG_DIR_SHIFT;
 }
