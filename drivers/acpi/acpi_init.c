@@ -45,7 +45,18 @@ void
 acpi_init(void)
 {
         struct rsdp_desc *rsdp;
+        int sum;
+        char *p;
 
         if ((rsdp = find_rsdp()) == NULL)
                 printk("ACPI not supported.\r\n");
+        /*
+         * Make sure the table is valid.
+         * Casing the sum of all the struct's members to a byte
+         * should give 0. See ACPI specification.
+         */
+        for (p = (char *)rsdp, sum = 0; p < (char *)rsdp +sizeof(*rsdp); p++)
+                sum += *p;
+        if ((uint8_t)sum)
+                printk("Invalid RSDP\r\n");
 }
