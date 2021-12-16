@@ -40,7 +40,7 @@ fb_init(void)
                 panic("WARNING: Anything less than 32bpp not supported\r\n");
                 warn_no_fb();
         }
-        current_fb_info.fb_virt_addr = virt_map_fb(__mb_info.framebuffer_addr_low);
+        current_fb_info.fb_virt_addr = virt_map_phys(__mb_info.framebuffer_addr_low);
         fbcon_init(&current_fb_info);
         return 0;
 }
