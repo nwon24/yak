@@ -39,9 +39,9 @@ __arch_memcmp(const void *a, const void *b, size_t n)
         __asm__("cld; repe; cmpsb\n\t"
                 "je 1f\n\t"
                 "movl $1, %%eax\n\t"
-                "jg 1f\n\t"
-                "negl %%eax\n\t"
-                "1:" : "=a" (__ret) : "a" (0), "c" (n), "D" (b), "S" (a));
+                "jl 1f\n\t"
+                "negl %%eax\n"
+                "1:" : "=g" (__ret), "+D" (a), "+S" (b), "+c" (n) : "0" (0));
         return __ret;
 }
 
