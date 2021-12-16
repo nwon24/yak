@@ -40,7 +40,6 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 		printk("Invalid multiboot magic number %x\r\n", mb_magic);
 		panic("");
 	}
-	tty_write(0, "Hello\r\n", 7);
-	tty_write(0, "New line?", 9);
+	tty_write(0, "Hello, world!\r\n", 15);
 	while (1);
 }
