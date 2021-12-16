@@ -6,3 +6,5 @@ OBJ_FILES += $(DRIVERS_DIR)/driver_tab.o \
              $(DRIVERS_DIR)/fbcon.o \
              $(DRIVERS_DIR)/psf.o \
              $(DRIVERS_DIR)/virtual_console.o
+
+include $(DRIVERS_DIR)/acpi/Makefile
