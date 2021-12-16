@@ -43,6 +43,8 @@ memcmp(const void *str1, const void *str2, size_t count)
 			return -1;
 		else if (*p2 < *p1)
 			return 1;
+		p1++;
+		p2++;
 	}
 	return 0;
 }
