@@ -13,7 +13,7 @@ extern uint32_t _start_kernel;
 extern uint32_t _end_kernel;
 
 uint32_t kernel_virt_map_page(uint32_t page_frame);
-uint32_t virt_map_fb(uint32_t fb);
+uint32_t virt_map_phys(uint32_t phys);
 
 #define kernel_virt_put_page()	(kernel_virt_map_page(page_frame_alloc()))
 
