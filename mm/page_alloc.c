@@ -56,11 +56,11 @@ page_frame_free(uint32_t page)
 	if (!IS_PAGE_ALIGNED(page))
 		panic("page_frame_free: page has wrong alignment");
 	for (bmap = mmap_bitmaps; bmap->mmap_entry->next != NULL; bmap++) {
-		if (bmap->mmap_entry->base >= page)
+		if (bmap->mmap_entry->base + bmap->mmap_entry->size > page)
 			/* Found correct bitmap */
 			break;
 	}
-	if (bmap->mmap_entry->base < page)
+	if (bmap->mmap_entry->base + bmap->mmap_entry->size < page)
 		panic("page_frame_free: page address is nowhere in memory!");
 	page -= bmap->mmap_entry->base;
 	bit = page / PAGE_SIZE;
