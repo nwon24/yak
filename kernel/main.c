@@ -33,9 +33,9 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 	__mb_info = *mb_info;
 	interrupts_init();
 	run_critical_driver_init_functions();
-	acpi_init();
 	mm_init();
 	vm_init();
+	acpi_init();
 	run_driver_init_functions();
 	printk("Hello, world!\r\n");
 	if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
