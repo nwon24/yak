@@ -20,6 +20,7 @@ extern uint32_t init_page_table[];
 
 static uint32_t *current_pg_table = NULL;
 
+static int virt_map_entry = 1023;
 
 static inline void
 tmp_map_page(uint32_t page)
@@ -86,9 +87,7 @@ kernel_virt_map_page(uint32_t page)
 uint32_t
 virt_map_phys(uint32_t phys)
 {
-	static int entry = 1023;
-
-	uint32_t old, pg_table, *p, i;
+	uint32_t old, pg_table, *p, i, ret;
 
 	old = get_tmp_page();
 	if ((pg_table = page_frame_alloc()) == NO_FREE_PAGE)
@@ -100,6 +99,28 @@ virt_map_phys(uint32_t phys)
 		*p = i | PAGE_PRESENT | PAGE_WRITABLE;
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
-	init_page_directory[entry] = pg_table | PAGE_PRESENT | PAGE_WRITABLE;
-	return entry-- << VIRT_ADDR_PG_DIR_SHIFT;
+	init_page_directory[virt_map_entry] = pg_table | PAGE_PRESENT | PAGE_WRITABLE;
+	ret = virt_map_entry << VIRT_ADDR_PG_DIR_SHIFT;
+	for (i = 1023; i; i --) {
+		if (!(init_page_directory[i] & PAGE_PRESENT)) {
+			virt_map_entry = i;
+			break;
+		}
+	}
+	return ret;
+}
+
+void
+virt_unmap_virt(uint32_t virt)
+{
+	int entry;
+	uint32_t pg_table;
+
+	entry = virt >> VIRT_ADDR_PG_DIR_SHIFT;
+	pg_table = init_page_directory[entry] & 0xFFFFF000;
+	page_frame_free(pg_table);
+	init_page_directory[entry] = 0;
+	tlb_flush(virt);
+	if (entry > virt_map_entry)
+		virt_map_entry = entry;
 }
