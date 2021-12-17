@@ -14,6 +14,7 @@ extern uint32_t _end_kernel;
 
 uint32_t kernel_virt_map_page(uint32_t page_frame);
 uint32_t virt_map_phys(uint32_t phys);
+void virt_unmap_virt(uint32_t virt);
 
 #define kernel_virt_put_page()	(kernel_virt_map_page(page_frame_alloc()))
 
