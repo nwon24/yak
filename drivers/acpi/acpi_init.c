@@ -8,6 +8,8 @@
 
 #include <asm/paging.h>
 
+#include <drivers/acpi.h>
+
 #include <kernel/debug.h>
 
 #include <generic/string.h>
@@ -166,9 +168,15 @@ is_acpi_supported(void)
         return acpi_supported;
 }
 
+/*
+ * The boot architecture flags are only relevant from ACPI 2.0+.
+ * If it is ACPI 1.0 we are dealing with, do not return the flags, which is meant to be researved in the FADT.
+ */
 uint16_t
 get_acpi_boot_arch_flags(void)
 {
+	if (fadt.header.revision == 0)
+		return ACPI_1_0;	
 	return fadt.boot_architecture_flags;
 }
 
