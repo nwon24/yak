@@ -70,15 +70,16 @@ pci_get_secondary_bus(uint8_t bus, uint8_t device, uint8_t function)
 	return (pci_read_register(bus, device, function, 0x18) >> 8) & 0xFF;
 }
 
+/*
+ * Scan the PCI buses and for each device/function that exists, put it
+ * into a table. Later this should be used to build a device tree or
+ * something so that drivers can be loaded.
+ */
 void
 pci_init(void)
 {
-	struct pci_entry *entry;
-
 	next_entry = pci_table;
 	pci_enumerate();
-	for (entry = pci_table; entry < pci_table + pci_entries; entry++)
-		printk("bus %d, device %d, function %d, class %x, subclass %x\r\n", entry->bus, entry->device, entry->function, pci_get_class_code(entry->bus, entry->device, entry->function), pci_get_subclass(entry->bus, entry->device, entry->function));
 }
 
 static void
