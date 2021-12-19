@@ -8,3 +8,4 @@ OBJ_FILES += $(DRIVERS_DIR)/driver_tab.o \
              $(DRIVERS_DIR)/virtual_console.o
 
 include $(DRIVERS_DIR)/acpi/Makefile
+include $(DRIVERS_DIR)/pci/Makefile
