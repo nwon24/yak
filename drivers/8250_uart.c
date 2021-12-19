@@ -168,11 +168,11 @@ uart8250_serial_init(void)
 
 	if (uart8250_port_init(COM1_PORT_BASE) == PORT_INIT_SUCCESS
 	    || uart8250_port_init(COM3_PORT_BASE) == PORT_INIT_SUCCESS) {
-		set_idt_entry(COM_1_3_IRQ, (uint32_t)com_1_3_irq, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
+		set_idt_entry(COM_1_3_IRQ, (uint32_t)irq4_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
 		pic_clear_mask(COM_1_3_IRQ);
 	} else if (uart8250_port_init(COM2_PORT_BASE) == PORT_INIT_SUCCESS
 		   || uart8250_port_init(COM4_PORT_BASE) == PORT_INIT_SUCCESS) {
-		set_idt_entry(COM_2_4_IRQ, (uint32_t)com_2_4_irq, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
+		set_idt_entry(COM_2_4_IRQ, (uint32_t)irq3_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
 		pic_clear_mask(COM_2_4_IRQ);
 	}
 
