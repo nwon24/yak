@@ -5,7 +5,9 @@ OBJ_FILES += $(DRIVERS_DIR)/driver_tab.o \
              $(DRIVERS_DIR)/fb.o \
              $(DRIVERS_DIR)/fbcon.o \
              $(DRIVERS_DIR)/psf.o \
-             $(DRIVERS_DIR)/virtual_console.o
+             $(DRIVERS_DIR)/virtual_console.o \
+             $(DRIVERS_DIR)/pit.o \
+             $(DRIVERS_DIR)/timer.o
 
 include $(DRIVERS_DIR)/acpi/Makefile
 include $(DRIVERS_DIR)/pci/Makefile
