@@ -1,8 +1,9 @@
 #ifndef _IRQ_H
 #define _IRQ_H
 
-void com_1_3_irq(void);
-void com_2_4_irq(void);
+void irq0_handler(void);
+void irq3_handler(void);
+void irq4_handler(void);
 
 void driver_irq(int id);
 
