@@ -11,6 +11,12 @@
 #define	_DRIVERS_UART8250_DRIVER	1
 #endif /* _CONFIG_DRIVER_8250_UART */
 #define _DRIVERS_VIRTUAL_CONSOLE_DRIVER	2
+#define _DRIVERS_TIMER_DRIVER		3
+#ifdef _CONFIG_ARCH_X86
+#define _DRIVERS_PIT_DRIVER	3
+#else
+#error "No other timer driver supported yet."
+#endif /* _DRIVERS_PIT_DRIVER */
 
 #ifndef _ASSEMBLY_
 struct driver {
