@@ -116,9 +116,19 @@ acknowledge_int:
 /*
  * Start of actual IRQ handlers.
  */
-	.global	com_2_4_irq, com_1_3_irq
-com_2_4_irq:
-com_1_3_irq:
+	.global irq0_handler
+irq0_handler:
+	save_regs
+	call	acknowledge_int
+	pushl	$_DRIVERS_PIT_DRIVER
+	call	driver_irq
+	addl	$4, %esp
+	restore_regs
+	iret
+
+	.global	irq3_handler, irq4_handler
+irq3_handler:
+irq4_handler:
 	save_regs
 	call	acknowledge_int
 	pushl	$_DRIVERS_UART8250_DRIVER
