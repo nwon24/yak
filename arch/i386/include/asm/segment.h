@@ -73,6 +73,7 @@
 
 #define KERNEL_CS_SELECTOR	(KERNEL_CS_ENTRY << 3)
 #define KERNEL_DS_SELECTOR	(KERNEL_DS_ENTRY << 3)
+#define KERNEL_SS_SELELCTOR	KERNEL_DS_SELECTOR
 #define USER_CS_SELECTOR	((USER_CS_ENTRY << 3) | DPL_3)
 #define USER_DS_SELECTOR	((USER_DS_ENTRY << 3) | DPL_3)
 
@@ -128,6 +129,8 @@ uint32_t *set_dt_entry(enum desc_table table,
 		       uint8_t type,
 		       uint8_t attr);
 void gdt_init(void);
+
+extern struct tss tss;
 
 #endif /* _ASSEMBLY_ */
 
