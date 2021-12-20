@@ -147,6 +147,9 @@ higher_half:
 	movw	%ax, %fs
 	movw	%ax, %ss
 	movw	%ax, %gs
+	movl	$TSS_ENTRY, %eax
+	shll	$3, %eax
+	ltr	%ax
 	pushl	_mb_magic_saved
 	pushl	_mb_info_ptr_saved
 	calll	kernel_main
