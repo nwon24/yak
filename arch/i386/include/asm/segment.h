@@ -6,9 +6,8 @@
 
 /*
  * Number of GDT entries.
- * TODO: Increase for TSS.
  */
-#define GDT_ENTRIES	5
+#define GDT_ENTRIES	6
 
 /* GDT entry types. */
 
@@ -70,11 +69,14 @@
 #define KERNEL_DS_ENTRY		2
 #define USER_CS_ENTRY		3
 #define USER_DS_ENTRY		4
+#define TSS_ENTRY		5
 
 #define KERNEL_CS_SELECTOR	(KERNEL_CS_ENTRY << 3)
 #define KERNEL_DS_SELECTOR	(KERNEL_DS_ENTRY << 3)
 #define USER_CS_SELECTOR	((USER_CS_ENTRY << 3) | DPL_3)
 #define USER_DS_SELECTOR	((USER_DS_ENTRY << 3) | DPL_3)
+
+#define SEG_TYPE_TSS		0x9
 
 #ifndef _ASSEMBLY_
 
@@ -87,6 +89,35 @@ extern uint8_t gdt[];
 enum desc_table {
 	GDT,
 	LDT
+};
+
+struct tss {
+	uint32_t link;
+	uint32_t esp0;
+	uint32_t ss0;
+	uint32_t esp1;
+	uint32_t ss1;
+	uint32_t esp2;
+	uint32_t ss2;
+	uint32_t cr3;
+	uint32_t eip;
+	uint32_t eflags;
+	uint32_t eax;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t ebx;
+	uint32_t esp;
+	uint32_t ebp;
+	uint32_t esi;
+	uint32_t edi;
+	uint32_t es;
+	uint32_t cs;
+	uint32_t ss;
+	uint32_t ds;
+	uint32_t fs;
+	uint32_t gs;
+	uint32_t ldtr;
+	uint32_t iopb;
 };
 
 uint32_t *set_dt_entry(enum desc_table table,
