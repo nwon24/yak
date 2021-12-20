@@ -35,10 +35,17 @@
 	popl	%ds
 	.endm
 
+	.macro save_state
+	pushl	%esp
+	call	cpu_state_save
+	addl	$4, %esp
+	.endm
+
 	.macro exception_handler_no_error handler name
 	.global	\name
 \name\():
 	save_regs
+	save_state
 	movl	44(%esp), %edx
 	pushl	$0
 	pushl	%edx
@@ -52,6 +59,7 @@
 	.global	\name
 \name\():
 	save_regs
+	save_state
 	movl	44(%esp), %edx
 	pushl	%edx
 	movl	52(%esp), %edx
@@ -63,41 +71,11 @@
 	.endm
 
 	.section .text
-	/* Some stuff if we don't want to use the inline assembly equivalents. */
-#ifndef _CONFIG_USE_INLINE_ASM
-	.global enable_intr
-enable_intr:
-	sti
-	ret
-
-	.global disable_intr
-disable_intr:
-	cli
-	ret
-
-	.global load_idt
-load_idt:
-	movl	4(%ebp), %eax
-	lidt	%eax
-	ret
-
-	/* Shouldn't reall be in this file, but... */
-	.global tlb_flush
-tlb_flush:
-#ifdef _CONFIG_X86_ISA_I686
-	movl	4(%esp), %eax
-	invlpg	(%eax)
-	ret
-#else
-	movl	%cr3, %eax
-	movl	%eax, %cr3
-	ret
-#endif /* _CONFIG_X86_ISA_I686 */
-#endif /* _CONFIG_USE_INLINE_ASM */
 
 	.global	ignore_interrupt
 ignore_interrupt:
 	save_regs
+	save_state
 	/* Do not need to move kernel data segment into %ds for now */
 	calll	acknowledge_int
 	restore_regs
@@ -119,6 +97,7 @@ acknowledge_int:
 	.global irq0_handler
 irq0_handler:
 	save_regs
+	save_state
 	call	acknowledge_int
 	pushl	$_DRIVERS_PIT_DRIVER
 	call	driver_irq
@@ -130,6 +109,7 @@ irq0_handler:
 irq3_handler:
 irq4_handler:
 	save_regs
+	save_state
 	call	acknowledge_int
 	pushl	$_DRIVERS_UART8250_DRIVER
 	call	driver_irq
