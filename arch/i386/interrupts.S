@@ -4,6 +4,7 @@
  */
 
 #include <asm/8259_pic.h>
+#include <asm/segment.h>
 
 #include <drivers/driver.h>
 
@@ -41,11 +42,18 @@
 	addl	$4, %esp
 	.endm
 
+	.macro restore_kernel_seg
+	movl	$KERNEL_DS_SELECTOR, %eax
+	movw	%ax, %ds
+	movw	%ax, %es
+	.endm
+
 	.macro exception_handler_no_error handler name
 	.global	\name
 \name\():
 	save_regs
 	save_state
+	restore_kernel_seg
 	movl	44(%esp), %edx
 	pushl	$0
 	pushl	%edx
@@ -60,6 +68,7 @@
 \name\():
 	save_regs
 	save_state
+	restore_kernel_seg
 	movl	44(%esp), %edx
 	pushl	%edx
 	movl	52(%esp), %edx
@@ -76,6 +85,7 @@
 ignore_interrupt:
 	save_regs
 	save_state
+	restore_kernel_seg
 	/* Do not need to move kernel data segment into %ds for now */
 	calll	acknowledge_int
 	restore_regs
@@ -98,8 +108,9 @@ acknowledge_int:
 irq0_handler:
 	save_regs
 	save_state
+	restore_kernel_seg
 	call	acknowledge_int
-	pushl	$_DRIVERS_PIT_DRIVER
+	pushl	$_DRIVERS_TIMER_DRIVER
 	call	driver_irq
 	addl	$4, %esp
 	restore_regs
@@ -110,6 +121,7 @@ irq3_handler:
 irq4_handler:
 	save_regs
 	save_state
+	restore_kernel_seg
 	call	acknowledge_int
 	pushl	$_DRIVERS_UART8250_DRIVER
 	call	driver_irq
