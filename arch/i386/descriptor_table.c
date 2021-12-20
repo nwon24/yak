@@ -9,6 +9,8 @@
 
 uint8_t gdt[GDT_ENTRIES * GDT_ENTRY_SIZE];
 
+struct tss tss;
+
 /*
  * Put an entry into a descriptor table.
  * @table: GDT or LDT.
@@ -40,7 +42,7 @@ set_dt_entry(enum desc_table table,
 	p += 2;
 	*(uint8_t *)p = (uint8_t) (base >> 16) & 0xFF;
 	p++;
-	*(uint8_t *)p = (uint8_t) (type | DESC_TYPE_CODE_DATA | SEG_PRESENT | (dpl << 5));
+	*(uint8_t *)p = (uint8_t) (type | SEG_PRESENT | (dpl << 5));
 	p++;
 	*(uint8_t *)p = (uint8_t) ((limit >> 16) & 0xF) | (attr << 4);
 	p++;
@@ -63,13 +65,16 @@ gdt_init(void)
 
 	/* Kernel code */
 	cs_attr = SEG_GRANULARITY | SEG_32_BIT;
-	set_dt_entry(GDT, KERNEL_CS_ENTRY, 0xFFFFFFFF, 0, DPL_0, SEG_TYPE_CODE_RX, cs_attr);
+	set_dt_entry(GDT, KERNEL_CS_ENTRY, 0xFFFFFFFF, 0, DPL_0, SEG_TYPE_CODE_RX | DESC_TYPE_CODE_DATA, cs_attr);
 	/* Kernel data */
 	ds_attr = SEG_GRANULARITY | SEG_32_BIT;
-	set_dt_entry(GDT, KERNEL_DS_ENTRY, 0xFFFFFFFF, 0, DPL_0, SEG_TYPE_DATA_RW, ds_attr);
+	set_dt_entry(GDT, KERNEL_DS_ENTRY, 0xFFFFFFFF, 0, DPL_0, SEG_TYPE_DATA_RW | DESC_TYPE_CODE_DATA, ds_attr);
 
 	/* User code */
-	set_dt_entry(GDT, USER_CS_ENTRY, 0xFFFFFFFF, 0, DPL_3, SEG_TYPE_CODE_RX, cs_attr);
+	set_dt_entry(GDT, USER_CS_ENTRY, 0xFFFFFFFF, 0, DPL_3, SEG_TYPE_CODE_RX | DESC_TYPE_CODE_DATA, cs_attr);
 	/* User data */
-	set_dt_entry(GDT, USER_DS_ENTRY, 0xFFFFFFF, 0, DPL_3, SEG_TYPE_DATA_RW, ds_attr);
+	set_dt_entry(GDT, USER_DS_ENTRY, 0xFFFFFFF, 0, DPL_3, SEG_TYPE_DATA_RW | DESC_TYPE_CODE_DATA, ds_attr);
+
+	/* TSS */
+	set_dt_entry(GDT, TSS_ENTRY, sizeof(tss), (uint32_t)&tss, DPL_0, SEG_TYPE_TSS, SEG_32_BIT);
 }
