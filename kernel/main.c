@@ -5,8 +5,10 @@
 
 #include <generic/multiboot.h>
 
+#include <asm/cpu_state.h>
 #include <asm/interrupts.h>
 #include <asm/paging.h>
+#include <asm/user_mode.h>
 
 #include <kernel/debug.h>
 
@@ -32,6 +34,7 @@ void
 kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 {
 	__mb_info = *mb_info;
+	cpu_state_init();
 	interrupts_init();
 	run_critical_driver_init_functions();
 	mm_init();
