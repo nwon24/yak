@@ -67,4 +67,9 @@ gdt_init(void)
 	/* Kernel data */
 	ds_attr = SEG_GRANULARITY | SEG_32_BIT;
 	set_dt_entry(GDT, KERNEL_DS_ENTRY, 0xFFFFFFFF, 0, DPL_0, SEG_TYPE_DATA_RW, ds_attr);
+
+	/* User code */
+	set_dt_entry(GDT, USER_CS_ENTRY, 0xFFFFFFFF, 0, DPL_3, SEG_TYPE_CODE_RX, cs_attr);
+	/* User data */
+	set_dt_entry(GDT, USER_DS_ENTRY, 0xFFFFFFF, 0, DPL_3, SEG_TYPE_DATA_RW, ds_attr);
 }
