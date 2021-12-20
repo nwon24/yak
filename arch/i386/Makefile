@@ -6,7 +6,9 @@ OBJ_FILES += $(ARCH_DIR)/boot.o \
 	     $(ARCH_DIR)/port_io.o \
              $(ARCH_DIR)/driver_irq.o \
              $(ARCH_DIR)/exceptions.o \
-	     $(ARCH_DIR)/virtual_mm.o
+	     $(ARCH_DIR)/virtual_mm.o \
+             $(ARCH_DIR)/cpu_state.o \
+             $(ARCH_DIR)/asm_aux.o
 
 KERNEL_BIN := $(ARCH_DIR)/kimage
 LDSCRIPT := $(ARCH_DIR)/kernel.ld
