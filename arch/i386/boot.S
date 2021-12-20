@@ -26,6 +26,7 @@ multiboot_header:
 	.section .bss, "aw", @nobits
 	.align	16
 	.space	BOOT_STACK_SIZE
+	.global	boot_stack
 boot_stack:
 	.align	PAGE_SIZE
 init_page_directory:
