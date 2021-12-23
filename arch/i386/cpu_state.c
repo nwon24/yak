@@ -32,7 +32,5 @@ struct i386_cpu_state *
 cpu_state_save(struct i386_cpu_state *new)
 {
 	memmove(current_cpu_state, new, sizeof(*new) - (sizeof(new->cr3) + sizeof(new->kernel_stack)));
-	if (!current_cpu_state->ds)
-		__asm__("cli; hlt");
 	return current_cpu_state;
 }
