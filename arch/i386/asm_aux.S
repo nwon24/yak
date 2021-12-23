@@ -37,6 +37,13 @@ tlb_flush:
 	movl	%eax, %cr3
 	ret
 #endif /* _CONFIG_X86_ISA_I686 */
+
+	.global	load_cr3
+load_cr3:
+	movl	4(%esp), %eax
+	movl	%eax, %cr3
+	ret
+
 	.global	i386_move_to_user
 i386_move_to_user:
 	movl	$USER_DS_SELECTOR, %eax
