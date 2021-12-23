@@ -19,6 +19,12 @@ SECTIONS
 		_end_multiboot_header = .;
 	}
 
+	.user_head : ALIGN(PAGE_SIZE) {
+		_start_user_head = .;
+		*(.user_head)
+		_end_user_head = .;
+	}
+
 	.low_text : ALIGN(PAGE_SIZE) {
 		_start_low_text = .;
 		*(.low_text)
