@@ -65,6 +65,10 @@ _start:
 	movl	$_end_multiboot_header, %esi
 	movl	$(PAGE_PRESENT), %ecx
 	call	map_section
+	movl	$_start_user_head, %edx
+	movl	$_end_user_head, %esi
+	movl	$(PAGE_PRESENT), %ecx
+	call	map_section
 	movl	$_start_low_text, %edx
 	movl	$_end_low_text, %esi
 	movl	$(PAGE_PRESENT), %ecx
