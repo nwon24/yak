@@ -11,6 +11,7 @@
 #include <asm/user_mode.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 #include <drivers/acpi.h>
 #include <drivers/init.h>
@@ -48,5 +49,6 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 		panic("");
 	}
 	tty_write(0, "Hello, world!\r\n", 15);
+	processes_init();
 	while (1);
 }
