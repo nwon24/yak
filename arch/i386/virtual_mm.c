@@ -9,6 +9,8 @@
 
 #include <kernel/debug.h>
 
+#include <generic/string.h>
+
 #include <mm/mm.h>
 #include <mm/mmap.h>
 
@@ -123,4 +125,51 @@ virt_unmap_virt(uint32_t virt)
 	tlb_flush(virt);
 	if (entry > virt_map_entry)
 		virt_map_entry = entry;
+}
+
+/*
+ * Used for the setting up of the first process.
+ * It is simply mapped to virtual address 0.
+ */
+uint32_t
+virt_map_first_proc(uint32_t start, uint32_t size)
+{
+	uint32_t pg_table, pg_dir, old, tmp;
+	int nr_tables, i, j;
+
+	old = get_tmp_page();
+	if ((pg_dir = page_frame_alloc()) == NO_FREE_PAGE) {
+		tmp_map_page(old);
+		tlb_flush(VIRT_ADDR_TMP_PAGE);
+		goto error;
+	}
+	tmp_map_page(pg_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove((void *)VIRT_ADDR_TMP_PAGE, (void *)init_page_directory, PAGE_SIZE);
+	/* Figure out the number of page tables needed. Each page table can map up to 4 MiB of memory */
+	nr_tables = size / 0x400000 + 1;
+	tmp = start & 0xFFFFF000;
+	for (j = 0; j < nr_tables; j++) {
+		if ((pg_table = page_frame_alloc()) == NO_FREE_PAGE) {
+			tmp_map_page(old);
+			tlb_flush(VIRT_ADDR_TMP_PAGE);
+			goto error;
+		}
+		tmp_map_page(pg_table);
+		tlb_flush(VIRT_ADDR_TMP_PAGE);
+		memset((void *)VIRT_ADDR_TMP_PAGE, 0, PAGE_SIZE);
+		for (i = 0; i < PAGE_SIZE; i += 4, tmp += PAGE_SIZE) {
+			if (tmp > start + size)
+				break;
+			*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = tmp | PAGE_PRESENT | PAGE_USER;
+		}
+		tmp_map_page(pg_dir);
+		tlb_flush(VIRT_ADDR_TMP_PAGE);
+		*(uint32_t *)(VIRT_ADDR_TMP_PAGE + (j << 2)) = pg_table | PAGE_PRESENT | PAGE_USER;
+	}
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	return pg_dir;
+error:
+	return 0;
 }
