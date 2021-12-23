@@ -7,24 +7,22 @@
 #include <asm/segment.h>
 
 static inline void
-i386_move_to_user(void)
+i386_move_to_user(uint32_t entry, uint32_t esp)
 {
 	__asm__("movw %%ax, %%ds\n\t"
 		"movw %%ax, %%es\n\t"
 		"movw %%ax, %%fs\n\t"
 		"movw %%ax, %%gs\n\t"
-		"movl %%esp, %%edx\n\t"
 		"pushl %0\n\t"
-		"pushl %%edx\n\t"
-		"pushf\n\t"
 		"pushl %1\n\t"
-		"pushl $1f\n\t"
+		"pushf\n\t"
+		"pushl %2\n\t"
+		"pushl %3\n\t"
 		"iret\n\t"
-		"1:"
-		: : "a" (USER_DS_SELECTOR), "i" (USER_CS_SELECTOR) : "%edx");
+		: : "a" (USER_DS_SELECTOR), "i" (esp), "i" (USER_CS_SELECTOR), "i" (entry));
 }
 #else
-void i386_move_to_user(void);
+void i386_move_to_user(uint32_t entry, uint32_t esp);
 #endif /* _CONFIG_USE_INLINE_ASM */
 
 #define move_to_user	i386_move_to_user
