@@ -3,10 +3,17 @@
 
 #define NR_PROC	64
 
+struct proc_image {
+	uint32_t vir_base;
+	uint32_t vir_len;
+};
+
 struct process {
 	int pid;
 	int state;
 	int tty;
+
+	struct proc_image image;
 };
 
 extern struct process *current_process;

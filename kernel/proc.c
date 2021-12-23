@@ -21,6 +21,8 @@ processes_init(void)
 	proc->pid = 0;
 	proc->state = PROC_RUNNABLE;
 	proc->tty = 0;
+	proc->image.vir_base = (uint32_t)&_start_user_head;
+	proc->image.vir_len = &_end_user_head - &_start_user_head;
 	if (arch_processes_init((uint32_t)&_start_user_head, &_end_user_head - &_start_user_head) < 0)
 		panic("Unable to initialise processes");;
 }
