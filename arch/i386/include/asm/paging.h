@@ -15,6 +15,9 @@ extern uint32_t _end_kernel;
 uint32_t kernel_virt_map_page(uint32_t page_frame);
 uint32_t virt_map_phys(uint32_t phys);
 void virt_unmap_virt(uint32_t virt);
+uint32_t virt_map_first_proc(uint32_t start, uint32_t len);
+
+extern uint32_t current_page_directory;
 
 #define kernel_virt_put_page()	(kernel_virt_map_page(page_frame_alloc()))
 
@@ -29,8 +32,15 @@ tlb_flush(uint32_t page)
                 "movl %%eax, %%cr3\r\n" : :);
 #endif /* _CONFIG_X86_ISA_I686 */
 }
+
+static inline void
+load_cr3(uint32_t pg_dir)
+{
+	__asm__("movl %0, %%cr3" : : "r" (pg_dir));
+}
 #else
 void tlb_flush(void);
+void load_cr3(void);
 #endif /* _CONFIG_USE_INLINE_ASM */
 
 #endif /* _KERNEL */
