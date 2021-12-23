@@ -5,6 +5,7 @@
  */
 #include <stdint.h>
 
+#include <asm/cpu_state.h>
 #include <asm/idt.h>
 #include <asm/segment.h>
 
@@ -71,127 +72,127 @@ handle_exception(char *msg, uint32_t eip, uint32_t error)
 }
 
 void
-do_div_by_zero(uint32_t eip, uint32_t error)
+do_div_by_zero(void)
 {
-	handle_exception("Divide by zero", eip, error);
+	handle_exception("Divide by zero", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_debug(uint32_t eip, uint32_t error)
+do_debug(void)
 {
-	handle_exception("Debug", eip, error);
+	handle_exception("Debug", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_nmi(uint32_t eip, uint32_t error)
+do_nmi(void)
 {
-	handle_exception("Non-maskable interrupt", eip, error);
+	handle_exception("Non-maskable interrupt", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_breakpoint(uint32_t eip, uint32_t error)
+do_breakpoint(void)
 {
-	handle_exception("Breakpoint", eip, error);
+	handle_exception("Breakpoint", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_overflow(uint32_t eip, uint32_t error)
+do_overflow(void)
 {
-	handle_exception("Overflow", eip, error);
+	handle_exception("Overflow", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_bound_range_exceeded(uint32_t eip, uint32_t error)
+do_bound_range_exceeded(void)
 {
-	handle_exception("Bound range exceeded", eip, error);
+	handle_exception("Bound range exceeded", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_invalid_opcode(uint32_t eip, uint32_t error)
+do_invalid_opcode(void)
 {
-	handle_exception("Invalid opcode", eip, error);
+	handle_exception("Invalid opcode", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_dev_not_available(uint32_t eip, uint32_t error)
+do_dev_not_available(void)
 {
-	handle_exception("Device not available", eip, error);
+	handle_exception("Device not available", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_double_fault(uint32_t eip, uint32_t error)
+do_double_fault(void)
 {
-	handle_exception("Double fault", eip, error);
+	handle_exception("Double fault", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_invalid_tss(uint32_t eip, uint32_t error)
+do_invalid_tss(void)
 {
-	handle_exception("Invalid TSS", eip, error);
+	handle_exception("Invalid TSS", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_segment_not_present(uint32_t eip, uint32_t error)
+do_segment_not_present(void)
 {
-	handle_exception("Segment not present", eip, error);
+	handle_exception("Segment not present", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_stack_segment_fault(uint32_t eip, uint32_t error)
+do_stack_segment_fault(void)
 {
-	handle_exception("Stack segment fault", eip, error);
+	handle_exception("Stack segment fault", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_gp_fault(uint32_t eip, uint32_t error)
+do_gp_fault(void)
 {
-	handle_exception("General protection fault", eip, error);
+	handle_exception("General protection fault", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_page_fault(uint32_t eip, uint32_t error)
+do_page_fault(void)
 {
-	handle_exception("Page fault", eip, error);
+	handle_exception("Page fault", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_x87_floating_point(uint32_t eip, uint32_t error)
+do_x87_floating_point(void)
 {
-	handle_exception("x87 floating point exception", eip, error);
+	handle_exception("x87 floating point exception", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_alignment_check(uint32_t eip, uint32_t error)
+do_alignment_check(void)
 {
-	handle_exception("Alignment check", eip, error);
+	handle_exception("Alignment check", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_machine_check(uint32_t eip, uint32_t error)
+do_machine_check(void)
 {
-	handle_exception("Machine check", eip, error);
+	handle_exception("Machine check", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_simd_floating_point(uint32_t eip, uint32_t error)
+do_simd_floating_point(void)
 {
-	handle_exception("SIMD Floating Point Exception", eip, error);
+	handle_exception("SIMD Floating Point Exception", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_virtualization(uint32_t eip, uint32_t error)
+do_virtualization(void)
 {
-	handle_exception("Virtualization Exception", eip, error);
+	handle_exception("Virtualization Exception", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_control_protection(uint32_t eip, uint32_t error)
+do_control_protection(void)
 {
-	handle_exception("Control Protection Exception", eip, error);
+	handle_exception("Control Protection Exception", current_cpu_state->eip, current_cpu_state->error);
 }
 
 void
-do_reserved(uint32_t eip, uint32_t error)
+do_reserved(void)
 {
-	handle_exception("Reserved", eip, error);
+	handle_exception("Reserved", current_cpu_state->eip, current_cpu_state->error);
 }
