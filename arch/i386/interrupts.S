@@ -34,6 +34,7 @@
 	popl	%fs
 	popl	%es
 	popl	%ds
+	addl	$4, %esp
 	.endm
 
 	.macro save_state
@@ -46,19 +47,18 @@
 	movl	$KERNEL_DS_SELECTOR, %eax
 	movw	%ax, %ds
 	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
 	.endm
 
 	.macro exception_handler_no_error handler name
 	.global	\name
 \name\():
+	pushl	$0
 	save_regs
 	save_state
 	restore_kernel_seg
-	movl	44(%esp), %edx
-	pushl	$0
-	pushl	%edx
 	call	\handler
-	addl	$8, %esp
 	restore_regs
 	iret
 	.endm
@@ -69,12 +69,7 @@
 	save_regs
 	save_state
 	restore_kernel_seg
-	movl	44(%esp), %edx
-	pushl	%edx
-	movl	52(%esp), %edx
-	pushl	%edx
 	call	\handler
-	addl	$8, %esp
 	restore_regs
 	iret
 	.endm
@@ -83,10 +78,10 @@
 
 	.global	ignore_interrupt
 ignore_interrupt:
+	pushl	$0
 	save_regs
 	save_state
 	restore_kernel_seg
-	/* Do not need to move kernel data segment into %ds for now */
 	calll	acknowledge_int
 	restore_regs
 	iretl
@@ -106,6 +101,7 @@ acknowledge_int:
  */
 	.global irq0_handler
 irq0_handler:
+	pushl	$0
 	save_regs
 	save_state
 	restore_kernel_seg
@@ -119,6 +115,7 @@ irq0_handler:
 	.global	irq3_handler, irq4_handler
 irq3_handler:
 irq4_handler:
+	pushl	$0
 	save_regs
 	save_state
 	restore_kernel_seg
