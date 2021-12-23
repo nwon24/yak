@@ -1,6 +1,6 @@
 /*
  * virtual_mm.c
- * Maps physical addresses to virtual addresses.
+ * Contains code to deal with virtual memory.
  */
 
 #include <stddef.h>
@@ -14,7 +14,7 @@
 #include <mm/mm.h>
 #include <mm/mmap.h>
 
-/* Virtual address of temporary page table */
+/* Virtual address of temporary pages */
 #define VIRT_ADDR_TMP_PAGE	0xC03FF000
 
 extern uint32_t init_page_directory[];
@@ -172,4 +172,35 @@ virt_map_first_proc(uint32_t start, uint32_t size)
 	return pg_dir;
 error:
 	return 0;
+}
+
+/*
+ * Is actually quite simple.
+ * We simply mark the page directory as read only. We only copy the
+ * page once it is written to and a page fault appears.
+ */
+void
+copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
+{
+	uint32_t *p, old;
+	uint32_t tmp_page[PAGE_SIZE / sizeof(uint32_t)];
+
+	/* Addresses passed are physical address so this is a bit of a pain. */
+	old = get_tmp_page();
+	tmp_map_page(from_page_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove(tmp_page, (void *)VIRT_ADDR_TMP_PAGE, PAGE_SIZE);
+	tmp_map_page(to_page_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
+	/*
+	 * Setting the write bit to 0 makes the entire 4 MiB region mapped by the page
+	 * table unwritable.
+	 */
+	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
+		if (*p & PAGE_PRESENT)
+			*p &= ~PAGE_WRITABLE;
+	}
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
 }
