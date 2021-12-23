@@ -4,8 +4,10 @@
 #define NR_PROC	64
 
 struct proc_image {
-	uint32_t vir_base;
-	uint32_t vir_len;
+	uint32_t vir_code_base;	/* Only readable */
+	uint32_t vir_code_len;
+	uint32_t vir_data_base; /* Readable and writeable */
+	uint32_t vir_data_len;
 };
 
 struct process {
