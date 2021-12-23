@@ -15,7 +15,7 @@
 
 struct i386_cpu_state *current_cpu_state = NULL;
 
-static struct i386_cpu_state cpu_states[NR_PROC];
+struct i386_cpu_state cpu_states[NR_PROC];
 
 extern uint32_t boot_stack;
 
