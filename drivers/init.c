@@ -39,7 +39,6 @@ init_function init_func_table[] = {
 	fb_init,
 #endif /* _CONFIG_DRIVER_FBDEV */
 	vc_init,
-	timer_init,
 	NULL,
 };
 
