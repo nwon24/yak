@@ -21,6 +21,7 @@ struct process {
 extern struct process *current_process;
 
 void processes_init(void);
+int __kernel_fork(void);
 
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
