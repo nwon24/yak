@@ -28,9 +28,8 @@ cpu_state_init(void)
 	tss.esp0 = (uint32_t)&boot_stack;
 }
 
-struct i386_cpu_state *
+void
 cpu_state_save(struct i386_cpu_state *new)
 {
 	memmove(current_cpu_state, new, sizeof(*new) - (sizeof(new->cr3) + sizeof(new->kernel_stack)));
-	return current_cpu_state;
 }
