@@ -7,6 +7,13 @@
 #include <drivers/timer.h>
 #include <drivers/driver.h>
 
+#include <kernel/debug.h>
+
+uint32_t get_current_time(void);
+
+uint32_t startup_time;
+uint32_t timer_ticks;
+
 static struct timer_driver *timer_driver;
 
 static void timer_driver_irq_handler(void);
@@ -27,6 +34,8 @@ register_timer_driver(struct timer_driver *driver)
 int
 timer_init(void)
 {
+	/* Not exactly related to the timer, but close enough. */
+	startup_time = get_current_time();
 	register_driver(&generic_timer_driver);
 	return 0;
 }
@@ -34,5 +43,6 @@ timer_init(void)
 static void
 timer_driver_irq_handler(void)
 {
+	timer_ticks++;
 	timer_driver->irq_handler();
 }
