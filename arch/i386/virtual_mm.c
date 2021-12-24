@@ -198,7 +198,7 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 	 * table unwritable.
 	 */
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
-		if (*p & PAGE_PRESENT)
+		if (*p & PAGE_PRESENT && *p & PAGE_USER)
 			*p &= ~PAGE_WRITABLE;
 	}
 	tmp_map_page(old);
