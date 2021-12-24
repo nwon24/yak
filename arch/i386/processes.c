@@ -5,15 +5,20 @@
 #include <asm/cpu_state.h>
 #include <asm/paging.h>
 #include <asm/user_mode.h>
+#include <asm/idt.h>
+#include <asm/syscall.h>
 
 #include <generic/errno.h>
 #include <generic/string.h>
+#include <generic/unistd.h>
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
 #include <mm/mm.h>
 #include <mm/vm.h>
+
+void syscall(void);
 
 extern uint32_t init_page_directory;
 /* Page directory for current process */
@@ -26,6 +31,8 @@ uint32_t current_page_directory;
 int
 arch_processes_init(uint32_t start, uint32_t size)
 {
+	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_TRAP_GATE);
+	register_syscall(__NR_fork, (uint32_t)__kernel_fork, 0);
 	current_page_directory = virt_map_first_proc(start, size);
 	if (!current_page_directory)
 		return -1;
