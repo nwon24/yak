@@ -30,7 +30,7 @@ struct i386_cpu_state {
 };
 
 void cpu_state_init(void);
-struct i386_cpu_state *cpu_state_save(struct i386_cpu_state *new);
+void cpu_state_save(struct i386_cpu_state *new);
 
 extern struct i386_cpu_state *current_cpu_state;
 extern struct i386_cpu_state cpu_states[];
