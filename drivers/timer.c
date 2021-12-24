@@ -8,6 +8,7 @@
 #include <drivers/driver.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 uint32_t get_current_time(void);
 
@@ -37,6 +38,7 @@ timer_init(void)
 	/* Not exactly related to the timer, but close enough. */
 	startup_time = get_current_time();
 	register_driver(&generic_timer_driver);
+	timer_driver->init();
 	return 0;
 }
 
@@ -45,4 +47,8 @@ timer_driver_irq_handler(void)
 {
 	timer_ticks++;
 	timer_driver->irq_handler();
+	if (current_process->quanta++ == PROC_QUANTA) {
+		current_process->quanta = 0;
+		schedule();
+	}
 }
