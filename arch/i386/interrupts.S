@@ -162,22 +162,30 @@ exception_handler_no_error do_reserved reserved
 	/* Syscall handler (IRQ 0x80) */
 	.global syscall
 syscall:
+	/* Save %eax immediately - contains syscall number */
+	movl	%eax, syscall_nr
 	pushl	$0
 	save_regs
 	save_state
 	restore_kernel_seg
-	pushl	%eax
-	pushl	%edi
-	pushl	%ebx
 	movl	$syscall_table, %edi
-	shll	$3, %eax
-	addl	%eax, %edi
+	shll	$3, syscall_nr
+	addl	syscall_nr, %edi
 	movl	4(%edi), %ebx
 	movl	%ebx, nr_args
 	movl	(%edi), %ebx
 	movl	%ebx, addr
-	popl	%ebx
+	/*
+	 * Now we need to restore general registers just pushed since
+	 * they may have been clobbered by 'save_cpu_state'.
+	 * The calling convention only specifies a few registers to be saved.
+	 */
+	popl	%ebp
 	popl	%edi
+	popl	%esi
+	popl	%edx
+	popl	%ecx
+	popl	%ebx
 	movl	addr, %eax
 	testl	%eax, %eax
 	jz	bad_syscall
@@ -207,10 +215,17 @@ syscall:
 bad_syscall:
 	popl	%eax
 	movl	$-EINVAL, %eax
-1:	restore_regs
+1:	/* Only need to restore segment registers here. */
+	popl	%gs
+	popl	%fs
+	popl	%es
+	popl	%ds
+	addl	$4, %esp
 	iret
 
 	.section .data
+syscall_nr:
+	.long	0
 addr:
 	.long	0
 nr_args:
