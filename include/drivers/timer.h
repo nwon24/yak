@@ -7,7 +7,7 @@
 #define HZ	100
 
 struct timer_driver {
-	int (*init)(void);
+	void (*init)(void);
 	void (*irq_handler)(void);
 };
 
