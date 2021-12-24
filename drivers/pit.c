@@ -30,10 +30,11 @@
 #define FREQUENCY	1193182
 
 static void pit_irq_handler(void);
+static void pit_start_timer(void);
 int pit_init(void);
 
 static struct timer_driver pit_interface = {
-	.init = pit_init,
+	.init = pit_start_timer,
 	.irq_handler = pit_irq_handler
 };
 
@@ -44,14 +45,19 @@ pit_set_reload(uint16_t reload)
 	outb((reload >> 8) & 0xFF, PIT_CHAN0_DATA);
 }
 
-int
-pit_init(void)
+static void
+pit_start_timer(void)
 {
-	register_timer_driver(&pit_interface);
 	set_idt_entry(PIT_IRQ, (uint32_t)irq0_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
 	outb(PIT_SQUARE_WAVE_MODE, PIT_MODE_CMD);
 	pit_set_reload(FREQUENCY / HZ);
 	pic_clear_mask(PIT_IRQ);
+}
+
+int
+pit_init(void)
+{
+	register_timer_driver(&pit_interface);
 	return 0;
 }
 
