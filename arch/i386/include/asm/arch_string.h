@@ -7,28 +7,17 @@
 static inline void *
 __arch_memcpy(void *dst, const void *src, size_t n)
 {
-        __asm__("cld; rep; movsl\n\t"
-                "movl %0, %%ecx\n\t"
-                "andl $3, %%ecx\r\n"
-                "jz 1f\r\n"
-                "rep; movsb\r\n"
-                "1:" : : "g" (n), "c" (n >> 2), "D" (dst), "S" (src));
+	__asm__("cld; rep; movsb" : : "c" (n), "D" ((uint32_t)dst), "S" ((uint32_t)src));
         return dst;
 }
 
 static inline void *
 __arch_memmove(void *dst, const void *src, size_t n)
 {
-        if (dst < src) {
+        if (dst < src)
                 return __arch_memcpy(dst, src, n);
-        } else {
-                __asm__("std; rep; movsl\n\t"
-                        "movl %0, %%ecx\n\t"
-                        "andl $3, %%ecx\n\t"
-                        "jz 1f\n\t"
-                        "rep; movsb\r\n"
-                        "1:" : : "g" (n), "c" (n >> 2), "D" ((uint32_t)dst + n - 1), "S" ((uint32_t)src + n - 1));
-        }
+        else
+		__asm__("std; rep; movsb" : : "c" (n), "D" ((uint32_t)dst + n - 1), "S" ((uint32_t)src + n - 1));
         return dst;
 }
 
