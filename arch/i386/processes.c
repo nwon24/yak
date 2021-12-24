@@ -7,6 +7,9 @@
 #include <asm/user_mode.h>
 #include <asm/idt.h>
 #include <asm/syscall.h>
+#include <asm/segment.h>
+
+#include <drivers/tty.h>
 
 #include <generic/errno.h>
 #include <generic/string.h>
@@ -19,6 +22,8 @@
 #include <mm/vm.h>
 
 void syscall(void);
+
+void asm_switch_to(void);
 
 extern uint32_t init_page_directory;
 /* Page directory for current process */
@@ -59,8 +64,21 @@ arch_fork(int child)
 	memmove(new, current_cpu_state, sizeof(*new));
 	/* Return value for child process is 0 */
 	new->eax = 0;
+	new->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE) + PAGE_SIZE - 1;
 	if ((new->cr3 = page_frame_alloc()) == NO_FREE_PAGE)
 		return -ENOMEM;
 	copy_address_space(current_cpu_state->cr3, new->cr3);
 	return child;
+}
+
+/*
+ * Should switch to a different process.
+ */
+void
+arch_switch_to(int state)
+{
+	current_cpu_state = cpu_states + state;
+	load_cr3(current_cpu_state->cr3);
+	tss.esp0 = current_cpu_state->kernel_stack;
+	asm_switch_to();
 }
