@@ -10,7 +10,8 @@ OBJ_FILES += $(ARCH_DIR)/boot.o \
              $(ARCH_DIR)/cpu_state.o \
              $(ARCH_DIR)/asm_aux.o \
 	     $(ARCH_DIR)/userspace_head.o \
-             $(ARCH_DIR)/processes.o
+             $(ARCH_DIR)/processes.o \
+             $(ARCH_DIR)/syscall.o
 
 KERNEL_BIN := $(ARCH_DIR)/kimage
 LDSCRIPT := $(ARCH_DIR)/kernel.ld
