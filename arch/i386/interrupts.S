@@ -6,6 +6,8 @@
 #include <asm/8259_pic.h>
 #include <asm/segment.h>
 
+#include <generic/errno.h>
+
 #include <drivers/driver.h>
 
 	.macro save_regs
@@ -44,11 +46,13 @@
 	.endm
 
 	.macro restore_kernel_seg
+	pushl	%eax
 	movl	$KERNEL_DS_SELECTOR, %eax
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %fs
 	movw	%ax, %gs
+	popl	%eax
 	.endm
 
 	.macro exception_handler_no_error handler name
@@ -154,3 +158,60 @@ exception_handler_no_error do_simd_floating_point simd_floating_point
 exception_handler_no_error do_virtualization virtualization
 exception_handler_error do_control_protection control_protection
 exception_handler_no_error do_reserved reserved
+
+	/* Syscall handler (IRQ 0x80) */
+	.global syscall
+syscall:
+	pushl	$0
+	save_regs
+	save_state
+	restore_kernel_seg
+	pushl	%eax
+	pushl	%edi
+	pushl	%ebx
+	movl	$syscall_table, %edi
+	shll	$3, %eax
+	addl	%eax, %edi
+	movl	4(%edi), %ebx
+	movl	%ebx, nr_args
+	movl	(%edi), %ebx
+	movl	%ebx, addr
+	popl	%ebx
+	popl	%edi
+	movl	addr, %eax
+	testl	%eax, %eax
+	jz	bad_syscall
+	popl	%eax
+	cmpl	$6, nr_args
+	jl	1f
+	pushl	%ebp
+1:	cmpl	$5, nr_args
+	jl	1f
+	pushl	%esi
+1:	cmpl	$4, nr_args
+	jl	1f
+	pushl	%edi
+1:	cmpl	$3, nr_args
+	jl	1f
+	pushl	%edx
+1:	cmpl	$2, nr_args
+	jl	1f
+	pushl	%ecx
+1:	cmpl	$1, nr_args
+	jl	1f
+	pushl	%ebx
+1:	call	*addr
+	shll	$2, nr_args
+	add	nr_args, %esp
+	jmp	1f
+bad_syscall:
+	popl	%eax
+	movl	$-EINVAL, %eax
+1:	restore_regs
+	iret
+
+	.section .data
+addr:
+	.long	0
+nr_args:
+	.long	0
