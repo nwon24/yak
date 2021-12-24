@@ -1,6 +1,8 @@
 #ifndef _PROC_H
 #define _PROC_H
 
+#include <stdint.h>
+
 #define NR_PROC	64
 
 struct proc_image {
@@ -14,14 +16,18 @@ struct process {
 	int pid;
 	int state;
 	int tty;
+	int quanta;
 
 	struct proc_image image;
 };
 
 extern struct process *current_process;
+extern struct process process_table[];
 
 void processes_init(void);
 int __kernel_fork(void);
+
+void schedule(void);
 
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
@@ -29,5 +35,8 @@ int __kernel_fork(void);
 #define PROC_RUNNING	1
 #define PROC_BLOCKED	2
 #define PROC_RUNNABLE	3
+
+/* In 10s of milliseconds */
+#define PROC_QUANTA	10
 
 #endif /* _PROC_H */
