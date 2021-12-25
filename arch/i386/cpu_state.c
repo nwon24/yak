@@ -7,6 +7,7 @@
 #include <asm/cpu_state.h>
 #include <asm/segment.h>
 #include <asm/paging.h>
+#include <asm/interrupts.h>
 
 #include <generic/string.h>
 
@@ -31,5 +32,13 @@ cpu_state_init(void)
 void
 cpu_state_save(struct i386_cpu_state *new)
 {
-	memmove(current_cpu_state, new, sizeof(*new) - (sizeof(new->cr3) + sizeof(new->kernel_stack)));
+	/*
+	 * Copy just everything up to eflags because the interrupt might not have
+	 * happened in userspace, in which case esp and ss are not saved.
+	 */
+	memmove(current_cpu_state, new, (char *)&new->eflags - (char *)&new->ebp);
+	if (new->ss == USER_DS_SELECTOR) {
+		current_cpu_state->ss = new->ss;
+		current_cpu_state->esp = new->esp;
+	}
 }
