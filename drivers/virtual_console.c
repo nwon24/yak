@@ -63,6 +63,8 @@ vc_linefeed(struct virtual_console *vc)
 {
         if (vc->vc_cy + 1 < vc->vc_height)
                 vc->vc_cy++;
+	else
+		vc_scroll_up(vc);
 }
 
 static inline void
@@ -172,9 +174,9 @@ vc_write(int n, struct tty_queue *tq)
         p = tq->tq_head;
         while (nr--) {
                 if (*p == '\r') {
-                        vc->vc_cx = 0;
+			vc_carriage_return(vc);
                 } else if (*p == '\n') {
-                        vc->vc_cy++;
+			vc_linefeed(vc);
                 } else if (*p == '\b') {
                         if (vc->vc_cx)
                                 vc->vc_cx--;
@@ -184,7 +186,15 @@ vc_write(int n, struct tty_queue *tq)
                         nr -= p - old;
                 } else {
                         *(vc->vc_scr_buf + SCR_POS(vc)) = *p;
-                        vc->vc_cx++;
+			if (vc->vc_cx == vc->vc_width - 1 && vc->vc_cy == vc->vc_height - 1) {
+				vc_scroll_up(vc);
+				vc->vc_cx = 0;
+			} else if (vc->vc_cx == vc->vc_width - 1) {
+				vc_carriage_return(vc);
+				vc_linefeed(vc);
+			} else {
+				vc->vc_cx++;
+			}
                 }
                 p++;
         }
