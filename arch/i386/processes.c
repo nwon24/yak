@@ -8,6 +8,7 @@
 #include <asm/idt.h>
 #include <asm/syscall.h>
 #include <asm/segment.h>
+#include <asm/interrupts.h>
 
 #include <drivers/tty.h>
 
@@ -29,6 +30,8 @@ extern uint32_t init_page_directory;
 /* Page directory for current process */
 uint32_t current_page_directory;
 
+void __kernel_test(int);
+
 /*
  * Allocates user memory for the first process.
  * Arguments passed are the entry point and the size in bytes.
@@ -36,8 +39,10 @@ uint32_t current_page_directory;
 int
 arch_processes_init(uint32_t start, uint32_t size)
 {
-	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_TRAP_GATE);
+/*	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_TRAP_GATE); */
+	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_INT_GATE);
 	register_syscall(__NR_fork, (uint32_t)__kernel_fork, 0);
+	register_syscall(0, (uint32_t)__kernel_test, 1);
 	current_page_directory = virt_map_first_proc(start, size);
 	if (!current_page_directory)
 		return -1;
@@ -77,8 +82,20 @@ arch_fork(int child)
 void
 arch_switch_to(int state)
 {
+	disable_intr();
 	current_cpu_state = cpu_states + state;
+/*	if ((current_cpu_state->cr3 & 0xFFF) || !current_cpu_state->cr3)
+		__asm__("cli; hlt"); */
 	load_cr3(current_cpu_state->cr3);
 	tss.esp0 = current_cpu_state->kernel_stack;
 	asm_switch_to();
+}
+
+void
+__kernel_test(int n)
+{
+	if (n)
+		tty_write(0, "1", 1);
+	else
+		tty_write(0, "0", 1);
 }
