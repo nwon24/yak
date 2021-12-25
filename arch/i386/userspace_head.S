@@ -10,4 +10,14 @@
 first_user_code:
 	movl	$__NR_fork, %eax
 	int	$0x80
-	jmp	.
+	test	%eax, %eax
+	jz	2f
+1:	movl	$0, %eax
+	movl	$0, %ebx
+	int	$0x80
+	jmp	1b
+2:	movl	$0, %eax
+	movl	$1, %ebx
+	int	$0x80
+	jmp	2b
+3:	jmp	.
