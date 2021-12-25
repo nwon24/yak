@@ -208,7 +208,9 @@ syscall:
 1:	cmpl	$1, nr_args
 	jl	1f
 	pushl	%ebx
-1:	call	*addr
+1:	sti
+	call	*addr
+	cli
 	shll	$2, nr_args
 	add	nr_args, %esp
 	jmp	1f
