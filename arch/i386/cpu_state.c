@@ -14,6 +14,8 @@
 #include <kernel/proc.h>
 #include <kernel/debug.h>
 
+#include <mm/vm.h>
+
 struct i386_cpu_state *current_cpu_state = NULL;
 
 struct i386_cpu_state cpu_states[NR_PROC];
@@ -36,7 +38,7 @@ cpu_state_save(struct i386_cpu_state *new)
 	 * Copy just everything up to eflags because the interrupt might not have
 	 * happened in userspace, in which case esp and ss are not saved.
 	 */
-	memmove(current_cpu_state, new, (char *)&new->eflags - (char *)&new->ebp);
+	memmove(current_cpu_state, new, (char *)&new->ss - (char *)&new->ebp);
 	if (new->ss == USER_DS_SELECTOR) {
 		current_cpu_state->ss = new->ss;
 		current_cpu_state->esp = new->esp;
