@@ -37,7 +37,8 @@ processes_init(void)
 	proc->quanta = 0;
 	proc->image.vir_code_base = (uint32_t)&_start_user_head;
 	proc->image.vir_code_len = &_end_user_head - &_start_user_head;
-	timer_init();
+	proc->queue_next = NULL;
+	/* Timer init should be called from 'arch_processes_init' */
 	if (arch_processes_init((uint32_t)&_start_user_head, &_end_user_head - &_start_user_head) < 0)
 		panic("Unable to initialise processes");;
 }
