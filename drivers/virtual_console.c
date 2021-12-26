@@ -3,11 +3,12 @@
  * Virtual console driver, built on top of low level console drivers (such as the framebuffer console driver)
  * Handles a subset of VT102 escape sequences.
  */
-
 #include <drivers/ansi_vt.h>
 #include <drivers/driver.h>
 #include <drivers/tty.h>
 #include <drivers/virtual_console.h>
+
+#include <kernel/debug.h>
 
 #include <mm/vm.h>
 
@@ -125,9 +126,11 @@ vc_init(void)
                 vc->vc_scroll_top = 0;
                 vc->vc_scroll_bottom = vc->vc_height - 1;
                 vc_set_default_attr(vc);
+		mutex_init(&vc->vc_mutex);
         }
         for (i = 0; i < NR_VIRTUAL_CONSOLES; i++)
                 tty_driver_register(i, &vc_tty_driver);
+	change_printk_tty(0);
         return 0;
 }
 
@@ -160,17 +163,20 @@ vc_write(int n, struct tty_queue *tq)
 {
         struct virtual_console *vc;
         struct virtual_console_driver *vcd;
-        int nr, i;
+        int nr, i, ret;
         char *p, *old;
 
         vc = vc_table + n;
         if (vc >= vc_table + NR_VIRTUAL_CONSOLES)
                 return -1;
+	mutex_lock(&vc->vc_mutex);
         vcd = *(vc_driver_table + n);
         nr = tq->tq_tail - tq->tq_head;
         i = nr;
-        if (nr < 0)
-                return -1;
+        if (nr < 0) {
+		ret = -1;
+		goto out;
+	}
         p = tq->tq_head;
         while (nr--) {
                 if (*p == '\r') {
@@ -200,7 +206,10 @@ vc_write(int n, struct tty_queue *tq)
         }
         vc_calc_last_pos(vc);
         vc_flush(vc, vcd);
-        return i;
+	ret = i;
+out:
+	mutex_unlock(&vc->vc_mutex);
+        return ret;
 }
 
 static char *
