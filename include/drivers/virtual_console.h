@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <kernel/mutex.h>
+
 /* I think Linux has 63... */
 #define NR_VIRTUAL_CONSOLES	4
 
@@ -64,6 +66,8 @@ struct virtual_console {
         uint32_t vc_scroll_bottom;
 
         struct vc_attr vc_attr;
+
+	mutex vc_mutex;
 };
 
 struct virtual_console_driver {
