@@ -3,6 +3,7 @@
  * Has the IRQs for all interrupts.
  */
 
+#include <asm/cpu_state.h>
 #include <asm/8259_pic.h>
 #include <asm/segment.h>
 
@@ -39,6 +40,17 @@
 	addl	$4, %esp
 	.endm
 
+	.macro save_iret_frame
+	movl	%esp, iret_frame
+	pushl	%edi
+	pushl	%eax
+	movl	current_cpu_state, %edi
+	movl	iret_frame, %eax
+	movl	%eax, IRET_FRAME_OFF(%edi)
+	popl	%eax	
+	popl	%edi
+	.endm
+
 	.macro save_state
 	pushl	%esp
 	call	cpu_state_save
@@ -60,8 +72,8 @@
 \name\():
 	pushl	$0
 	save_regs
-	save_state
 	restore_kernel_seg
+	save_state
 	call	\handler
 	restore_regs
 	iret
@@ -71,8 +83,8 @@
 	.global	\name
 \name\():
 	save_regs
-	save_state
 	restore_kernel_seg
+	save_state
 	call	\handler
 	restore_regs
 	iret
@@ -84,8 +96,9 @@
 ignore_interrupt:
 	pushl	$0
 	save_regs
-	save_state
 	restore_kernel_seg
+	save_state
+	save_iret_frame
 	calll	acknowledge_int
 	restore_regs
 	iretl
@@ -97,7 +110,7 @@ acknowledge_int:
 	cmpw	$PIC2_OFFSET, %ax
 	jl	1f
 	movb	$PIC_EOI, %al
-	outb	%al, $PIC1_CMD
+	outb	%al, $PIC2_CMD
 1:	ret
 
 /*
@@ -107,28 +120,28 @@ acknowledge_int:
 irq0_handler:
 	pushl	$0
 	save_regs
-	save_state
 	restore_kernel_seg
+	save_state
+	save_iret_frame
 	call	acknowledge_int
 	pushl	$_DRIVERS_TIMER_DRIVER
 	call	driver_irq
 	addl	$4, %esp
-	restore_regs
-	iret
+	jmp	__restart
 
 	.global	irq3_handler, irq4_handler
 irq3_handler:
 irq4_handler:
 	pushl	$0
 	save_regs
-	save_state
 	restore_kernel_seg
+	save_state
+	save_iret_frame
 	call	acknowledge_int
 	pushl	$_DRIVERS_UART8250_DRIVER
 	call	driver_irq
 	addl	$4, %esp
-	restore_regs
-	iret
+	jmp	__restart
 
 	.global cpu_stop
 cpu_stop:
@@ -163,72 +176,29 @@ exception_handler_no_error do_reserved reserved
 	.global syscall
 syscall:
 	/* Save %eax immediately - contains syscall number */
+	pushl	%eax
 	movl	%eax, syscall_nr
+	popl	%eax
 	pushl	$0
 	save_regs
-	save_state
 	restore_kernel_seg
-	movl	$syscall_table, %edi
-	shll	$3, syscall_nr
-	addl	syscall_nr, %edi
-	movl	4(%edi), %ebx
-	movl	%ebx, nr_args
-	movl	(%edi), %ebx
-	movl	%ebx, addr
-	/*
-	 * Now we need to restore general registers just pushed since
-	 * they may have been clobbered by 'save_cpu_state'.
-	 * The calling convention only specifies a few registers to be saved.
-	 */
-	popl	%ebp
-	popl	%edi
-	popl	%esi
-	popl	%edx
-	popl	%ecx
-	popl	%ebx
-	movl	addr, %eax
-	testl	%eax, %eax
-	jz	bad_syscall
-	popl	%eax
-	cmpl	$6, nr_args
-	jl	1f
-	pushl	%ebp
-1:	cmpl	$5, nr_args
-	jl	1f
-	pushl	%esi
-1:	cmpl	$4, nr_args
-	jl	1f
-	pushl	%edi
-1:	cmpl	$3, nr_args
-	jl	1f
-	pushl	%edx
-1:	cmpl	$2, nr_args
-	jl	1f
-	pushl	%ecx
-1:	cmpl	$1, nr_args
-	jl	1f
-	pushl	%ebx
-1:	sti
-	call	*addr
-	cli
-	shll	$2, nr_args
-	add	nr_args, %esp
-	jmp	1f
-bad_syscall:
-	popl	%eax
-	movl	$-EINVAL, %eax
-1:	/* Only need to restore segment registers here. */
-	popl	%gs
-	popl	%fs
-	popl	%es
-	popl	%ds
-	addl	$4, %esp
+	save_state
+	save_iret_frame
+	pushl	syscall_nr
+	pushl	current_cpu_state
+	call	handle_syscall
+	addl	$8, %esp
+	jmp	__restart
+	
+	/* Two underscores because this is extra special */
+	.global	__restart
+__restart:
+	restore_regs
 	iret
 
 	.section .data
 syscall_nr:
 	.long	0
-addr:
-	.long	0
-nr_args:
+
+iret_frame:
 	.long	0
