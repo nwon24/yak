@@ -15,6 +15,8 @@
  */
 void cpu_stop(void);
 
+static int printk_tty = DEBUG_TTY;
+
 enum signedness {
 	SIGNED,
 	UNSIGNED,
@@ -34,7 +36,13 @@ printk(const char *fmt, ...)
 	va_start(args, fmt);
 	nr = vsprintf(buf, fmt, args);
 	va_end(args);
-	return tty_write(DEBUG_TTY, buf, nr);
+	return tty_write(printk_tty, buf, nr);
+}
+
+void
+change_printk_tty(int tty)
+{
+	printk_tty = tty;
 }
 
 void
