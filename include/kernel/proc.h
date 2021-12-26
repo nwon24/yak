@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <kernel/mutex.h>
+
 #define NR_PROC	64
 
 struct proc_image {
@@ -17,8 +19,10 @@ struct process {
 	int state;
 	int tty;
 	int quanta;
+	void *sleeping_on;
 
 	struct proc_image image;
+	struct process *queue_next;
 };
 
 extern struct process *current_process;
@@ -28,6 +32,8 @@ void processes_init(void);
 int __kernel_fork(void);
 
 void schedule(void);
+void sleep(void *addr);
+void wakeup(void *addr);
 
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
