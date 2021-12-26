@@ -11,6 +11,7 @@
 #include <asm/interrupts.h>
 
 #include <drivers/tty.h>
+#include <drivers/timer.h>
 
 #include <generic/errno.h>
 #include <generic/string.h>
@@ -39,7 +40,13 @@ void __kernel_test(int);
 int
 arch_processes_init(uint32_t start, uint32_t size)
 {
-/*	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_TRAP_GATE); */
+/*	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_TRAP_GATE);  */
+	/*
+	 * Not a trap gate here since the first few steps of the syscall interrupt handler does some critical things
+	 * during which an interrupt must not happen. Interrupts are then enabled before entering the system call.
+	 * Each timer tick is 10 ms so none should be missed from the time the syscall interrupt handler is entered
+	 * to the point interrupts are enabled.
+	 */
 	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_INT_GATE);
 	register_syscall(__NR_fork, (uint32_t)__kernel_fork, 0);
 	register_syscall(0, (uint32_t)__kernel_test, 1);
@@ -48,9 +55,13 @@ arch_processes_init(uint32_t start, uint32_t size)
 		return -1;
 	current_cpu_state->cr3 = current_page_directory;
 	load_cr3(current_cpu_state->cr3);
+	current_cpu_state->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE) + PAGE_SIZE - 1;
+	tss.ss = KERNEL_SS_SELECTOR;
+	tss.esp0 = current_cpu_state->kernel_stack;
 	/*
 	 * This is really quite ugly...
 	 */
+	timer_init();
 	move_to_user(0, 4096);
 	return 0;
 }
@@ -82,10 +93,7 @@ arch_fork(int child)
 void
 arch_switch_to(int state)
 {
-	disable_intr();
 	current_cpu_state = cpu_states + state;
-/*	if ((current_cpu_state->cr3 & 0xFFF) || !current_cpu_state->cr3)
-		__asm__("cli; hlt"); */
 	load_cr3(current_cpu_state->cr3);
 	tss.esp0 = current_cpu_state->kernel_stack;
 	asm_switch_to();
