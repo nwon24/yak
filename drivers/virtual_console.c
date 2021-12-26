@@ -130,7 +130,7 @@ vc_init(void)
         }
         for (i = 0; i < NR_VIRTUAL_CONSOLES; i++)
                 tty_driver_register(i, &vc_tty_driver);
-	change_printk_tty(0);
+/*	change_printk_tty(0); */
         return 0;
 }
 
