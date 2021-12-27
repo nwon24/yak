@@ -47,8 +47,13 @@ timer_driver_irq_handler(void)
 {
 	timer_ticks++;
 	timer_driver->irq_handler();
-	if (current_process->quanta++ == PROC_QUANTA) {
-		current_process->quanta = 0;
-		schedule();
+	if (current_process->priority) {
+		current_process->priority--;
+		adjust_proc_queues(current_process);
 	}
+	if (!current_process->counter--) {
+		current_process->counter = 0;
+		current_process->state = PROC_RUNNABLE;
+	}
+	schedule();
 }
