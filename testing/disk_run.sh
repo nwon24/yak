@@ -7,4 +7,4 @@ sudo cp -rf $2/* /mnt
 sudo sync
 sudo umount /mnt
 sudo losetup -d $LOOP_UNUSED1
-qemu-system-i386 -hda $1 -d int,cpu_reset -D qemu.log
+qemu-system-i386 -hda $1 -d int,cpu_reset -D qemu.log -no-reboot -no-shutdown
