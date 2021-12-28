@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <asm/cpu_state.h>
+
 #include <kernel/mutex.h>
 
 #define NR_PROC	64
@@ -18,11 +20,16 @@ struct process {
 	int pid;
 	int state;
 	int tty;
+	int priority;
 	int quanta;
+	int counter;
 	void *sleeping_on;
+
+	struct context *context;
 
 	struct proc_image image;
 	struct process *queue_next;
+	struct process *queue_prev;
 };
 
 extern struct process *current_process;
@@ -35,6 +42,8 @@ void schedule(void);
 void sleep(void *addr);
 void wakeup(void *addr);
 
+void adjust_proc_queues(struct process *proc);
+
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
 
@@ -44,5 +53,8 @@ void wakeup(void *addr);
 
 /* In 10s of milliseconds */
 #define PROC_QUANTA	10
+
+#define HIGHEST_PRIORITY	(PROC_QUANTA - 1)
+#define LOWEST_PRIORITY		0
 
 #endif /* _PROC_H */
