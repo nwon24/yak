@@ -40,17 +40,6 @@
 	addl	$4, %esp
 	.endm
 
-	.macro save_iret_frame
-	movl	%esp, iret_frame
-	pushl	%edi
-	pushl	%eax
-	movl	current_cpu_state, %edi
-	movl	iret_frame, %eax
-	movl	%eax, IRET_FRAME_OFF(%edi)
-	popl	%eax	
-	popl	%edi
-	.endm
-
 	.macro save_state
 	pushl	%esp
 	call	cpu_state_save
@@ -98,10 +87,8 @@ ignore_interrupt:
 	save_regs
 	restore_kernel_seg
 	save_state
-	save_iret_frame
 	calll	acknowledge_int
-	restore_regs
-	iretl
+	jmp	__restart
 
 acknowledge_int:
 	movb	$PIC_EOI, %al
@@ -122,7 +109,6 @@ irq0_handler:
 	save_regs
 	restore_kernel_seg
 	save_state
-	save_iret_frame
 	call	acknowledge_int
 	pushl	$_DRIVERS_TIMER_DRIVER
 	call	driver_irq
@@ -136,7 +122,6 @@ irq4_handler:
 	save_regs
 	restore_kernel_seg
 	save_state
-	save_iret_frame
 	call	acknowledge_int
 	pushl	$_DRIVERS_UART8250_DRIVER
 	call	driver_irq
@@ -183,7 +168,6 @@ syscall:
 	save_regs
 	restore_kernel_seg
 	save_state
-	save_iret_frame
 	pushl	syscall_nr
 	pushl	current_cpu_state
 	call	handle_syscall
