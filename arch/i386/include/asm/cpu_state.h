@@ -5,6 +5,9 @@
 
 #include <stdint.h>
 
+#define IRET_FRAME_SIZE	68
+
+/* Is better named 'trap frame' or 'iret frame' */
 struct i386_cpu_state {
 	uint32_t ebp;
 	uint32_t edi;
@@ -32,11 +35,19 @@ struct i386_cpu_state {
 	uint32_t iret_frame;
 };
 
+#define NR_REGS	7
+
+struct context {
+	uint32_t regs[NR_REGS];
+	uint32_t eip;
+};
+
 void cpu_state_init(void);
 void cpu_state_save(struct i386_cpu_state *new);
 
 extern struct i386_cpu_state *current_cpu_state;
 extern struct i386_cpu_state cpu_states[];
+
 
 #endif /* _ASSEMBLY_ */
 
