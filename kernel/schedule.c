@@ -22,8 +22,6 @@ struct process *process_queues[PROC_QUANTA];
 static void add_to_queue(struct process *proc);
 static void remove_from_queue(struct process *proc);
 
-int sl = 0;
-
 void
 schedule(void)
 {
@@ -55,11 +53,10 @@ void
 sleep(void *addr)
 {
 	disable_intr();
-	printk("sleep %d", current_process->pid);
-	sl = 1;
 	current_process->state = PROC_BLOCKED;
 	current_process->sleeping_on = addr;
 	schedule();
+	enable_intr();
 }
 
 void
@@ -79,6 +76,7 @@ wakeup(void *addr)
 	}
 	if (sched)
 		schedule();
+	enable_intr();
 }
 
 void
