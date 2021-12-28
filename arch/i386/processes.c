@@ -23,9 +23,11 @@
 #include <mm/mm.h>
 #include <mm/vm.h>
 
+void __restart(void);
+
 void syscall(void);
 
-void asm_switch_to(void);
+void asm_switch_to(struct context **old, struct context *new);
 
 extern uint32_t init_page_directory;
 /* Page directory for current process */
@@ -55,9 +57,10 @@ arch_processes_init(uint32_t start, uint32_t size)
 		return -1;
 	current_cpu_state->cr3 = current_page_directory;
 	load_cr3(current_cpu_state->cr3);
-	current_cpu_state->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE) + PAGE_SIZE - 1;
+	current_cpu_state->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE) + PAGE_SIZE;
 	tss.ss = KERNEL_SS_SELECTOR;
 	tss.esp0 = current_cpu_state->kernel_stack;
+	current_process->context = (struct context *)current_cpu_state->kernel_stack;
 	/*
 	 * This is really quite ugly...
 	 */
@@ -71,7 +74,7 @@ arch_processes_init(uint32_t start, uint32_t size)
  * Integer passed is PID of child process.
  */
 int
-arch_fork(int child)
+arch_fork(int child, struct process *proc)
 {
 	struct i386_cpu_state *new;
 
@@ -80,10 +83,16 @@ arch_fork(int child)
 	memmove(new, current_cpu_state, sizeof(*new));
 	/* Return value for child process is 0 */
 	new->eax = 0;
-	new->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE) + PAGE_SIZE - 1;
+	new->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE) + PAGE_SIZE;
 	if ((new->cr3 = page_frame_alloc()) == NO_FREE_PAGE)
 		return -ENOMEM;
 	copy_address_space(current_cpu_state->cr3, new->cr3);
+	new->kernel_stack -= IRET_FRAME_SIZE;
+	memmove((void *)new->kernel_stack, new, IRET_FRAME_SIZE);
+	new->kernel_stack -= sizeof(*proc->context);
+	proc->context = (struct context *)new->kernel_stack;
+	memmove(proc->context, 0, sizeof(uint32_t) * NR_REGS);
+	proc->context->eip = (uint32_t)__restart;
 	return child;
 }
 
@@ -91,12 +100,12 @@ arch_fork(int child)
  * Should switch to a different process.
  */
 void
-arch_switch_to(int state)
+arch_switch_to(struct process *prev, struct process *new)
 {
-	current_cpu_state = cpu_states + state;
+	current_cpu_state = cpu_states + new->pid;
 	load_cr3(current_cpu_state->cr3);
 	tss.esp0 = current_cpu_state->kernel_stack;
-	asm_switch_to();
+	asm_switch_to(&prev->context, new->context);
 }
 
 void
