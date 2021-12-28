@@ -41,11 +41,12 @@ handle_syscall:
 1:	cmpl	$1,%ecx
 	jl	1f
 	pushl	20(%edi)
+1:	movl	%ecx, %edi		/* Move %ecx to a callee saved register */
 	sti
-1:	call	*%ebx
+	call	*%ebx
 	cli
-	shll	$2, %ecx
-	addl	%ecx, %esp
+	shll	$2, %edi
+	addl	%edi, %esp
 
 	popl	%ebx
 	popl	%esi
