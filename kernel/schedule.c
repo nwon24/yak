@@ -13,7 +13,16 @@
 
 #include <kernel/debug.h>
 
-void arch_switch_to(int state);
+#define IN_A_QUEUE(proc)	((proc)->queue_next != NULL || (proc)->queue_prev != NULL)
+
+void arch_switch_to(struct process *prev, struct process *new);
+
+struct process *process_queues[PROC_QUANTA];
+
+static void add_to_queue(struct process *proc);
+static void remove_from_queue(struct process *proc);
+
+int sl = 0;
 
 void
 schedule(void)
@@ -21,27 +30,33 @@ schedule(void)
 	struct process *proc, *old;
 
 	old = current_process;
-	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
-		if (proc == current_process)
+	for (proc = process_queues[HIGHEST_PRIORITY]; proc >= process_queues[LOWEST_PRIORITY]; proc--) {
+		if (!proc || proc == current_process)
 			continue;
-		if (proc->state == PROC_RUNNABLE) {
-			proc->state = PROC_RUNNING;
-			current_process->state = PROC_RUNNABLE;
-			current_process = proc;
-			goto switch_proc;
+		proc->state = PROC_RUNNING;
+		if (current_process != FIRST_PROC && current_process->quanta != current_process->counter) {
+			current_process->priority = current_process->quanta / (current_process->quanta - current_process->counter);
+			current_process->quanta = current_process->priority;
+			current_process->counter = current_process->quanta;
+			adjust_proc_queues(current_process);
 		}
+		current_process = proc;
+		goto switch_proc;
 	}
 	/* No processes available to run. Resort to idle */
-	current_process = FIRST_PROC;
+	current_process = process_queues[LOWEST_PRIORITY];
 switch_proc:
 	if (current_process != old)
-		arch_switch_to(current_process->pid);
+		arch_switch_to(old, current_process);
 }
 
 
 void
 sleep(void *addr)
 {
+	disable_intr();
+	printk("sleep %d", current_process->pid);
+	sl = 1;
 	current_process->state = PROC_BLOCKED;
 	current_process->sleeping_on = addr;
 	schedule();
@@ -51,11 +66,61 @@ void
 wakeup(void *addr)
 {
 	struct process *proc;
+	int sched = 0;
 
+	disable_intr();
 	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
 		if (proc->sleeping_on == addr) {
+			sched = 1;
 			proc->state = PROC_RUNNABLE;
 			proc->sleeping_on = NULL;
+			adjust_proc_queues(proc);
 		}
 	}
+	if (sched)
+		schedule();
+}
+
+void
+adjust_proc_queues(struct process *proc)
+{
+	if (IN_A_QUEUE(proc))
+		remove_from_queue(proc);
+	if (proc->state == PROC_RUNNABLE)
+		add_to_queue(proc);
+}
+
+static void
+remove_from_queue(struct process *proc)
+{
+	if (!proc->queue_prev && !proc->queue_next)
+		return;
+	if (!proc->queue_prev && proc->queue_next) {
+		/* First process in queue */
+		process_queues[proc->priority] = proc->queue_next;
+	} else if (proc->queue_prev && !proc->queue_next) {
+		/* End process in queue */
+		proc->queue_prev->queue_next = NULL;
+	} else {
+		/* Middle of queue */
+		proc->queue_next->queue_prev = proc->queue_prev;
+		proc->queue_prev->queue_next = proc->queue_next;
+	}
+	proc->queue_next = proc->queue_prev = NULL;
+}
+
+static void
+add_to_queue(struct process *proc)
+{
+	struct process *p;
+
+	if ((p = process_queues[proc->priority]) == NULL) {
+		process_queues[proc->priority] = proc;
+		proc->queue_prev = proc->queue_next = NULL;
+		return;
+	}
+	for ( ; p->queue_next != NULL; p = p->queue_next);
+	p->queue_next = proc;
+	proc->queue_prev = p;
+	proc->queue_next = NULL;
 }
