@@ -18,14 +18,34 @@ static int last_pid = 0;
 struct process process_table[NR_PROC];
 struct process *current_process;
 
+enum system_state {
+	SYSTEM_SINGLETASKING,
+	SYSTEM_MULTITASKING,
+};
+
+enum system_state system_state = SYSTEM_SINGLETASKING;
+
 extern uint32_t _start_user_head, _end_user_head;
 
 int arch_processes_init(uint32_t start, uint32_t size);
 int arch_fork(int child, struct process *proc);
 
 static struct process *get_free_proc(void);
+static void system_change_state(enum system_state state);
 
 extern struct process *process_queues[];
+
+int
+system_is_multitasking(void)
+{
+	return system_state == SYSTEM_MULTITASKING;
+}
+
+static void
+system_change_state(enum system_state state)
+{
+	system_state = state;
+}
 
 void
 processes_init(void)
@@ -46,6 +66,7 @@ processes_init(void)
 	proc->image.vir_code_len = &_end_user_head - &_start_user_head;
 	process_queues[proc->priority] = proc;
 	proc->queue_next = proc->queue_prev = NULL;
+	system_change_state(SYSTEM_MULTITASKING);
 	/* Timer init should be called from 'arch_processes_init' */
 	if (arch_processes_init((uint32_t)&_start_user_head, &_end_user_head - &_start_user_head) < 0)
 		panic("Unable to initialise processes");;
