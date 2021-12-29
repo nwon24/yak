@@ -81,7 +81,7 @@ get_bar(uint8_t bus, uint8_t device, uint8_t function, int bar)
 {
 	if (bar > 5 || bar < 0)
 		return 0;
-	return pci_read_register(bus, device, function, 0x10 + (bar << 2);
+	return pci_read_register(bus, device, function, 0x10 + (bar << 2));
 }
 
 /*
