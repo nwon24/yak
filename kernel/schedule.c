@@ -32,12 +32,11 @@ schedule(void)
 		if (!proc || proc == current_process)
 			continue;
 		proc->state = PROC_RUNNING;
-		if (current_process != FIRST_PROC && current_process->quanta != current_process->counter) {
+		if (current_process != FIRST_PROC && current_process->quanta != current_process->counter)
 			current_process->priority = current_process->quanta / (current_process->quanta - current_process->counter);
-			current_process->quanta = current_process->priority;
-			current_process->counter = current_process->quanta;
-			adjust_proc_queues(current_process);
-		}
+		current_process->quanta = current_process->priority;
+		current_process->counter = current_process->quanta;
+		adjust_proc_queues(current_process);
 		current_process = proc;
 		goto switch_proc;
 	}
@@ -55,6 +54,7 @@ sleep(void *addr)
 	disable_intr();
 	current_process->state = PROC_BLOCKED;
 	current_process->sleeping_on = addr;
+	adjust_proc_queues(current_process);
 	schedule();
 	enable_intr();
 }
@@ -84,7 +84,7 @@ adjust_proc_queues(struct process *proc)
 {
 	if (IN_A_QUEUE(proc))
 		remove_from_queue(proc);
-	if (proc->state == PROC_RUNNABLE)
+	if (proc->state == PROC_RUNNABLE || proc->state == PROC_RUNNING)
 		add_to_queue(proc);
 }
 
