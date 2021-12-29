@@ -44,6 +44,8 @@ void wakeup(void *addr);
 
 void adjust_proc_queues(struct process *proc);
 
+int system_is_multitasking(void);
+
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
 
