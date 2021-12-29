@@ -15,7 +15,7 @@ first_user_code:
 1:	movl	$0, %eax
 	movl	$0, %ebx
 	int	$0x80
-	jmp	1b
+	jmp	.
 2:	movl	$0, %eax
 	movl	$1, %ebx
 	int	$0x80
