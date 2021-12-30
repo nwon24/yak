@@ -1,5 +1,5 @@
-#ifndef _ANSI_VT_H_
-#define _ANSI_VT_H_
+#ifndef ANSI_VT_H_
+#define ANSI_VT_H_
 
 #define ANSI_FG_COLOR_BASE	30
 #define ANSI_BG_COLOR_BASE	40

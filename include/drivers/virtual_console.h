@@ -1,5 +1,5 @@
-#ifndef _VIRTUAL_CONSOLE_H
-#define _VIRTUAL_CONSOLE_H
+#ifndef VIRTUAL_CONSOLE_H
+#define VIRTUAL_CONSOLE_H
 
 #include <stdint.h>
 
@@ -80,4 +80,4 @@ struct virtual_console_driver {
 int vc_init(void);
 void register_vc_driver(int console, struct virtual_console_driver *driver);
 
-#endif /* _VIRTUAL_CONSOLE_H */
+#endif /* VIRTUAL_CONSOLE_H */

@@ -1,20 +1,20 @@
-#ifndef _INTERRUPTS_H
-#define _INTERRUPTS_H
+#ifndef INTERRUPTS_H
+#define INTERRUPTS_H
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
-#include <asm/8259_pic.h>
+#include <asm/pic_8259.h>
 #include <asm/idt.h>
 
 #include <kernel/config.h>
 
-#ifdef _CONFIG_USE_INLINE_ASM
+#ifdef CONFIG_USE_INLINE_ASM
 #define enable_intr()	__asm__("sti")
 #define disable_intr()	__asm__("cli")
 #else
 void enable_intr(void);
 void disable_intr(void);
-#endif /* _CONFIG_USE_INLINE_ASM */
+#endif /* CONFIG_USE_INLINE_ASM */
 
 static inline void
 interrupts_init(void)
@@ -24,6 +24,6 @@ interrupts_init(void)
 	enable_intr();
 }
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _INTERRUPTS_H */
+#endif /* INTERRUPTS_H */

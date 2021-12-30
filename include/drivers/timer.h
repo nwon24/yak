@@ -1,5 +1,5 @@
-#ifndef _TIMER_H
-#define _TIMER_H
+#ifndef TIMER_H
+#define TIMER_H
 
 #include <stdint.h>
 
@@ -19,4 +19,4 @@ extern uint32_t starting_time;
 
 #define CURRENT_TIME	(starting_time + timer_ticks / HZ)
 
-#endif /* _TIMER_H */
+#endif /* TIMER_H */

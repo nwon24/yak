@@ -1,5 +1,5 @@
-#ifndef _PCI_H
-#define _PCI_H
+#ifndef PCI_H
+#define PCI_H
 
 #define PCI_CONFIG_ADDRESS	0xCF8
 #define PCI_CONFIG_DATA		0xCFC
@@ -53,4 +53,4 @@ uint8_t pci_get_class_code(uint8_t bus, uint8_t device, uint8_t function);
 uint8_t pci_get_subclass(uint8_t bus, uint8_t device, uint8_t function);
 uint8_t pci_get_prog_if(uint8_t bus, uint8_t device, uint8_t function);
 
-#endif /* _PCI_H */
+#endif /* PCI_H */

@@ -1,5 +1,5 @@
-#ifndef _SEGMENT_H
-#define _SEGMENT_H
+#ifndef SEGMENT_H
+#define SEGMENT_H
 
 /* Size of a GDT entry */
 #define GDT_ENTRY_SIZE	8
@@ -79,11 +79,11 @@
 
 #define SEG_TYPE_TSS		0x9
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
-#ifdef _KERNEL_
+#ifdef KERNEL
 #include <stdint.h>
-#endif /* _KERNEL_ */
+#endif /* KERNEL */
 
 extern uint8_t gdt[];
 
@@ -132,6 +132,6 @@ void gdt_init(void);
 
 extern struct tss tss;
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _SEGMENT_H */
+#endif /* SEGMENT_H */

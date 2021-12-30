@@ -1,5 +1,5 @@
-#ifndef _ERRNO_H
-#define _ERRNO_H
+#ifndef ERRNO_H
+#define ERRNO_H
 
 #define E2BIG		1
 #define EACCES		2
@@ -81,4 +81,4 @@
 #define EWOULDBLOCK	77
 #define EXDEV		78
 
-#endif /* _ERRNO_H */
+#endif /* ERRNO_H */

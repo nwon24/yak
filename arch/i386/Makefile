@@ -1,6 +1,6 @@
 OBJ_FILES += $(ARCH_DIR)/boot.o \
 	     $(ARCH_DIR)/descriptor_table.o \
-	     $(ARCH_DIR)/8259_pic.o \
+	     $(ARCH_DIR)/pic_8259.o \
 	     $(ARCH_DIR)/idt.o \
 	     $(ARCH_DIR)/interrupts.o \
 	     $(ARCH_DIR)/port_io.o \

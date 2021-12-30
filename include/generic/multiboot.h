@@ -4,8 +4,8 @@
  * Only includes constants, definitions, etc. that are actually used.
  */
 
-#ifndef _MULTIBOOT_H
-#define _MULTIBOOT_H
+#ifndef MULTIBOOT_H
+#define MULTIBOOT_H
 
 /* Magic number of multiboot header. */
 #define MULTIBOOT_HEADER_MAGIC		0x1BADB002
@@ -67,7 +67,7 @@
 
 #define MULTIBOOT_FLAG(mb_info, flag)	((mb_info)->flags & (flag))
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
 #include <stdint.h>
 
@@ -114,12 +114,12 @@ struct multiboot_info {
 	uint16_t vbe_interface_seg;
 	uint16_t vbe_interface_off;
 	uint16_t vbe_interface_len;
-#ifdef _CONFIG_ARCH_X86
+#ifdef CONFIG_ARCH_X86
 	uint32_t framebuffer_addr_low;
 	uint32_t framebuffer_addr_high;
 #else
 #error "No support for 64 bit"
-#endif /* _CONFIG_ARCH_X86 */
+#endif /* CONFIG_ARCH_X86 */
 	uint32_t framebuffer_pitch;
 	uint32_t framebuffer_width;
 	uint32_t framebuffer_height;
@@ -154,14 +154,14 @@ struct multiboot_color {
 
 struct multiboot_mmap_entry {
 	uint32_t size;
-#ifdef _CONFIG_ARCH_X86
+#ifdef CONFIG_ARCH_X86
 	uint32_t addr_low;
 	uint32_t addr_high;
 	uint32_t len_low;
 	uint32_t len_high;
 #else
 #error "No support for 64 bit"
-#endif /* _CONFIG_ARCH_X86 */
+#endif /* CONFIG_ARCH_X86 */
 #define MULTIBOOT_MEMORY_AVAILABLE	1
 #define MULTIBOOT_MEMORY_RESERVED	2
 #define MULTIBOOT_MEMORY_ACPI_RECLAIMABLE	3
@@ -191,6 +191,6 @@ struct multiboot_apm_info {
 	uint16_t dseg_len;
 };
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _MULTIBOOT_H */
+#endif /* MULTIBOOT_H */

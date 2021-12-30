@@ -21,7 +21,7 @@ static void timer_driver_irq_handler(void);
 
 static struct driver generic_timer_driver = {
 	.irq = 1,
-	.id = _DRIVERS_TIMER_DRIVER,
+	.id = DRIVERS_TIMER_DRIVER,
 	.irq_handler = &timer_driver_irq_handler,
 };
 

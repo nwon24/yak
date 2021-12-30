@@ -1,5 +1,5 @@
-#ifndef _VM_H
-#define _VM_H
+#ifndef VM_H
+#define VM_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -22,4 +22,4 @@ void kvmalloc_init(uint32_t heap, uint32_t size);
 void *kvmalloc(size_t bytes);
 void kvmfree(void *p);
 
-#endif /* _VM_H */
+#endif /* VM_H */

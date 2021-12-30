@@ -6,7 +6,7 @@
 
 	.section .text
 	/* Some stuff if we don't want to use the inline assembly equivalents. */
-#ifndef _CONFIG_USE_INLINE_ASM
+#ifndef CONFIG_USE_INLINE_ASM
 #include <asm/segment.h>
 
 	.global enable_intr
@@ -28,7 +28,7 @@ load_idt:
 	/* Shouldn't reall be in this file, but... */
 	.global tlb_flush
 tlb_flush:
-#ifdef _CONFIG_X86_ISA_I686
+#ifdef CONFIG_X86_ISA_I686
 	movl	4(%esp), %eax
 	invlpg	(%eax)
 	ret
@@ -36,7 +36,7 @@ tlb_flush:
 	movl	%cr3, %eax
 	movl	%eax, %cr3
 	ret
-#endif /* _CONFIG_X86_ISA_I686 */
+#endif /* CONFIG_X86_ISA_I686 */
 
 	.global	load_cr3
 load_cr3:
@@ -59,4 +59,4 @@ i386_move_to_user:
 	pushl	$1f
 	iret
 1:	ret
-#endif /* _CONFIG_USE_INLINE_ASM */
+#endif /* CONFIG_USE_INLINE_ASM */

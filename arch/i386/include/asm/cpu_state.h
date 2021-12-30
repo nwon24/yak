@@ -1,7 +1,7 @@
-#ifndef _CPU_STATE_H
-#define _CPU_STATE_H
+#ifndef CPU_STATE_H
+#define CPU_STATE_H
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
 #include <stdint.h>
 
@@ -48,6 +48,6 @@ void cpu_state_save(struct i386_cpu_state *new);
 extern struct i386_cpu_state *current_cpu_state;
 extern struct i386_cpu_state cpu_states[];
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _CPU_STATE_H */
+#endif /* CPU_STATE_H */

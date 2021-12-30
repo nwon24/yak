@@ -5,7 +5,7 @@
 
 #include <kernel/config.h>
 
-#ifdef _CONFIG_ARCH_X86
+#ifdef CONFIG_ARCH_X86
 
 #include <stdint.h>
 
@@ -108,4 +108,4 @@ get_current_time(void)
         return make_posix_time(time_last.sec, time_last.min, time_last.hour, time_last.day_of_month, time_last.month, time_last.year + CURRENT_MILLENIUM);
 }
 
-#endif /* _CONFIG_ARCH_X86 */
+#endif /* CONFIG_ARCH_X86 */

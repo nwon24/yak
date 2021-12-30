@@ -4,10 +4,10 @@
  */
 #include <kernel/config.h>
 
-#ifdef _CONFIG_ARCH_X86
+#ifdef CONFIG_ARCH_X86
 #include <stdint.h>
 
-#include <asm/8259_pic.h>
+#include <asm/pic_8259.h>
 #include <asm/port_io.h>
 #include <asm/idt.h>
 #include <asm/irq.h>
@@ -67,4 +67,4 @@ pit_irq_handler(void)
 	/* Nothing */
 }
 
-#endif /* _CONFIG_ARCH_X86 */
+#endif /* CONFIG_ARCH_X86 */

@@ -1,5 +1,5 @@
-#ifndef _VBE_H
-#define _VBE_H
+#ifndef VBE_H
+#define VBE_H
 
 #include <stdint.h>
 
@@ -44,4 +44,4 @@ struct vbe_mode_info {
         uint8_t reserved1[206];
 }__attribute__((packed));
 
-#endif /* _VBE_H */
+#endif /* VBE_H */

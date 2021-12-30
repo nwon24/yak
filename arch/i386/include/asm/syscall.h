@@ -1,5 +1,5 @@
-#ifndef _SYSCALL_H
-#define _SYSCALL_H
+#ifndef SYSCALL_H
+#define SYSCALL_H
 
 #include <stdint.h>
 
@@ -22,4 +22,4 @@ register_syscall(int n, uint32_t addr, uint32_t nr_args)
 	syscall_table[n].nr_args = nr_args;
 }
  
-#endif /* _SYSCALL_H */
+#endif /* SYSCALL_H */

@@ -1,5 +1,5 @@
-#ifndef _PROC_H
-#define _PROC_H
+#ifndef PROC_H
+#define PROC_H
 
 #include <stdint.h>
 
@@ -59,4 +59,4 @@ int system_is_multitasking(void);
 #define HIGHEST_PRIORITY	(PROC_QUANTA - 1)
 #define LOWEST_PRIORITY		0
 
-#endif /* _PROC_H */
+#endif /* PROC_H */

@@ -7,9 +7,9 @@
 #include <kernel/fonts.h>
 
 unsigned char *font_table[] = {
-#ifdef _CONFIG_FONT_8X16_PSFU
+#ifdef CONFIG_FONT_8X16_PSFU
         default8x16_psfu,
 #else
 #error "No support for another font currently"
-#endif /* _CONFIG_FONT_8X16_PSFU */
+#endif /* CONFIG_FONT_8X16_PSFU */
 };

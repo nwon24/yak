@@ -1,5 +1,5 @@
-#ifndef _MMAP_H
-#define _MMAP_H
+#ifndef MMAP_H
+#define MMAP_H
 
 #include <stdint.h>
 
@@ -25,4 +25,4 @@ extern struct mmap_bitmap mmap_bitmaps[];
 
 extern uint32_t total_mem;
 
-#endif /* _MMAP_H */
+#endif /* MMAP_H */

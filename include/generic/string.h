@@ -1,13 +1,13 @@
-#ifndef _GENERIC_STRING_H
-#define _GENERIC_STRING_H
+#ifndef GENERIC_STRING_H
+#define GENERIC_STRING_H
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
 #include <stddef.h>
 
 #include <kernel/config.h>
 
-#ifdef _CONFIG_USE_ARCH_STRING_H
+#ifdef CONFIG_USE_ARCH_STRING_H
 #include <asm/arch_string.h>
 #define memcpy	__arch_memcpy
 #define memmove __arch_memmove
@@ -18,10 +18,10 @@ void *memcpy(void *dst, const void *src, size_t count);
 void *memmove(void *dst, const void *src, size_t count);
 int memcmp(const void *str1, const void *str2, size_t count);
 void *memset(void *bufp, int c, size_t count);
-#endif /* _CONFIG_ARCH_USE_STRING_H */
+#endif /* CONFIG_ARCH_USE_STRING_H */
 
 size_t strlen(const char *str);
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _GENERIC_STRING_H */
+#endif /* GENERIC_STRING_H */

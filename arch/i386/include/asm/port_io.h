@@ -1,12 +1,12 @@
-#ifndef _PORT_IO_H
-#define _PORT_IO_H
+#ifndef PORT_IO_H
+#define PORT_IO_H
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
 #include <stdint.h>
 #include <kernel/config.h>
 
-#ifdef _CONFIG_USE_INLINE_ASM
+#ifdef CONFIG_USE_INLINE_ASM
 static inline void
 outb(uint8_t data, uint16_t port)
 {
@@ -51,7 +51,7 @@ inl(uint32_t port)
 	__asm__ volatile("inl %1, %0" : "=a" (ret) : "Nd" (port));
 	return ret;
 }
-#else /* _CONFIG_USE_INLINE_ASM */
+#else /* CONFIG_USE_INLINE_ASM */
 
 void port_outb(uint8_t data, uint16_t port);
 uint8_t port_inb(uint16_t port);
@@ -71,7 +71,7 @@ uint32_t port_inl(uint32_t port);
 #define outl	port_outl
 #define inl	port_inl
 
-#endif /* _CONFIG_USE_INLINE_ASM */
-#endif /* _ASSEMBLY_ */
+#endif /* CONFIG_USE_INLINE_ASM */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */

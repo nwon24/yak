@@ -1,7 +1,7 @@
-#ifndef _PAGING_H
-#define _PAGING_H
+#ifndef PAGING_H
+#define PAGING_H
 
-#ifdef _KERNEL_
+#ifdef KERNEL
 #include <stdint.h>
 
 #include <kernel/config.h>
@@ -22,16 +22,16 @@ extern uint32_t current_page_directory;
 
 #define kernel_virt_put_page()	(kernel_virt_map_page(page_frame_alloc()))
 
-#ifdef _CONFIG_USE_INLINE_ASM
+#ifdef CONFIG_USE_INLINE_ASM
 static inline void
 tlb_flush(uint32_t page)
 {
-#ifdef _CONFIG_X86_ISA_I686
+#ifdef CONFIG_X86_ISA_I686
         __asm__("invlpg (%0)" : : "r" (page) : "memory");
 #else
         __asm__("movl %%cr3, %%eax\r\n"
                 "movl %%eax, %%cr3\r\n" : :);
-#endif /* _CONFIG_X86_ISA_I686 */
+#endif /* CONFIG_X86_ISA_I686 */
 }
 
 static inline void
@@ -42,21 +42,21 @@ load_cr3(uint32_t pg_dir)
 #else
 void tlb_flush(void);
 void load_cr3(void);
-#endif /* _CONFIG_USE_INLINE_ASM */
+#endif /* CONFIG_USE_INLINE_ASM */
 
-#endif /* _KERNEL */
+#endif /* KERNEL */
 
 #include <kernel/config.h>
 
 #define KERNEL_LOAD_PHYS_ADDR	0x100000
 #define KERNEL_LOAD_VIRT_ADDR	(KERNEL_LOAD_PHYS_ADDR + KERNEL_VIRT_BASE)
 
-#ifdef _ASSEMBLY_
+#ifdef __ASSEMBLER__
 #define ASM_PHYS_ADDR(x)	(x - KERNEL_VIRT_BASE)
 #else
 #define PHYS_ADDR(x)		(((uint32_t)(x)) - KERNEL_VIRT_BASE)
 #define VIRT_ADDR(x)		(((uint32_t)(x)) + KERNEL_VIRT_BASE)
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
 #define PAGE_SIZE		4096
 #define PAGE_SHIFT		12	/* 2^12 = 4096 */
@@ -81,8 +81,8 @@ void load_cr3(void);
 #define VIRT_ADDR_PG_TAB_INDEX(x)	(((x) >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK)
 #define VIRT_ADDR_FRAME_OFFSET(x)	((x) & VIRT_ADDR_FRAME_MASK)
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 #define IS_PAGE_ALIGNED(x)	(!((x) & VIRT_ADDR_FRAME_MASK))
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _PAGING_H */
+#endif /* PAGING_H */

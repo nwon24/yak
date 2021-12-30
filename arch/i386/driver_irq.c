@@ -12,7 +12,7 @@ driver_irq(int id)
 {
 	struct driver **dp;
 
-	for (dp = driver_tab; dp < &driver_tab[_CONFIG_DRIVER_NR_DRIVERS]; dp++) {
+	for (dp = driver_tab; dp < &driver_tab[CONFIG_DRIVER_NR_DRIVERS]; dp++) {
 		if (!*dp)
 			continue;
 		if ((*dp)->irq) {

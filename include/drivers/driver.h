@@ -1,24 +1,24 @@
-#ifndef _DRIVER_H
-#define _DRIVER_H
+#ifndef DRIVER_H
+#define DRIVER_H
 
 #include <kernel/config.h>
 
 /*
  * Numbers aren't important here.
  */
-#define	_DRIVERS_TTY_DRIVER		0
-#ifdef _CONFIG_DRIVER_8250_UART	
-#define	_DRIVERS_UART8250_DRIVER	1
-#endif /* _CONFIG_DRIVER_8250_UART */
-#define _DRIVERS_VIRTUAL_CONSOLE_DRIVER	2
-#define _DRIVERS_TIMER_DRIVER		3
-#ifdef _CONFIG_ARCH_X86
-#define _DRIVERS_PIT_DRIVER	3
+#define	DRIVERS_TTY_DRIVER		0
+#ifdef CONFIG_DRIVER_8250_UART	
+#define	DRIVERS_UART8250_DRIVER	1
+#endif /* CONFIG_DRIVER_8250_UART */
+#define DRIVERS_VIRTUAL_CONSOLE_DRIVER	2
+#define DRIVERS_TIMER_DRIVER		3
+#ifdef CONFIG_ARCH_X86
+#define DRIVERS_PIT_DRIVER	3
 #else
 #error "No other timer driver supported yet."
-#endif /* _DRIVERS_PIT_DRIVER */
+#endif /* DRIVERS_PIT_DRIVER */
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 struct driver {
 	int irq;	/* Handles IRQs? */
 	void (*irq_handler)(void);	/* The actual handler. */
@@ -31,6 +31,6 @@ static inline void register_driver(struct driver *d)
 {
 	driver_tab[d->id] = d;
 }
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _DRIVER_H */
+#endif /* DRIVER_H */

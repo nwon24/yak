@@ -1,5 +1,5 @@
-#ifndef _IDT_H
-#define _IDT_H
+#ifndef IDT_H
+#define IDT_H
 
 #define IDT_32BIT_INT_GATE	0xE
 #define IDT_32BIT_TRAP_GATE	0xF
@@ -9,7 +9,7 @@
 #define IDT_ENTRIES		256
 #define IDT_LIMIT		((IDT_ENTRIES << 3) - 1)
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
 #include <stdint.h>
 
@@ -20,7 +20,7 @@
 void set_idt_entry(int n, uint32_t offset, uint16_t selector, uint8_t dpl, uint8_t type);
 void idt_init(void);
 
-#ifdef _CONFIG_USE_INLINE_ASM
+#ifdef CONFIG_USE_INLINE_ASM
 static inline void
 load_idt(void *idt_ptr)
 {
@@ -32,8 +32,8 @@ load_idt(void *idt_ptr)
 }
 #else
 void load_idt(void *idt_ptr);
-#endif /* _CONFIG_USE_INLINE_ASM */
+#endif /* CONFIG_USE_INLINE_ASM */
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _IDT_H */
+#endif /* IDT_H */

@@ -1,5 +1,5 @@
-#ifndef _MM_H
-#define _MM_H
+#ifndef MM_H
+#define MM_H
 
 #include <stdint.h>
 
@@ -14,4 +14,4 @@ void page_frame_free(uint32_t page);
  */
 #define NO_FREE_PAGE	1
 
-#endif /* _MM_H */
+#endif /* MM_H */

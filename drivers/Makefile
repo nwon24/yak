@@ -1,5 +1,5 @@
 OBJ_FILES += $(DRIVERS_DIR)/driver_tab.o \
-             $(DRIVERS_DIR)/8250_uart.o \
+             $(DRIVERS_DIR)/uart_8250.o \
              $(DRIVERS_DIR)/tty.o \
 	     $(DRIVERS_DIR)/init.o \
              $(DRIVERS_DIR)/fb.o \

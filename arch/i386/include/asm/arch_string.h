@@ -1,5 +1,5 @@
-#ifndef _ARCH_STRING_H_
-#define _ARCH_STRING_H_
+#ifndef ARCH_STRING_H_
+#define ARCH_STRING_H_
 
 #include <stddef.h>
 #include <stdint.h>

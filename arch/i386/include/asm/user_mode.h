@@ -1,9 +1,9 @@
-#ifndef _USER_MODE_H
-#define _USER_MODE_H
+#ifndef USER_MODE_H
+#define USER_MODE_H
 
 #include <kernel/config.h>
 
-#ifdef _CONFIG_USE_INLINE_ASM
+#ifdef CONFIG_USE_INLINE_ASM
 #include <asm/segment.h>
 
 static inline void
@@ -23,8 +23,8 @@ i386_move_to_user(uint32_t entry, uint32_t esp)
 }
 #else
 void i386_move_to_user(uint32_t entry, uint32_t esp);
-#endif /* _CONFIG_USE_INLINE_ASM */
+#endif /* CONFIG_USE_INLINE_ASM */
 
 #define move_to_user	i386_move_to_user
 
-#endif /* _USER_MODE_H */
+#endif /* USER_MODE_H */

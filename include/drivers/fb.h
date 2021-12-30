@@ -1,5 +1,5 @@
-#ifndef _FB_H
-#define _FB_H
+#ifndef FB_H
+#define FB_H
 
 #include <stdint.h>
 
@@ -12,4 +12,4 @@ struct fb_info {
 
 int fb_init(void);
 
-#endif /* _FB_H */
+#endif /* FB_H */

@@ -1,5 +1,5 @@
-#ifndef _FBCON_H_
-#define _FBCON_H_
+#ifndef FBCON_H_
+#define FBCON_H_
 
 #include <drivers/fb.h>
 #include <kernel/fonts.h>
@@ -13,4 +13,4 @@ struct fbcon {
 
 void fbcon_init(struct fb_info *info);
 
-#endif /* _FBCON_H_*/
+#endif /* FBCON_H_*/

@@ -23,7 +23,7 @@
 #include <mm/mm.h>
 #include <mm/vm.h>
 
-void __restart(void);
+void restart(void);
 
 void syscall(void);
 
@@ -92,7 +92,7 @@ arch_fork(int child, struct process *proc)
 	new->kernel_stack -= sizeof(*proc->context);
 	proc->context = (struct context *)new->kernel_stack;
 	memmove(proc->context, 0, sizeof(uint32_t) * NR_REGS);
-	proc->context->eip = (uint32_t)__restart;
+	proc->context->eip = (uint32_t)restart;
 	return child;
 }
 

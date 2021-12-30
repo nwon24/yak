@@ -4,7 +4,7 @@
  */
 
 #include <asm/cpu_state.h>
-#include <asm/8259_pic.h>
+#include <asm/pic_8259.h>
 #include <asm/segment.h>
 
 #include <generic/errno.h>
@@ -88,7 +88,7 @@ ignore_interrupt:
 	restore_kernel_seg
 	save_state
 	calll	acknowledge_int
-	jmp	__restart
+	jmp	restart
 
 acknowledge_int:
 	movb	$PIC_EOI, %al
@@ -110,10 +110,10 @@ irq0_handler:
 	restore_kernel_seg
 	save_state
 	call	acknowledge_int
-	pushl	$_DRIVERS_TIMER_DRIVER
+	pushl	$DRIVERS_TIMER_DRIVER
 	call	driver_irq
 	addl	$4, %esp
-	jmp	__restart
+	jmp	restart
 
 	.global	irq3_handler, irq4_handler
 irq3_handler:
@@ -123,10 +123,10 @@ irq4_handler:
 	restore_kernel_seg
 	save_state
 	call	acknowledge_int
-	pushl	$_DRIVERS_UART8250_DRIVER
+	pushl	$DRIVERS_UART8250_DRIVER
 	call	driver_irq
 	addl	$4, %esp
-	jmp	__restart
+	jmp	restart
 
 	.global cpu_stop
 cpu_stop:
@@ -172,11 +172,11 @@ syscall:
 	pushl	current_cpu_state
 	call	handle_syscall
 	addl	$8, %esp
-	jmp	__restart
+	jmp	restart
 	
 	/* Two underscores because this is extra special */
-	.global	__restart
-__restart:
+	.global	restart
+restart:
 	restore_regs
 	iret
 

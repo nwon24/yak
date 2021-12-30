@@ -56,7 +56,7 @@ static uint32_t *vc_set_rgb(struct virtual_console *vc, uint32_t *par, int fg);
 
 static struct tty_driver vc_tty_driver = {
         .driver_out = vc_write,
-        .driver_id = _DRIVERS_VIRTUAL_CONSOLE_DRIVER
+        .driver_id = DRIVERS_VIRTUAL_CONSOLE_DRIVER
 };
 
 static inline void

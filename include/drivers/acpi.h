@@ -1,5 +1,5 @@
-#ifndef _ACPI_H_
-#define _ACPI_H_
+#ifndef ACPI_H_
+#define ACPI_H_
 
 #include <stdint.h>
 

@@ -1,5 +1,5 @@
-#ifndef _TTY_H
-#define _TTY_H
+#ifndef TTY_H
+#define TTY_H
 
 #include <drivers/virtual_console.h>
 
@@ -30,4 +30,4 @@ struct tty *tty_driver_register(int n, struct tty_driver *driver);
 int tty_write(int n, char *buf, int count);
 int tty_init(void);
 
-#endif /* _TTY_H */
+#endif /* TTY_H */
