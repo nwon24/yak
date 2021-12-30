@@ -9,17 +9,17 @@
 
 #include <kernel/config.h>
 
-#ifdef _CONFIG_ARCH_X86
+#ifdef CONFIG_ARCH_X86
 
 #include <kernel/debug.h>
 
-#include <asm/8259_pic.h>
+#include <asm/pic_8259.h>
 #include <asm/port_io.h>
 #include <asm/idt.h>
 #include <asm/irq.h>
 #include <asm/segment.h>
 
-#include <drivers/8250_uart.h>
+#include <drivers/uart_8250.h>
 #include <drivers/driver.h>
 #include <drivers/tty.h>
 
@@ -108,13 +108,13 @@ static struct uart8250_request *current_req = NULL;
 static int uart8250_tty_out(int tty, struct tty_queue *tq);
 static struct tty_driver uart8250_tty_driver = {
 	.driver_out = uart8250_tty_out,
-	.driver_id = _DRIVERS_UART8250_DRIVER
+	.driver_id = DRIVERS_UART8250_DRIVER
 };
 
 static void handle_com_irq(void);
 static struct driver uart8250_driver = {
 	.irq = 1,
-	.id = _DRIVERS_UART8250_DRIVER,
+	.id = DRIVERS_UART8250_DRIVER,
 	.irq_handler = &handle_com_irq,
 };
 
@@ -300,4 +300,4 @@ static int uart8250_tty_out(int tty, struct tty_queue *tq)
 	return nr;
 }
 
-#endif /* _CONFIG_ARCH_X86 */
+#endif /* CONFIG_ARCH_X86 */

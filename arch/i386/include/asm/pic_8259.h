@@ -1,5 +1,5 @@
-#ifndef _8259_PIC_H
-#define _8259_PIC_H
+#ifndef PIC_8259_H
+#define PIC_8259_H
 
 #define PIC1_BASE	0x20
 #define PIC2_BASE	0xA0
@@ -15,7 +15,7 @@
 
 #define IRQ_BASE	PIC1_OFFSET
 
-#ifndef _ASSEMBLY_
+#ifndef __ASSEMBLER__
 
 #include <stdint.h>
 
@@ -25,6 +25,6 @@ void pic_remap(void);
 uint16_t pic_read_isr(void);
 uint16_t pic_read_irr(void);
 
-#endif /* _ASSEMBLY_ */
+#endif /* __ASSEMBLER__ */
 
-#endif /* _8259_PIC_H */
+#endif /* PIC_8259_H */

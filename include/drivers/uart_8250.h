@@ -1,5 +1,5 @@
-#ifndef _8250_UART_H
-#define _8250_UART_H
+#ifndef UART_8250_H
+#define UART_8250_H
 
 enum {
 	UART8250_WRITE,
@@ -8,4 +8,4 @@ enum {
 
 int uart8250_serial_init(void);
 
-#endif /* _8260_UART_H */
+#endif /* UART_8250_H */

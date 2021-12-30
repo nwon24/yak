@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#include <asm/8259_pic.h>
+#include <asm/pic_8259.h>
 #include <asm/port_io.h>
 
 #define PIC_INIT	0x11
