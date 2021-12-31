@@ -7,6 +7,7 @@
 
 #include <kernel/config.h>
 
+#include <drivers/drive.h>
 #include <drivers/init.h>
 #include <drivers/tty.h>
 #include <drivers/fb.h>
@@ -37,8 +38,11 @@ init_function critical_init_func_table[] = {
 init_function init_func_table[] = {
 #ifdef CONFIG_DRIVER_FBDEV
 	fb_init,
+#else
+#error "Text mode not supported."
 #endif /* CONFIG_DRIVER_FBDEV */
 	vc_init,
+	drive_init,
 	NULL,
 };
 
