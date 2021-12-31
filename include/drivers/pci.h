@@ -1,6 +1,8 @@
 #ifndef PCI_H
 #define PCI_H
 
+#include <stdint.h>
+
 #define PCI_CONFIG_ADDRESS	0xCF8
 #define PCI_CONFIG_DATA		0xCFC
 
@@ -52,5 +54,7 @@ uint8_t pci_get_header_type(uint8_t bus, uint8_t device, uint8_t function);
 uint8_t pci_get_class_code(uint8_t bus, uint8_t device, uint8_t function);
 uint8_t pci_get_subclass(uint8_t bus, uint8_t device, uint8_t function);
 uint8_t pci_get_prog_if(uint8_t bus, uint8_t device, uint8_t function);
+uint32_t pci_get_bar(uint8_t bus, uint8_t device, uint8_t function, int bar);
+uint8_t pci_get_int_line(uint8_t bus, uint8_t device, uint8_t function);
 
 #endif /* PCI_H */
