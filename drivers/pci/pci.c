@@ -84,6 +84,17 @@ get_bar(uint8_t bus, uint8_t device, uint8_t function, int bar)
 	return pci_read_register(bus, device, function, 0x10 + (bar << 2));
 }
 
+static inline uint8_t
+get_int_line(uint8_t bus, uint8_t device, uint8_t function)
+{
+	/*
+	 * We should probably check the header type...
+	 * We are banking on the fact that whoever calls this knows what
+	 * they are doing.
+	 */
+	return pci_read_register(bus, device, function, 0x3C) & 0xFF;
+}
+
 /*
  * Scan the PCI buses and for each device/function that exists, put it
  * into a table. Later this should be used to build a device tree or
@@ -248,4 +259,10 @@ uint32_t
 pci_get_bar(uint8_t bus, uint8_t device, uint8_t function, int bar)
 {
 	return get_bar(bus, device, function, bar);
+}
+
+uint8_t
+pci_get_int_line(uint8_t bus, uint8_t device, uint8_t function)
+{
+	return get_int_line(bus, device, function);
 }
