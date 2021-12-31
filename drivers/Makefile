@@ -8,7 +8,9 @@ OBJ_FILES += $(DRIVERS_DIR)/driver_tab.o \
              $(DRIVERS_DIR)/virtual_console.o \
              $(DRIVERS_DIR)/pit.o \
              $(DRIVERS_DIR)/timer.o \
-             $(DRIVERS_DIR)/cmos.o
+             $(DRIVERS_DIR)/cmos.o \
+             $(DRIVERS_DIR)/drive.o
 
 include $(DRIVERS_DIR)/acpi/Makefile
 include $(DRIVERS_DIR)/pci/Makefile
+include $(DRIVERS_DIR)/ata/Makefile
