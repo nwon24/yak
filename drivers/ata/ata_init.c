@@ -55,6 +55,28 @@ ata_identify(struct ata_device *dev)
 		return ATA_DEV_UNKNOWN;
 	dev->exists = 1;
 	ata_pio_transfer(dev, buf, ATA_PIO_IN);
+	/*
+	 * See wiki.osdev.org/ATA_PIO_Mode or the ATA specification
+	 * for the magic offsets into the 256 word block return from the
+	 * IDENTIFY command.
+	 */
+	if (buf[0] & 1)
+		return ATA_DEV_UNKNOWN;
+	if (buf[83] & (1 << 10))
+		printk("Drive supports LBA48 mode");
+	if (!(dev->max_lba28 = buf[60] | (buf[61] << 16))) {
+		printk("Get a newer drive that supports LBA.");
+		return ATA_DEV_UNKNOWN;
+	}
+	/*
+	 * For 48-bit LBA, a 32-bit kernel can only access up to 0xFFFFFFFF sectors,
+	 * which is around 2 TiB.
+	 * No support for 64-bit, so no '#else' bit.
+	 */
+#ifdef CONFIG_ARCH_X86
+	dev->max_lba48_low = buf[100] | (buf[101] << 16);
+	dev->max_lba48_high = buf[102] | (buf[103] << 16);
+#endif /* _CONFIG_ARCH_X86 */
 	return ATA_DEV_PATA;
 }
 
@@ -65,22 +87,17 @@ ata_probe(uint32_t bar0,
 	  uint32_t bar3,
 	  uint32_t bar4,
 	  int pri_irq,
-	  int sec_irq,
-	  enum ata_port_width width_pri,
-	  enum ata_port_width width_sec)
+	  int sec_irq)
 {
 	struct ata_device *dev;
 
 	for (dev = ata_drives; dev < ata_drives + ATA_MAX_DRIVES; dev++) {
 		int i = dev - ata_drives;
 
-		if (i < ATA_DRIVES_PER_BUS) {
+		if (i < ATA_DRIVES_PER_BUS)
 			dev->bus = ATA_PRIMARY_BUS;
-			dev->port_width = width_pri;
-		} else {
+		else
 			dev->bus = ATA_SECONDARY_BUS;
-			dev->port_width = width_sec;
-		}
 		if (!(i % 2))
 			dev->drive = ATA_BUS_DRIVE1;
 		else
