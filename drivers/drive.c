@@ -5,8 +5,11 @@
 
 #include <drivers/ata.h>
 #include <drivers/pci.h>
+#include <drivers/drive.h>
 
 #include <kernel/debug.h>
+
+static struct drive_driver *current_driver;
 
 enum msd_subclass {
 	SCSI_BUS_CTRL,		/* SCSI Bus Controller */
@@ -27,6 +30,7 @@ drive_init(void)
 	uint8_t bus, dev, func, prog_if; 
 	uint32_t bar0, bar1, bar2, bar3, bar4;
 	int pri_irq, sec_irq;
+	uint16_t buf[256];
 
 	if (!pci_find_class_code(PCI_CLASS_CODE_MASS_STORAGE, &bus, &dev, &func))
 		panic("No mass storage device found.");
@@ -63,5 +67,14 @@ drive_init(void)
 	else
 		bar4 = 0;
 	ata_probe(bar0, bar1, bar2, bar3, bar4, pri_irq, sec_irq);
+	current_driver->drive_start(0, (char *)buf, 1, 0, 0);
+	for (int j = 0; j < 256; j++)
+		printk("%x ", buf[j]);
 	return 0;
+}
+
+void
+drive_driver_register(struct drive_driver *drv)
+{
+	current_driver = drv;
 }
