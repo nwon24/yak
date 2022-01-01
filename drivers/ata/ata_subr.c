@@ -32,16 +32,10 @@ ata_reg_write(struct ata_device *dev, uint32_t val, int reg)
 	switch (reg) {
 	case ATA_REG_DEV_CTRL:
 	case ATA_REG_DRIVE_ADDR:
-		if (dev->port_width == ATA_PORT_32)
-			outl(val, dev->ctrl_base + reg);
-		else if (dev->port_width == ATA_PORT_16)
-			outb(val, dev->ctrl_base + reg);
+		outb(val, dev->ctrl_base + reg);
 		break;
 	default:
-		if (dev->port_width == ATA_PORT_32)
-			outl(val, dev->cmd_base + reg);
-		else if (dev->port_width == ATA_PORT_16)
-			outb(val, dev->cmd_base + reg);
+		outb(val, dev->cmd_base + reg);
 		break;
 	}
 }
@@ -52,17 +46,9 @@ ata_reg_read(struct ata_device *dev, int reg)
 	switch (reg) {
 	case ATA_REG_DEV_CTRL:
 	case ATA_REG_DRIVE_ADDR:
-		if (dev->port_width == ATA_PORT_32)
-			return inl(dev->ctrl_base + reg);
-		else if (dev->port_width == ATA_PORT_16)
-			return inb(dev->ctrl_base + reg);
-		break;
+		return inb(dev->ctrl_base + reg);
 	default:
-		if (dev->port_width == ATA_PORT_32)
-			return inl(dev->ctrl_base + reg);
-		else if (dev->port_width == ATA_PORT_16)
-			return inb(dev->cmd_base + reg);
-		return 0;
+		return inb(dev->cmd_base + reg);
 	}
 	/* Unreachable */
 	return 0;
