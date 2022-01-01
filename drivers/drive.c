@@ -27,7 +27,6 @@ drive_init(void)
 	uint8_t bus, dev, func, prog_if; 
 	uint32_t bar0, bar1, bar2, bar3, bar4;
 	int pri_irq, sec_irq;
-	enum ata_port_width width1, width2;
 
 	if (!pci_find_class_code(PCI_CLASS_CODE_MASS_STORAGE, &bus, &dev, &func))
 		panic("No mass storage device found.");
@@ -42,12 +41,10 @@ drive_init(void)
 		bar0 &= 0xFFFFFFFC;
 		bar1 = pci_get_bar(bus, dev, func, 1) + 2;
 		bar1 &= 0xFFFFFFFC;
-		width1 = ATA_PORT_32;
 		pri_irq = sec_irq = pci_get_int_line(bus, dev, func);
 	} else {
 		bar0 = ATA_PRI_CMD_BASE;
 		bar1 = ATA_PRI_CTRL_BASE;
-		width1 = ATA_PORT_16;
 	}
 	if (prog_if & (1 << 2)) {
 		/* Secondary channel is in PCI native mode */
@@ -55,18 +52,16 @@ drive_init(void)
 		bar2 &= 0xFFFFFFFC;
 		bar3 = pci_get_bar(bus, dev, func, 3) + 2;
 		bar3 &= 0xFFFFFFFC;
-		width2 = ATA_PORT_32;
 		pri_irq = sec_irq = pci_get_int_line(bus, dev, func);
 	} else {
 		bar2 = ATA_SEC_CMD_BASE;
 		bar3 = ATA_SEC_CTRL_BASE;
-		width2 = ATA_PORT_16;
 	}
 	if (prog_if & (1 << 7))
 		/* Bus master IDE controller */
 		bar4 = pci_get_bar(bus, dev, func, 4);
 	else
 		bar4 = 0;
-	ata_probe(bar0, bar1, bar2, bar3, bar4, pri_irq, sec_irq, width1, width2);
+	ata_probe(bar0, bar1, bar2, bar3, bar4, pri_irq, sec_irq);
 	return 0;
 }
