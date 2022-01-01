@@ -1,7 +1,5 @@
 # Makefile
 
-.POSIX:
-
 include config.mk
 
 KERNEL_TAR := kernel.tar
