@@ -2,6 +2,7 @@
 #define ATA_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include <kernel/config.h>
 
@@ -119,13 +120,12 @@ struct ata_device {
 struct ata_request {
 	struct ata_device *dev;		/* ATA device */
 
-	int rw;				/* Read or write */
-	int count;			/* Number of sectors to read/write */
-#ifdef CONFIG_ARCH_X86
-	uint32_t lba;			/* LBA */
-#else
-	uint64_t lba;
-#endif /* CONFIG_ARCH_X86 */
+	int cmd;			/* ATA command */
+	size_t count;			/* Number of sectors to read/write */
+	size_t lba;			/* LBA */
+	void *buf;			/* Buffer to r/w from */
+
+	struct ata_request *next;	/* Next request in queue */
 };
 
 extern struct ata_device ata_drives[];
@@ -138,5 +138,14 @@ void ata_select_drive(struct ata_device *dev, int lba);
 int ata_error(struct ata_device *dev);
 void ata_pio_transfer(struct ata_device *dev, void *buf, enum ata_pio_direction dir);
 void ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int pri_irq, int sec_irq);
+void ata_add_request(struct ata_request *req);
+struct ata_request *ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, char *buf);
+struct ata_device *ata_find_device(unsigned int chan, unsigned int drive);
+void ata_start_request(struct ata_request *req);
+void ata_finish_request(struct ata_request *req);
+void ata_reset_bus(struct ata_device *dev);
+void ata_enable_intr(struct ata_device *dev);
+void ata_disable_intr(struct ata_device *dev);
+void ata_pio_init(void);
 
 #endif /* ATA_H */
