@@ -1,5 +1,7 @@
 # Makefile
 
+.POSIX:
+
 include config.mk
 
 KERNEL_TAR := kernel.tar
@@ -35,11 +37,11 @@ $(LIBK): $(LIB_OBJ)
 $(LIBFONT): $(LIBFONT_OBJ)
 	$(Q)$(AR) rcs $@ $^
 	$(E) " AR	" $@
-%.o: %.c
+.c.o:
 	$(Q)$(CC) -c $< -o $@ $(CFLAGS) -I$(INC_DIR) -I$(ARCH_INC_DIR)
 	$(E) " CC	" $@
 
-%.o: %.S
+.S.o:
 	$(Q)$(CC) -c $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(ASFLAGS)
 	$(E) " AS	" $@
 $(LDSCRIPT): $(LDSCRIPT_SRC)
