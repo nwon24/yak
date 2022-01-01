@@ -17,9 +17,8 @@ struct ata_request ata_requests[ATA_MAX_REQUESTS];
 
 struct ata_request *ata_current_req = NULL;
 
-#ifdef CONFIG_ARCH_X86
 struct ata_request *
-ata_build_request(struct ata_device *dev, uint32_t lba, int count, int rw, char *buf)
+ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, char *buf)
 {
 	struct ata_request *req;
 
@@ -32,12 +31,11 @@ ata_build_request(struct ata_device *dev, uint32_t lba, int count, int rw, char 
 	req->dev = dev;
 	req->lba = lba;
 	req->count = count;
-	req->rw = rw;
+	req->cmd = cmd;
 	req->buf = buf;
 	req->next = NULL;
 	return req;
 }
-#endif /* CONFIG_ARCH_X86 */
 
 void
 ata_add_request(struct ata_request *req)
