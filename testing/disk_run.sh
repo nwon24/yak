@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 LOOP_UNUSED1=$(sudo losetup -f)
 sudo losetup $LOOP_UNUSED1 $1 -o $[512*2048]
