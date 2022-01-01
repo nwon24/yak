@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <kernel/config.h>
+
 enum ata_bus {
 	ATA_PRIMARY_BUS,
 	ATA_SECONDARY_BUS,
@@ -73,9 +75,13 @@ enum ata_drive {
 #define ATA_DRIVES_PER_BUS	2
 #define ATA_MAX_DRIVES		4		/* Two buses, two drives on each bus */
 
+#define ATA_MAX_REQUESTS	64
+
 /* Commands */
 #define ATA_CMD_READ_SECTORS	0x20
 #define ATA_CMD_WRITE_SECTORS	0x30
+#define ATA_CMD_READ_SECTORS_EXT	0x24
+#define ATA_CMD_WRITE_SECTORS_EXT	0x34
 #define ATA_CMD_IDENTIFY	0xEC
 
 #define ATA_PRI_IRQ		0x2E
@@ -93,15 +99,9 @@ enum ata_pio_direction {
 	ATA_PIO_OUT,
 };
 
-enum ata_port_width {
-	ATA_PORT_16,
-	ATA_PORT_32
-};
-
 struct ata_device {
 	enum ata_bus bus;
 	enum ata_drive drive;
-	enum ata_port_width port_width;
 
 	int exists;
 
@@ -110,8 +110,22 @@ struct ata_device {
 	uint32_t bus_master_base;
 
 	uint32_t max_lba28;
+#ifdef CONFIG_ARCH_X86
 	uint32_t max_lba48_low;
 	uint32_t max_lba48_high;
+#endif /* CONFIG_ARCH_X86 */
+};
+
+struct ata_request {
+	struct ata_device *dev;		/* ATA device */
+
+	int rw;				/* Read or write */
+	int count;			/* Number of sectors to read/write */
+#ifdef CONFIG_ARCH_X86
+	uint32_t lba;			/* LBA */
+#else
+	uint64_t lba;
+#endif /* CONFIG_ARCH_X86 */
 };
 
 extern struct ata_device ata_drives[];
@@ -123,6 +137,6 @@ void ata_poll_drq(struct ata_device *dev);
 void ata_select_drive(struct ata_device *dev, int lba);
 int ata_error(struct ata_device *dev);
 void ata_pio_transfer(struct ata_device *dev, void *buf, enum ata_pio_direction dir);
-void ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int pri_irq, int sec_irq, enum ata_port_width width_ppri, enum ata_port_width width_sec);
+void ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int pri_irq, int sec_irq);
 
 #endif /* ATA_H */
