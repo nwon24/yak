@@ -46,7 +46,7 @@ ata_identify(struct ata_device *dev)
 		return ATA_DEV_UNKNOWN;
 	}
 	if (ata_reg_read(dev, ATA_REG_STATUS) == 0)
-		return ATA_DEV_UNKNOWN;	
+		return ATA_DEV_UNKNOWN;
 	ata_poll_bsy(dev);
 	if (ata_reg_read(dev, ATA_REG_LBA2) != 0 && ata_reg_read(dev, ATA_REG_LBA3) != 0)
 		return ATA_DEV_UNKNOWN;
@@ -63,7 +63,7 @@ ata_identify(struct ata_device *dev)
 	if (buf[0] & 1)
 		return ATA_DEV_UNKNOWN;
 	if (buf[83] & (1 << 10))
-		printk("Drive supports LBA48 mode");
+		printk("Drive supports LBA48 mode\r\n");
 	if (!(dev->max_lba28 = buf[60] | (buf[61] << 16))) {
 		printk("Get a newer drive that supports LBA.");
 		return ATA_DEV_UNKNOWN;
@@ -77,6 +77,11 @@ ata_identify(struct ata_device *dev)
 	dev->max_lba48_low = buf[100] | (buf[101] << 16);
 	dev->max_lba48_high = buf[102] | (buf[103] << 16);
 #endif /* _CONFIG_ARCH_X86 */
+	/*
+	 * Disable interrupts since the system begins in singletasking mode and we want to
+	 * use PIO (with polling). In multitasking mode, DMA (if supported) is better.
+	 */
+	ata_disable_intr(dev);
 	return ATA_DEV_PATA;
 }
 
@@ -106,7 +111,7 @@ ata_probe(uint32_t bar0,
 		case 0:
 		case 1:
 			dev->cmd_base = bar0;
-			dev->ctrl_base = bar1; 
+			dev->ctrl_base = bar1;
 			break;
 		case 2:
 		case 3:
@@ -117,8 +122,11 @@ ata_probe(uint32_t bar0,
 		if (ata_identify(dev) == ATA_DEV_PATA)
 			printk("channel %x, drive %x\r\n", dev->bus, dev->drive);
 	}
+	ata_reset_bus(&ata_drives[0]);
+	ata_reset_bus(&ata_drives[2]);
 #ifdef CONFIG_ARCH_X86
 	set_idt_entry(pri_irq, (uint32_t)ignore_interrupt, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
 	set_idt_entry(sec_irq, (uint32_t)ignore_interrupt, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
 #endif
+	ata_pio_init();
 }
