@@ -33,7 +33,7 @@ extern uint32_t init_page_directory;
 /* Page directory for current process */
 uint32_t current_page_directory;
 
-void __kernel_test(int);
+void kernel_test(int);
 
 /*
  * Allocates user memory for the first process.
@@ -50,8 +50,8 @@ arch_processes_init(uint32_t start, uint32_t size)
 	 * to the point interrupts are enabled.
 	 */
 	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_INT_GATE);
-	register_syscall(__NR_fork, (uint32_t)__kernel_fork, 0);
-	register_syscall(0, (uint32_t)__kernel_test, 1);
+	register_syscall(__NR_fork, (uint32_t)kernel_fork, 0);
+	register_syscall(0, (uint32_t)kernel_test, 1);
 	current_page_directory = virt_map_first_proc(start, size);
 	if (!current_page_directory)
 		return -1;
@@ -109,7 +109,7 @@ arch_switch_to(struct process *prev, struct process *new)
 }
 
 void
-__kernel_test(int n)
+kernel_test(int n)
 {
 	if (n)
 		tty_write(0, "1", 1);
