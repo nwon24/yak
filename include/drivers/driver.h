@@ -17,6 +17,7 @@
 #else
 #error "No other timer driver supported yet."
 #endif /* DRIVERS_PIT_DRIVER */
+#define DRIVERS_DISK_DRIVER	4
 
 #ifndef __ASSEMBLER__
 struct driver {
