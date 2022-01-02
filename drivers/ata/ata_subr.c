@@ -91,7 +91,7 @@ ata_error(struct ata_device *dev)
  * since this function can only be called if a current request is not being serviced.
  */
 void
-ata_select_drive(struct ata_device *dev, int lba)
+ata_select_drive(struct ata_device *dev, int include_lba, size_t lba)
 {
 	if (bsy_bit(dev) || drq_bit(dev)) {
 		panic("ata_select_drive: bsy or drq not cleared");
@@ -99,12 +99,12 @@ ata_select_drive(struct ata_device *dev, int lba)
 	if (last_selected == dev)
 		return;
 	last_selected = dev;
-	if (lba)
-		lba = ATA_DRIVE_LBA;
+	if (include_lba)
+		include_lba = ATA_DRIVE_LBA | ((lba >> 24) & 0x0F);
 	if (dev->drive == ATA_BUS_DRIVE1)
-		ata_reg_write(dev, 0xA0 | lba, ATA_REG_DRIVE);
+		ata_reg_write(dev, 0xA0 | include_lba, ATA_REG_DRIVE);
 	else
-		ata_reg_write(dev, 0xA0 | ATA_DRIVE_DRV | lba, ATA_REG_DRIVE);
+		ata_reg_write(dev, 0xA0 | ATA_DRIVE_DRV | include_lba, ATA_REG_DRIVE);
 }
 
 /*
@@ -126,6 +126,8 @@ ata_pio_transfer(struct ata_device *dev, void *buf, enum ata_pio_direction dir)
 			outw(*p++, dev->cmd_base + ATA_REG_DATA);
 			io_delay();
 		}
+	} else {
+		panic("This should never happen because we are using enums");
 	}
 }
 
@@ -165,7 +167,7 @@ ata_reset_bus(struct ata_device *dev)
 void
 ata_disable_intr(struct ata_device *dev)
 {
-	ata_select_drive(dev, 0);
+	ata_select_drive(dev, 0, 0);
 	ata_reg_write(dev, ATA_DEV_CTRL_NIEN, ATA_REG_DEV_CTRL);
 }
 
@@ -175,6 +177,23 @@ ata_disable_intr(struct ata_device *dev)
 void
 ata_enable_intr(struct ata_device *dev)
 {
-	ata_select_drive(dev, 0);
+	ata_select_drive(dev, 0, 0);
 	ata_reg_write(dev, 0, ATA_REG_DEV_CTRL);
+}
+
+/*
+ * Should be used after each write command.
+ */
+void
+ata_flush(struct ata_device *dev)
+{
+	/*
+	 * Assuming this device was the last one selected.
+	 * This should be the case because this is called before we finish
+	 * handling a write request.
+	 */
+	ata_reg_write(dev, ATA_CMD_FLUSH, ATA_REG_CMD);
+	ata_poll_bsy(dev);
+	if (ata_error(dev))
+		ata_reset_bus(dev);
 }
