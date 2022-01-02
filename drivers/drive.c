@@ -1,16 +1,28 @@
 /*
  * drive.c
  * Contains the device independent disk driver.
+ * The only common word between SSD and HDD is 'drive'.
  */
 
 #include <drivers/ata.h>
 #include <drivers/pci.h>
 #include <drivers/drive.h>
+#include <drivers/driver.h>
 
 #include <kernel/debug.h>
 
-static struct drive_driver *current_driver;
+struct drive_driver *current_driver;
+static void drive_irq_handler(void);
 
+static struct driver drive_driver = {
+	.irq = 1,
+	.id = DRIVERS_DISK_DRIVER,
+	.irq_handler = drive_irq_handler,
+};
+
+/*
+ * Mass Storage Controller (MSD) subclass values.
+ */
 enum msd_subclass {
 	SCSI_BUS_CTRL,		/* SCSI Bus Controller */
 	IDE_CTRL,		/* IDE controller */
@@ -27,7 +39,7 @@ enum msd_subclass {
 int
 drive_init(void)
 {
-	uint8_t bus, dev, func, prog_if; 
+	uint8_t bus, dev, func, prog_if;
 	uint32_t bar0, bar1, bar2, bar3, bar4;
 	int pri_irq, sec_irq;
 	uint16_t buf[256];
@@ -67,10 +79,18 @@ drive_init(void)
 	else
 		bar4 = 0;
 	ata_probe(bar0, bar1, bar2, bar3, bar4, pri_irq, sec_irq);
+	register_driver(&drive_driver);
 	current_driver->drive_start(0, (char *)buf, 1, 0, 0);
-	for (int j = 0; j < 256; j++)
+	for (int j = 0; j < 256; ++j)
 		printk("%x ", buf[j]);
 	return 0;
+}
+
+static void
+drive_irq_handler(void)
+{
+	if (current_driver->drive_intr != NULL)
+		current_driver->drive_intr();
 }
 
 void
