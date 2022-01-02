@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 cat >$1 <<EOF
 set default=0
