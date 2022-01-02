@@ -5,7 +5,11 @@
 #include <kernel/config.h>
 
 #include <asm/idt.h>
+#include <asm/irq.h>
 #include <asm/segment.h>
+#ifdef CONFIG_ARCH_X86
+#include <asm/pic_8259.h>
+#endif
 
 #include <drivers/ata.h>
 #include <drivers/pci.h>
@@ -27,7 +31,7 @@ ata_identify(struct ata_device *dev)
 	if (ata_reg_read(dev, ATA_REG_STATUS) == 0xFF)
 		return ATA_DEV_UNKNOWN;
 
-	ata_select_drive(dev, 0);
+	ata_select_drive(dev, 0, 0);
 	ata_reg_write(dev, 0, ATA_REG_SEC_COUNT);
 	ata_reg_write(dev, 0, ATA_REG_LBA1);
 	ata_reg_write(dev, 0, ATA_REG_LBA2);
@@ -103,10 +107,13 @@ ata_probe(uint32_t bar0,
 			dev->bus = ATA_PRIMARY_BUS;
 		else
 			dev->bus = ATA_SECONDARY_BUS;
-		if (!(i % 2))
+		if (!(i % 2)) {
 			dev->drive = ATA_BUS_DRIVE1;
-		else
+			ata_reset_bus(dev);
+			ata_disable_intr(dev);
+		} else {
 			dev->drive = ATA_BUS_DRIVE2;
+		}
 		switch (i) {
 		case 0:
 		case 1:
@@ -119,14 +126,17 @@ ata_probe(uint32_t bar0,
 			dev->ctrl_base = bar3;
 		}
 		dev->bus_master_base = bar4;
-		if (ata_identify(dev) == ATA_DEV_PATA)
+		if (ata_identify(dev) == ATA_DEV_PATA) {
 			printk("channel %x, drive %x\r\n", dev->bus, dev->drive);
+		}
 	}
-	ata_reset_bus(&ata_drives[0]);
-	ata_reset_bus(&ata_drives[2]);
-#ifdef CONFIG_ARCH_X86
-	set_idt_entry(pri_irq, (uint32_t)ignore_interrupt, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
-	set_idt_entry(sec_irq, (uint32_t)ignore_interrupt, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
-#endif
 	ata_pio_init();
+#ifdef CONFIG_ARCH_X86
+	set_idt_entry(pri_irq + IRQ_BASE, (uint32_t)irq14_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
+	set_idt_entry(sec_irq + IRQ_BASE, (uint32_t)irq15_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
+	/* Clear PIC2 mask */
+	pic_clear_mask(0x22);
+	pic_clear_mask(pri_irq + IRQ_BASE);
+	pic_clear_mask(sec_irq + IRQ_BASE);
+#endif
 }
