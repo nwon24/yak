@@ -84,9 +84,10 @@ enum ata_drive {
 #define ATA_CMD_READ_SECTORS_EXT	0x24
 #define ATA_CMD_WRITE_SECTORS_EXT	0x34
 #define ATA_CMD_IDENTIFY	0xEC
+#define ATA_CMD_FLUSH		0xE7
 
-#define ATA_PRI_IRQ		0x2E
-#define ATA_SEC_IRQ		0x2F
+#define ATA_PRI_IRQ		0xE
+#define ATA_SEC_IRQ		0xF
 
 enum ata_device_type {
 	ATA_DEV_PATA,
@@ -129,16 +130,17 @@ struct ata_request {
 };
 
 extern struct ata_device ata_drives[];
+extern struct ata_request *ata_current_req;
 
 void ata_reg_write(struct ata_device *dev, uint32_t val, int reg);
 uint8_t ata_reg_read(struct ata_device *dev, int reg);
 void ata_poll_bsy(struct ata_device *dev);
 void ata_poll_drq(struct ata_device *dev);
-void ata_select_drive(struct ata_device *dev, int lba);
+void ata_select_drive(struct ata_device *dev, int include_lba, size_t lba);
 int ata_error(struct ata_device *dev);
 void ata_pio_transfer(struct ata_device *dev, void *buf, enum ata_pio_direction dir);
 void ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int pri_irq, int sec_irq);
-void ata_add_request(struct ata_request *req);
+int ata_add_request(struct ata_request *req);
 struct ata_request *ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, char *buf);
 struct ata_device *ata_find_device(unsigned int chan, unsigned int drive);
 void ata_start_request(struct ata_request *req);
@@ -147,5 +149,6 @@ void ata_reset_bus(struct ata_device *dev);
 void ata_enable_intr(struct ata_device *dev);
 void ata_disable_intr(struct ata_device *dev);
 void ata_pio_init(void);
+void ata_flush(struct ata_device *dev);
 
 #endif /* ATA_H */
