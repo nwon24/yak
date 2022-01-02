@@ -37,17 +37,23 @@ ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, cha
 	return req;
 }
 
-void
+/*
+ * Returns 1 if there are no other requests, indicating
+ * to the caller that it must begin doing the request
+ * immediately.
+ */
+int
 ata_add_request(struct ata_request *req)
 {
 	struct ata_request *tmp;
 
 	if (ata_current_req == NULL) {
 		ata_current_req = req;
-		ata_start_request(req);
+		return 1;
 	} else {
 		for (tmp = ata_current_req; tmp->next != NULL; tmp = tmp->next);
 		tmp->next = req;
+		return 0;
 	}
 }
 
@@ -75,10 +81,8 @@ static void
 ata_start_request_lba28(struct ata_request *req)
 {
 	struct ata_device *dev = req->dev;
-	/*
-	 * Cannot use 'ata_select_drive' since the upper 4 bits are of the LBA.
-	 */
-	ata_reg_write(dev, 0xE0 | (dev->drive << 4) | ((req->lba >> 24) & 0x0F), ATA_REG_DRIVE);
+
+	ata_select_drive(req->dev, 1, req->lba);
 	ata_reg_write(dev, (unsigned char)req->count, ATA_REG_SEC_COUNT);
 	ata_reg_write(dev, req->lba & 0xFF, ATA_REG_LBA1);
 	ata_reg_write(dev, (req->lba >> 8) & 0xFF, ATA_REG_LBA2);
@@ -92,7 +96,11 @@ ata_start_request_lba48(struct ata_request *req)
 {
 	struct ata_device *dev = req->dev;
 
-	ata_reg_write(dev, 0xE0 | (dev->drive << 4) | ((req->lba >> 24) & 0x0F), ATA_REG_DRIVE);
+	/*
+	 * All bits are ignored except for LBA bit and drive bit when selected for 48-bit LBA addressing.
+	 * All bytes of LBA are sent to LBA registers.
+	 */
+	ata_select_drive(req->dev, 0, 0);
 	ata_reg_write(dev, (req->count >> 8) & 0xFF, ATA_REG_SEC_COUNT);
 	/*
 	 * Numbering the 48-bit LBA value from low to high, bytes 5 and 6 are zero if we are on
