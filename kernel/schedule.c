@@ -29,7 +29,7 @@ schedule(void)
 
 	old = current_process;
 	for (proc = process_queues[HIGHEST_PRIORITY]; proc >= process_queues[LOWEST_PRIORITY]; proc--) {
-		if (!proc || proc == current_process)
+		if (!proc)
 			continue;
 		proc->state = PROC_RUNNING;
 		if (current_process != FIRST_PROC && current_process->quanta != current_process->counter)
