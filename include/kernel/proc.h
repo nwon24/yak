@@ -36,7 +36,7 @@ extern struct process *current_process;
 extern struct process process_table[];
 
 void processes_init(void);
-int __kernel_fork(void);
+int kernel_fork(void);
 
 void schedule(void);
 void sleep(void *addr);
