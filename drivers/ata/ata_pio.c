@@ -11,10 +11,14 @@
 #include <drivers/drive.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 static int ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw);
 static int ata_pio_poll_read(struct ata_request *req);
 static int ata_pio_poll_write(struct ata_request *req);
+static void ata_pio_start_request(struct ata_request *req);
+static void ata_pio_read_intr(void);
+static void ata_pio_write_intr(void);
 
 static struct drive_driver ata_pio_driver = {
 	.drive_start = ata_pio_start,
@@ -40,23 +44,87 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 		printk("ata_pio_start called with non-existent drive\r\n");
 		return -1;
 	}
-	if (rw == 0)
+	if (rw == 0) {
 		cmd = ATA_CMD_READ_SECTORS;
-	else
+	} else if (rw == 1) {
 		cmd = ATA_CMD_WRITE_SECTORS;
+	} else {
+		printk("ata_pio_start called with invalid cmd\r\n");
+		return -1;
+	}
 	if ((req = ata_build_request(dev, lba, count, cmd, buf)) == NULL) {
 		printk("TODO: Out of ata_requests. Use sleep()\r\n");
 		return -1;
 	}
 	/*
-	 * TODO: Implement IRQs for PIO mode.
+	 * Use IRQs if in multitasking mode, poll otherwise.
+	 * Polling is fine in singletasking mode since the CPU has nothing better to do anyway.
 	 */
+
+	if (system_is_multitasking()) {
+		/* Use IRQs */
+		printk("multi %x\r\n", ata_reg_read(dev, ATA_REG_STATUS));
+		if (ata_add_request(req))
+			ata_pio_start_request(req);
+	} else {
+		ata_start_request(req);
+		if (rw == 0)
+			ata_pio_poll_read(req);
+		else if (rw == 1)
+			ata_pio_poll_write(req);
+		ata_finish_request(req);
+	}
+	return 0;
+}
+
+static void
+ata_pio_start_request(struct ata_request *req)
+{
+	ata_enable_intr(req->dev);
+	ata_pio_driver.drive_intr = (req->cmd == ATA_CMD_WRITE_SECTORS) ? ata_pio_write_intr : ata_pio_read_intr;
 	ata_start_request(req);
-	if (rw == 0)
-		return ata_pio_poll_read(req);
-	else
-		return ata_pio_poll_write(req);
-	ata_finish_request(req);
+	if (req->cmd == ATA_CMD_WRITE_SECTORS) {
+		ata_poll_drq(req->dev);
+		ata_pio_transfer(req->dev, req->buf, ATA_PIO_OUT);
+		if (!--req->count) {
+			ata_finish_request(req);
+			ata_current_req = ata_current_req->next;
+			ata_pio_driver.drive_intr = NULL;
+			return;
+		}
+	}
+	sleep(req);
+}
+
+static void
+ata_pio_read_intr(void)
+{
+	ata_reg_read(ata_current_req->dev, ATA_REG_STATUS);
+	ata_pio_transfer(ata_current_req->dev, ata_current_req->buf, ATA_PIO_IN);
+	ata_current_req->buf = (char *)ata_current_req->buf + SECTOR_SIZE;
+	if (!ata_current_req->count--) {
+		ata_finish_request(ata_current_req);
+		wakeup(ata_current_req);
+		ata_current_req = ata_current_req->next;
+		if (ata_current_req != NULL)
+			ata_pio_start_request(ata_current_req);
+	}
+}
+
+static void
+ata_pio_write_intr(void)
+{
+	ata_reg_read(ata_current_req->dev, ATA_REG_STATUS);
+	ata_pio_transfer(ata_current_req->dev, ata_current_req->buf, ATA_PIO_OUT);
+	ata_current_req->buf = (char *)ata_current_req->buf + SECTOR_SIZE;
+	if (!ata_current_req->count--) {
+		ata_flush(ata_current_req->dev);
+		ata_finish_request(ata_current_req);
+		wakeup(ata_current_req);
+		ata_current_req = ata_current_req->next;
+		if (ata_current_req != NULL)
+			ata_pio_start_request(ata_current_req);
+	}
 }
 
 static int
@@ -67,11 +135,13 @@ ata_pio_poll_read(struct ata_request *req)
 	while (req->count--) {
 		ata_poll_bsy(dev);
 		ata_poll_drq(dev);
-		if (ata_error(dev))
+		if (ata_error(dev)) {
+			ata_reset_bus(dev);
 			return -1;
+		}
 		ata_pio_transfer(dev, req->buf, ATA_PIO_IN);
 		io_delay();
-		req->buf = (char *)req->buf + 512;
+		req->buf = (char *)req->buf + SECTOR_SIZE;
 	}
 	return 0;
 }
@@ -84,11 +154,14 @@ ata_pio_poll_write(struct ata_request *req)
 	while (req->count--) {
 		ata_poll_bsy(dev);
 		ata_poll_drq(dev);
-		if (ata_error(dev))
+		if (ata_error(dev)) {
+			ata_reset_bus(dev);
 			return -1;
+		}
 		ata_pio_transfer(dev, req->buf, ATA_PIO_OUT);
 		io_delay();
-		req->buf = (char *)req->buf + 512;
+		req->buf = (char *)req->buf + SECTOR_SIZE;
 	}
+	ata_flush(dev);
 	return 0;
 }
