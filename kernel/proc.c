@@ -76,7 +76,7 @@ processes_init(void)
  * Main routine for the 'fork' system call.
  */
 int
-__kernel_fork(void)
+kernel_fork(void)
 {
 	struct process *proc;
 
