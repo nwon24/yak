@@ -128,6 +128,19 @@ irq4_handler:
 	addl	$4, %esp
 	jmp	restart
 
+	.global	irq14_handler, irq15_handler
+irq14_handler:
+irq15_handler:
+	pushl	$0
+	save_regs
+	restore_kernel_seg
+	save_state
+	call	acknowledge_int
+	pushl	$DRIVERS_DISK_DRIVER
+	call	driver_irq
+	addl	$4, %esp
+	jmp	restart
+
 	.global cpu_stop
 cpu_stop:
 	cli
@@ -173,8 +186,7 @@ syscall:
 	call	handle_syscall
 	addl	$8, %esp
 	jmp	restart
-	
-	/* Two underscores because this is extra special */
+
 	.global	restart
 restart:
 	restore_regs
