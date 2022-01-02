@@ -63,7 +63,6 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 
 	if (system_is_multitasking()) {
 		/* Use IRQs */
-		printk("multi %x\r\n", ata_reg_read(dev, ATA_REG_STATUS));
 		if (ata_add_request(req))
 			ata_pio_start_request(req);
 	} else {
