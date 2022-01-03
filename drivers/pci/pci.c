@@ -23,6 +23,7 @@
 #define PCI_DEVICE_MULTIPLE_FUNC	(1 << 7)
 
 static uint32_t pci_read_register(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+static void pci_write_register(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t val);
 static void pci_enumerate(void);
 static void pci_check_bus(uint8_t bus);
 static void pci_check_buses(void);
@@ -156,6 +157,18 @@ pci_read_register(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset)
 }
 
 static void
+pci_write_register(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t val)
+{
+	uint32_t out_val;
+
+	/* Make sure the last two bits of offset are clear */
+	out_val = (bus << 16) | (device << 11) | (function << 8) | (offset & 0xFC);
+	out_val |= PCI_CONFIG_ADDRESS_ENABLE;
+	outl(out_val, PCI_CONFIG_ADDRESS);
+	outl(val, PCI_CONFIG_DATA);
+}
+
+static void
 pci_check_bus(uint8_t bus)
 {
 	uint8_t i;
@@ -265,4 +278,14 @@ uint8_t
 pci_get_int_line(uint8_t bus, uint8_t device, uint8_t function)
 {
 	return get_int_line(bus, device, function);
+}
+
+void
+pci_set_cmd_bit(uint8_t bus, uint8_t device, uint8_t function, int bit)
+{
+	uint32_t val;
+
+	val = pci_read_register(bus, device, function, 0x4);
+	val |= (1 << bit);
+	pci_write_register(bus, device, function, 0x4, val);
 }
