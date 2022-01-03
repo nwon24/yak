@@ -12,12 +12,8 @@ first_user_code:
 	int	$0x80
 	test	%eax, %eax
 	jz	2f
-1:	movl	$0, %eax
-	movl	$0, %ebx
-	int	$0x80
-	jmp	.
+1:	jmp	.
 2:	movl	$0, %eax
 	movl	$1, %ebx
 	int	$0x80
-	jmp	2b
 3:	jmp	.
