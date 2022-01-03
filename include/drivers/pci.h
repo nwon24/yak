@@ -13,6 +13,12 @@
 /* Maximum number of functions per device */
 #define PCI_MAX_FUNCTIONS	8
 
+/* Lowest bit of BAR determines if it is a memory space or I/O space */
+enum {
+	PCI_BAR_MEM_SPACE,
+	PCI_BAR_IO_SPACE,
+};
+
 struct pci_entry {
 	int flag;
 	int bus;
@@ -56,5 +62,6 @@ uint8_t pci_get_subclass(uint8_t bus, uint8_t device, uint8_t function);
 uint8_t pci_get_prog_if(uint8_t bus, uint8_t device, uint8_t function);
 uint32_t pci_get_bar(uint8_t bus, uint8_t device, uint8_t function, int bar);
 uint8_t pci_get_int_line(uint8_t bus, uint8_t device, uint8_t function);
+void pci_set_cmd_bit(uint8_t bus, uint8_t device, uint8_t function, int bit);
 
 #endif /* PCI_H */
