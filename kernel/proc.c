@@ -3,6 +3,8 @@
  * Handles processes.
  * Implements the 'fork' and 'exit' system calls.
  */
+#include <kernel/config.h>
+
 #include <stddef.h>
 
 #include <drivers/timer.h>
@@ -12,6 +14,11 @@
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
+
+#define NR_MULTITASKING_HOOK	CONFIG_DRIVER_NR_DRIVERS
+
+static multitasking_hook multitasking_hooks[NR_MULTITASKING_HOOK];
+static int nr_multitasking_hook;
 
 static int last_pid = 0;
 
@@ -32,6 +39,7 @@ int arch_fork(int child, struct process *proc);
 
 static struct process *get_free_proc(void);
 static void system_change_state(enum system_state state);
+static void run_multitasking_hooks(void);
 
 extern struct process *process_queues[];
 
@@ -39,6 +47,25 @@ int
 system_is_multitasking(void)
 {
 	return system_state == SYSTEM_MULTITASKING;
+}
+
+/*
+ * Add a function to the list of functions to be run
+ * just before the systems goes into multitasking mode.
+ */
+void
+add_multitasking_hook(multitasking_hook hook)
+{
+	multitasking_hooks[nr_multitasking_hook++] = hook;
+}
+
+static void
+run_multitasking_hooks(void)
+{
+	int i;
+
+	for (i = 0; i < nr_multitasking_hook; ++i)
+		multitasking_hooks[i]();
 }
 
 static void
@@ -67,6 +94,7 @@ processes_init(void)
 	process_queues[proc->priority] = proc;
 	proc->queue_next = proc->queue_prev = NULL;
 	system_change_state(SYSTEM_MULTITASKING);
+	run_multitasking_hooks();
 	/* Timer init should be called from 'arch_processes_init' */
 	if (arch_processes_init((uint32_t)&_start_user_head, &_end_user_head - &_start_user_head) < 0)
 		panic("Unable to initialise processes");;
