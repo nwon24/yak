@@ -83,6 +83,10 @@ enum ata_drive {
 #define ATA_CMD_WRITE_SECTORS	0x30
 #define ATA_CMD_READ_SECTORS_EXT	0x24
 #define ATA_CMD_WRITE_SECTORS_EXT	0x34
+#define ATA_CMD_READ_SECTORS_DMA	0xC8
+#define ATA_CMD_WRITE_SECTORS_DMA	0xCA
+#define ATA_CMD_READ_SECTORS_DMA_EXT	0x25
+#define ATA_CMD_WRITE_SECTORS_DMA_EXT	0x35
 #define ATA_CMD_IDENTIFY	0xEC
 #define ATA_CMD_FLUSH		0xE7
 
@@ -110,6 +114,8 @@ struct ata_device {
 	uint32_t cmd_base;
 	uint32_t ctrl_base;
 	uint32_t bus_master_base;
+	/* Type of bus master registers - memory or I/O? */
+	int bus_master_type;
 
 	uint32_t max_lba28;
 #ifdef CONFIG_ARCH_X86
@@ -125,8 +131,20 @@ struct ata_request {
 	size_t count;			/* Number of sectors to read/write */
 	size_t lba;			/* LBA */
 	void *buf;			/* Buffer to r/w from */
+	int error;			/* Has there been an error */
 
 	struct ata_request *next;	/* Next request in queue */
+};
+
+/*
+ * ATA DMA is a bit of a pain since buffers and the PRDT have to be aligned
+ * on 64 KiB boundaries. This is the easiest way, even though fiddling around
+ * with page tables and page frames might be better.
+ */
+#define ATA_DMA_ALIGN	0x10000
+
+struct ata_dma_buffer {
+	char dma_buf[ATA_DMA_ALIGN]__attribute__((aligned(ATA_DMA_ALIGN)));
 };
 
 extern struct ata_device ata_drives[];
@@ -139,7 +157,7 @@ void ata_poll_drq(struct ata_device *dev);
 void ata_select_drive(struct ata_device *dev, int include_lba, size_t lba);
 int ata_error(struct ata_device *dev);
 void ata_pio_transfer(struct ata_device *dev, void *buf, enum ata_pio_direction dir);
-void ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int pri_irq, int sec_irq);
+void ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int bar4_type, int pri_irq, int sec_irq);
 int ata_add_request(struct ata_request *req);
 struct ata_request *ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, char *buf);
 struct ata_device *ata_find_device(unsigned int chan, unsigned int drive);
@@ -149,6 +167,7 @@ void ata_reset_bus(struct ata_device *dev);
 void ata_enable_intr(struct ata_device *dev);
 void ata_disable_intr(struct ata_device *dev);
 void ata_pio_init(void);
+void ata_dma_init(void);
 void ata_flush(struct ata_device *dev);
 
 #endif /* ATA_H */
