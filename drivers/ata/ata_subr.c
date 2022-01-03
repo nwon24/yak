@@ -96,7 +96,11 @@ ata_select_drive(struct ata_device *dev, int include_lba, size_t lba)
 	if (bsy_bit(dev) || drq_bit(dev)) {
 		panic("ata_select_drive: bsy or drq not cleared");
 	}
-	if (last_selected == dev)
+	/*
+	 * Only return early if we are not selecting for 28-bit LBA, in which
+	 * case we have to select again even if the last device was the same.
+	 */
+	if (last_selected == dev && !include_lba)
 		return;
 	last_selected = dev;
 	if (include_lba)
