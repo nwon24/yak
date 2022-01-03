@@ -41,8 +41,7 @@ drive_init(void)
 {
 	uint8_t bus, dev, func, prog_if;
 	uint32_t bar0, bar1, bar2, bar3, bar4;
-	int pri_irq, sec_irq;
-	uint16_t buf[256];
+	int pri_irq, sec_irq, bar4_type;
 
 	if (!pci_find_class_code(PCI_CLASS_CODE_MASS_STORAGE, &bus, &dev, &func))
 		panic("No mass storage device found.");
@@ -73,16 +72,37 @@ drive_init(void)
 		bar2 = ATA_SEC_CMD_BASE;
 		bar3 = ATA_SEC_CTRL_BASE;
 	}
-	if (prog_if & (1 << 7))
+	if (prog_if & (1 << 7)) {
 		/* Bus master IDE controller */
 		bar4 = pci_get_bar(bus, dev, func, 4);
-	else
+
+		/*
+		 * According to wiki.osdev.org/ATA/ATAPI_using_DMA,
+		 * the Bus Master registers could be memmory mapped, so we need to check for that.
+		 */
+		if (bar4 & PCI_BAR_IO_SPACE) {
+			bar4 &= 0xFFFFFFFC;
+			bar4_type = PCI_BAR_IO_SPACE;
+		} else {
+			bar4 &= 0xFFFFFFF0;
+			bar4_type = PCI_BAR_MEM_SPACE;
+		}
+#ifdef CONFIG_ARCH_X86
+		if ((bar4 & (3 << 1)) == 0x2) {
+			/* Address is 64-bits wide. We only have 32-bit address space here. */
+			printk("Busmaster BAR is 64-bits. No DMA\r\n");
+			bar4 = 0;
+		}
+		/* Set Bus Master bit of PCI command register */
+		if (bar4)
+			pci_set_cmd_bit(bus, dev, func, 2);
+#endif /* CONFIG_ARCH_X86 */
+	} else {
+		bar4_type = 0;
 		bar4 = 0;
-	ata_probe(bar0, bar1, bar2, bar3, bar4, pri_irq, sec_irq);
+	}
+	ata_probe(bar0, bar1, bar2, bar3, bar4, bar4_type, pri_irq, sec_irq);
 	register_driver(&drive_driver);
-	current_driver->drive_start(0, (char *)buf, 1, 0, 0);
-	for (int j = 0; j < 256; ++j)
-		printk("%x ", buf[j]);
 	return 0;
 }
 
