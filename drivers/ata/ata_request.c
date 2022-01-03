@@ -33,6 +33,7 @@ ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, cha
 	req->count = count;
 	req->cmd = cmd;
 	req->buf = buf;
+	req->error = 0;
 	req->next = NULL;
 	return req;
 }
