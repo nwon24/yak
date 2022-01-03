@@ -11,7 +11,7 @@
 
 #include <kernel/debug.h>
 
-struct drive_driver *current_driver;
+static struct drive_driver *current_driver;
 static void drive_irq_handler(void);
 
 static struct driver drive_driver = {
