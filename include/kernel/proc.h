@@ -35,6 +35,9 @@ struct process {
 extern struct process *current_process;
 extern struct process process_table[];
 
+typedef void (*multitasking_hook)(void);
+void add_multitasking_hook(multitasking_hook hook);
+
 void processes_init(void);
 int kernel_fork(void);
 
