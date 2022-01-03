@@ -15,8 +15,7 @@
 #include <drivers/pci.h>
 
 #include <kernel/debug.h>
-
-void ignore_interrupt(void);
+#include <kernel/proc.h>
 
 struct ata_device ata_drives[ATA_MAX_DRIVES];
 
@@ -95,6 +94,7 @@ ata_probe(uint32_t bar0,
 	  uint32_t bar2,
 	  uint32_t bar3,
 	  uint32_t bar4,
+	  int bar4_type,
 	  int pri_irq,
 	  int sec_irq)
 {
@@ -126,10 +126,13 @@ ata_probe(uint32_t bar0,
 			dev->ctrl_base = bar3;
 		}
 		dev->bus_master_base = bar4;
+		dev->bus_master_type = bar4_type;
 		if (ata_identify(dev) == ATA_DEV_PATA) {
-			printk("channel %x, drive %x\r\n", dev->bus, dev->drive);
+			printk("ATA drive found on channel %x, drive %x\r\n", dev->bus, dev->drive);
 		}
 	}
+	if (bar4)
+		add_multitasking_hook(ata_dma_init);
 	ata_pio_init();
 #ifdef CONFIG_ARCH_X86
 	set_idt_entry(pri_irq + IRQ_BASE, (uint32_t)irq14_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
