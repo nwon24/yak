@@ -45,9 +45,9 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 		return -1;
 	}
 	if (rw == 0) {
-		cmd = ATA_CMD_READ_SECTORS;
+		cmd = (lba > 0x0FFFFFFF) ? ATA_CMD_READ_SECTORS_EXT : ATA_CMD_READ_SECTORS;
 	} else if (rw == 1) {
-		cmd = ATA_CMD_WRITE_SECTORS;
+		cmd = (lba > 0x0FFFFFFF) ? ATA_CMD_WRITE_SECTORS_EXT : ATA_CMD_WRITE_SECTORS;
 	} else {
 		printk("ata_pio_start called with invalid cmd\r\n");
 		return -1;
@@ -73,6 +73,8 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 			ata_pio_poll_write(req);
 		ata_finish_request(req);
 	}
+	if (req->error)
+		return -1;
 	return 0;
 }
 
@@ -80,8 +82,13 @@ static void
 ata_pio_start_request(struct ata_request *req)
 {
 	ata_enable_intr(req->dev);
-	ata_pio_driver.drive_intr = (req->cmd == ATA_CMD_WRITE_SECTORS) ? ata_pio_write_intr : ata_pio_read_intr;
+	ata_pio_driver.drive_intr = (req->cmd == ATA_CMD_WRITE_SECTORS || req->cmd == ATA_CMD_WRITE_SECTORS_EXT) ? ata_pio_write_intr : ata_pio_read_intr;
 	ata_start_request(req);
+	if (ata_error(req->dev)) {
+		ata_reset_bus(req->dev);
+		req->error = 1;
+		return;
+	}
 	if (req->cmd == ATA_CMD_WRITE_SECTORS) {
 		ata_poll_drq(req->dev);
 		ata_pio_transfer(req->dev, req->buf, ATA_PIO_OUT);
