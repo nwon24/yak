@@ -201,3 +201,11 @@ ata_flush(struct ata_device *dev)
 	if (ata_error(dev))
 		ata_reset_bus(dev);
 }
+
+int
+ata_device_exists(int dev)
+{
+	if (dev >= ATA_MAX_DRIVES)
+		return 0;
+	return ata_drives[dev].exists;
+}
