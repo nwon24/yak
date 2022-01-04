@@ -11,6 +11,7 @@ LIB_DIR := lib
 INC_DIR := include
 KERNEL_DIR := kernel
 MM_DIR := mm
+FS_DIR := fs
 DRIVERS_DIR := drivers
 TESTING_DIR := testing
 
@@ -19,6 +20,7 @@ include $(KERNEL_DIR)/Makefile
 include $(DRIVERS_DIR)/Makefile
 include $(LIB_DIR)/Makefile
 include $(MM_DIR)/Makefile
+include $(FS_DIR)/Makefile
 
 DEP_FILES += ${OBJ_FILES:.o=.d} ${LIB_OBJ:.o=.d}
 
