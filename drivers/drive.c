@@ -11,8 +11,12 @@
 
 #include <kernel/debug.h>
 
-static struct drive_driver *current_driver;
+static struct drive_driver *current_driver = NULL;
+static struct generic_disk_dev disk_dev_table[MAX_NR_DRIVES * MAX_NR_PARTITIONS];
+
 static void drive_irq_handler(void);
+static void read_partition_table_mbr(void);
+static void parse_mbr(int disk, char *buf);
 
 static struct driver drive_driver = {
 	.irq = 1,
@@ -42,6 +46,7 @@ drive_init(void)
 	uint8_t bus, dev, func, prog_if;
 	uint32_t bar0, bar1, bar2, bar3, bar4;
 	int pri_irq, sec_irq, bar4_type;
+	struct generic_disk_dev *disk;
 
 	if (!pci_find_class_code(PCI_CLASS_CODE_MASS_STORAGE, &bus, &dev, &func))
 		panic("No mass storage device found.");
@@ -103,19 +108,65 @@ drive_init(void)
 	}
 	if (ata_probe(bar0, bar1, bar2, bar3, bar4, bar4_type, pri_irq, sec_irq) < 0)
 		panic("No ATA drive found.");
+	for (disk = disk_dev_table; disk < disk_dev_table + MAX_NR_DRIVES * MAX_NR_PARTITIONS; disk++)
+		disk->minor = disk - disk_dev_table;
 	register_driver(&drive_driver);
+#ifdef CONFIG_DISK_MBR
+	read_partition_table_mbr();
+#endif
 	return 0;
 }
 
 static void
 drive_irq_handler(void)
 {
-	if (current_driver->drive_intr != NULL)
+	if (current_driver != NULL && current_driver->drive_intr != NULL)
 		current_driver->drive_intr();
+}
+
+static void
+read_partition_table_mbr(void)
+{
+	int i;
+	char buf[512];
+	struct generic_disk_dev *dev;
+
+	for (dev = disk_dev_table; dev < disk_dev_table + MAX_NR_DRIVES * MAX_NR_PARTITIONS; dev += MAX_NR_PARTITIONS) {
+		i = dev->minor / MAX_NR_PARTITIONS;
+		if (dev->driver->drive_exists(i)) {
+			current_driver = dev->driver;
+			dev->driver->drive_start(i, buf, 1, 0, 0);
+			parse_mbr(i, buf);
+		}
+	}
+}
+
+static void
+parse_mbr(int disk, char *buf)
+{
+	struct generic_disk_dev *dev;
+	struct mbr_partition *p;
+	int i;
+
+	if (*(uint16_t *)&buf[510] != MBR_MAGIC)
+		return;
+	dev = disk_dev_table + disk * MAX_NR_PARTITIONS;
+	p = (struct mbr_partition *)(buf + MBR_PTE1_OFF);
+	for (i = 0; i < MAX_NR_PARTITIONS; i++) {
+		if (p->nr_sectors) {
+			dev->lba_start = p->lba_start;
+			dev->lba_len = p->nr_sectors;
+		}
+		dev++;
+		p++;
+	}
 }
 
 void
 drive_driver_register(struct drive_driver *drv)
 {
-	current_driver = drv;
+	struct generic_disk_dev *dev;
+
+	for (dev = disk_dev_table; dev < disk_dev_table + MAX_NR_DRIVES * MAX_NR_PARTITIONS; dev++)
+		dev->driver = drv;
 }
