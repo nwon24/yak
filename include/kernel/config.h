@@ -41,4 +41,8 @@
 #define CONFIG_FS_BUF_CACHE_SIZE	128
 #define CONFIG_FS_BUF_HASH_SIZE		100
 
+#define CONFIG_FS_ROOT_DEV	0x300
+
+#define CONFIG_FS_EXT2
+
 #endif /* CONFIG_H */
