@@ -157,7 +157,7 @@ void ata_poll_drq(struct ata_device *dev);
 void ata_select_drive(struct ata_device *dev, int include_lba, size_t lba);
 int ata_error(struct ata_device *dev);
 void ata_pio_transfer(struct ata_device *dev, void *buf, enum ata_pio_direction dir);
-void ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int bar4_type, int pri_irq, int sec_irq);
+int ata_probe(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4, int bar4_type, int pri_irq, int sec_irq);
 int ata_add_request(struct ata_request *req);
 struct ata_request *ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, char *buf);
 struct ata_device *ata_find_device(unsigned int chan, unsigned int drive);
