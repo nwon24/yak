@@ -18,6 +18,8 @@
 #include <drivers/fbcon.h>
 #include <drivers/pci.h>
 
+#include <fs/buffer.h>
+
 #include <mm/mm.h>
 #include <mm/vm.h>
 
@@ -43,6 +45,7 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 	acpi_init();
 	pci_init();
 	run_driver_init_functions();
+	buffer_init();
 	printk("Hello, world!\r\n");
 	if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
 		printk("Invalid multiboot magic number %x\r\n", mb_magic);
