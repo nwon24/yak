@@ -38,4 +38,7 @@
 #define CONFIG_USE_ARCH_STRING_H
 #endif
 
+#define CONFIG_FS_BUF_CACHE_SIZE	128
+#define CONFIG_FS_BUF_HASH_SIZE		100
+
 #endif /* CONFIG_H */
