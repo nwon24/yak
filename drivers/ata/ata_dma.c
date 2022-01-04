@@ -61,9 +61,9 @@ ata_dma_start(int drive, char *buf, size_t count, size_t lba, int rw)
 		return -1;
 	}
 	if (rw == 0) {
-		cmd = (lba >= 0x0FFFFFFF) ? ATA_CMD_READ_SECTORS_DMA_EXT : ATA_CMD_READ_SECTORS_DMA;
+		cmd = (lba > 0x0FFFFFFF) ? ATA_CMD_READ_SECTORS_DMA_EXT : ATA_CMD_READ_SECTORS_DMA;
 	} else if (rw == 1) {
-		cmd = (lba >= 0x0FFFFFFF) ? ATA_CMD_WRITE_SECTORS_DMA_EXT : ATA_CMD_WRITE_SECTORS_DMA;
+		cmd = (lba > 0x0FFFFFFF) ? ATA_CMD_WRITE_SECTORS_DMA_EXT : ATA_CMD_WRITE_SECTORS_DMA;
 	} else {
 		printk("ata_dma_start called with invalid cmd\r\n");
 		return -1;
