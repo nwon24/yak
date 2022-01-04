@@ -31,6 +31,7 @@ struct drive_driver {
 };
 
 int drive_init(void);
+int drive_rw(int minor, size_t block_off, char *buf, size_t count, int rw);
 void drive_driver_register(struct drive_driver *drv);
 
 #endif /* DRIVE_H */
