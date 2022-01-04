@@ -18,6 +18,10 @@
 #include <drivers/uart_8250.h>
 #endif /* CONFIG_DRIVER_8250_UART */
 
+#ifdef CONFIG_FS_EXT2
+#include <fs/ext2.h>
+#endif
+
 #ifdef CONFIG_ARCH_X86
 int pit_init(void);
 #endif /* CONFIG_ARCH_X86 */
@@ -43,6 +47,9 @@ init_function init_func_table[] = {
 #endif /* CONFIG_DRIVER_FBDEV */
 	vc_init,
 	drive_init,
+#ifdef CONFIG_FS_EXT2
+	ext2_init,
+#endif /* CONFIG_FS_EXT2 */
 	NULL,
 };
 
