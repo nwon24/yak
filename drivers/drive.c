@@ -101,7 +101,8 @@ drive_init(void)
 		bar4_type = 0;
 		bar4 = 0;
 	}
-	ata_probe(bar0, bar1, bar2, bar3, bar4, bar4_type, pri_irq, sec_irq);
+	if (ata_probe(bar0, bar1, bar2, bar3, bar4, bar4_type, pri_irq, sec_irq) < 0)
+		panic("No ATA drive found.");
 	register_driver(&drive_driver);
 	return 0;
 }
