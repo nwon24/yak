@@ -44,8 +44,8 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 	vm_init();
 	acpi_init();
 	pci_init();
-	run_driver_init_functions();
 	buffer_init();
+	run_driver_init_functions();
 	printk("Hello, world!\r\n");
 	if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
 		printk("Invalid multiboot magic number %x\r\n", mb_magic);
