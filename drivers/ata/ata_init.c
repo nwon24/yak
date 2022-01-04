@@ -88,7 +88,7 @@ ata_identify(struct ata_device *dev)
 	return ATA_DEV_PATA;
 }
 
-void
+int
 ata_probe(uint32_t bar0,
           uint32_t bar1,
 	  uint32_t bar2,
@@ -99,6 +99,7 @@ ata_probe(uint32_t bar0,
 	  int sec_irq)
 {
 	struct ata_device *dev;
+	int ret = -1;
 
 	for (dev = ata_drives; dev < ata_drives + ATA_MAX_DRIVES; dev++) {
 		int i = dev - ata_drives;
@@ -128,6 +129,7 @@ ata_probe(uint32_t bar0,
 		dev->bus_master_base = bar4;
 		dev->bus_master_type = bar4_type;
 		if (ata_identify(dev) == ATA_DEV_PATA) {
+			ret = 0;
 			printk("ATA drive found on channel %x, drive %x\r\n", dev->bus, dev->drive);
 		}
 	}
@@ -142,4 +144,5 @@ ata_probe(uint32_t bar0,
 	pic_clear_mask(pri_irq + IRQ_BASE);
 	pic_clear_mask(sec_irq + IRQ_BASE);
 #endif
+	return ret;
 }
