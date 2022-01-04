@@ -22,6 +22,7 @@ static void ata_pio_write_intr(void);
 
 static struct drive_driver ata_pio_driver = {
 	.drive_start = ata_pio_start,
+	.drive_exists = ata_device_exists,
 	.drive_intr = NULL
 };
 
