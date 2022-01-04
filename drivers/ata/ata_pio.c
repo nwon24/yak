@@ -10,7 +10,7 @@
 #include <drivers/ata.h>
 #include <drivers/drive.h>
 
-#include <fs/misc.h>
+#include <fs/fs.h>
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
