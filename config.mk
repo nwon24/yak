@@ -2,6 +2,7 @@ TARGET_TRIPLET := i686-elf
 TARGET_ARCH := i386
 
 CC := $(TARGET_TRIPLET)-gcc
+LD := $(CC)
 AR := $(TARGET_TRIPLET)-ar
 CPP := $(CC) -E
 

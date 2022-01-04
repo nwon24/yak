@@ -29,7 +29,7 @@ OBJ_LINK_LIST := $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJ_FILES) $(CRTEND_OBJ) $(CRTN_O
 all: $(KERNEL_BIN)
 -include $(DEP_FILES)
 $(KERNEL_BIN): $(OBJ_LINK_LIST) $(LDSCRIPT) $(LIBK) $(LIBFONT)
-	$(Q)$(CC) $(OBJ_LINK_LIST) -o $@ -T$(LDSCRIPT) $(LDFLAGS) -L$(LIB_DIR) -L$(LIBFONT_DIR) -lk -lfont
+	$(Q)$(LD) $(OBJ_LINK_LIST) -o $@ -T$(LDSCRIPT) $(LDFLAGS) -L$(LIB_DIR) -L$(LIBFONT_DIR) -lk -lfont
 	$(E) " LD	" $@
 $(LIBK): $(LIB_OBJ)
 	$(Q)$(AR) rcs $@ $^
