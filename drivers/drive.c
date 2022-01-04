@@ -3,6 +3,7 @@
  * Contains the device independent disk driver.
  * The only common word between SSD and HDD is 'drive'.
  */
+#include <asm/types.h>
 
 #include <drivers/ata.h>
 #include <drivers/pci.h>
@@ -171,4 +172,21 @@ drive_driver_register(struct drive_driver *drv)
 
 	for (dev = disk_dev_table; dev < disk_dev_table + MAX_NR_DRIVES * MAX_NR_PARTITIONS; dev++)
 		dev->driver = drv;
+}
+
+int
+drive_rw(int minor, size_t block_off, char *buf, size_t count, int rw)
+{
+	struct generic_disk_dev *dev;
+	int disk;
+	size_t block;
+
+	if (minor >= MAX_NR_DRIVES * MAX_NR_PARTITIONS)
+		return -1;
+	dev = disk_dev_table + minor;
+	disk = minor / MAX_NR_PARTITIONS;
+	if (block_off > dev->lba_len)
+		return -1;
+	block = dev->lba_start + block_off;
+	return dev->driver->drive_start(disk, buf, count, block, rw);
 }
