@@ -169,5 +169,6 @@ void ata_disable_intr(struct ata_device *dev);
 void ata_pio_init(void);
 void ata_dma_init(void);
 void ata_flush(struct ata_device *dev);
+int ata_device_exists(int dev);
 
 #endif /* ATA_H */
