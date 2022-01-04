@@ -22,6 +22,7 @@ static void ata_dma_write_intr(void);
 
 static struct drive_driver ata_dma_driver = {
 	.drive_start = ata_dma_start,
+	.drive_exists = ata_device_exists,
 	.drive_intr = NULL
 };
 
