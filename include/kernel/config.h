@@ -22,6 +22,9 @@
 /* Should be enough for now, right? */
 #define CONFIG_DRIVER_NR_DRIVERS	100
 
+/* No support for GPT yet. */
+#define CONFIG_DISK_MBR
+
 /* Compiled in font */
 #define CONFIG_FONT_8X16_PSFU
 
