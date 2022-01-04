@@ -9,6 +9,8 @@
 #include <drivers/drive.h>
 #include <drivers/driver.h>
 
+#include <fs/misc.h>
+
 #include <kernel/debug.h>
 
 static struct drive_driver *current_driver = NULL;
@@ -135,7 +137,7 @@ read_partition_table_mbr(void)
 		i = dev->minor / MAX_NR_PARTITIONS;
 		if (dev->driver->drive_exists(i)) {
 			current_driver = dev->driver;
-			dev->driver->drive_start(i, buf, 1, 0, 0);
+			dev->driver->drive_start(i, buf, 1, 0, READ);
 			parse_mbr(i, buf);
 		}
 	}

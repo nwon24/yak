@@ -10,6 +10,8 @@
 #include <drivers/ata.h>
 #include <drivers/drive.h>
 
+#include <fs/misc.h>
+
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
@@ -45,9 +47,9 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 		printk("ata_pio_start called with non-existent drive\r\n");
 		return -1;
 	}
-	if (rw == 0) {
+	if (rw == READ) {
 		cmd = (lba > 0x0FFFFFFF) ? ATA_CMD_READ_SECTORS_EXT : ATA_CMD_READ_SECTORS;
-	} else if (rw == 1) {
+	} else if (rw == WRITE) {
 		cmd = (lba > 0x0FFFFFFF) ? ATA_CMD_WRITE_SECTORS_EXT : ATA_CMD_WRITE_SECTORS;
 	} else {
 		printk("ata_pio_start called with invalid cmd\r\n");
