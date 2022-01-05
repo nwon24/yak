@@ -21,6 +21,7 @@ __arch_memmove(void *dst, const void *src, size_t n)
         return dst;
 }
 
+
 static inline int
 __arch_memcmp(const void *a, const void *b, size_t n)
 {
@@ -30,7 +31,7 @@ __arch_memcmp(const void *a, const void *b, size_t n)
                 "movl $1, %%eax\n\t"
                 "jl 1f\n\t"
                 "negl %%eax\n"
-                "1:" : "=g" (__ret), "+D" (a), "+S" (b), "+c" (n) : "0" (0));
+                "1:" : "=a" (__ret), "+D" (a), "+S" (b), "+c" (n) : "a" (0));
         return __ret;
 }
 
