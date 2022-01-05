@@ -122,8 +122,7 @@ static void *acpi_find_table(uint32_t phys, char *sig);
 static struct rsdp_desc *
 find_rsdp(void)
 {
-        uint32_t addr = VIRT_ADDR((EBDA_ADDR << 4));
-        uint32_t ptr;
+        volatile uint32_t addr = VIRT_ADDR((EBDA_ADDR << 4)), ptr;
 
         /* First check the EBDA */
         for (ptr = addr; ptr < addr + 1024; ptr += 16) {
@@ -144,7 +143,7 @@ acpi_table_check(struct acpi_sdt_header *header)
         uint32_t i;
 
         for (i = 0; i < header->length; i++)
-                sum += *((char *)header + i);
+                sum += *((unsigned char *)header + i);
         return sum == 0;
 }
 
@@ -176,7 +175,7 @@ uint16_t
 get_acpi_boot_arch_flags(void)
 {
 	if (fadt.header.revision == 0)
-		return ACPI_1_0;	
+		return ACPI_1_0;
 	return fadt.boot_architecture_flags;
 }
 
