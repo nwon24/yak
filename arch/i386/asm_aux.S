@@ -22,7 +22,7 @@ disable_intr:
 	.global load_idt
 load_idt:
 	movl	4(%ebp), %eax
-	lidt	%eax
+	lidtl	(%eax)
 	ret
 
 	/* Shouldn't reall be in this file, but... */

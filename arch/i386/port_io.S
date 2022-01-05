@@ -9,39 +9,39 @@
 port_outb:
 	movl	4(%esp), %eax
 	movl	8(%esp), %edx
-	outb	%al, %edx
+	outb	%al, %dx
 	ret
 
 port_inb:
 	xorl	%eax, %eax
 	movl	4(%esp), %edx
-	inb	%edx, %al
+	inb	%dx, %al
 	ret
 
 	.globl	port_outw, port_inw
 port_outw:
 	movl	4(%esp), %eax
 	movl	8(%esp), %edx
-	outw	%ax, %edx
+	outw	%ax, %dx
 	ret
 
 port_inw:
 	xorl	%eax, %eax
 	movl	4(%esp), %edx
-	inw	%edx, %ax
+	inw	%dx, %ax
 	ret
 
 	.globl	port_outl, port_inl
 port_outl:
 	movl	4(%esp), %eax
 	movl	8(%esp), %edx
-	outl	%eax, %edx
+	outl	%eax, %dx
 	ret
 
 port_inl:
 	xorl	%eax, %eax
 	movl	4(%esp), %edx
-	inl	%edx, %eax
+	inl	%dx, %eax
 	ret
 
 	.globl	port_rep_insb, port_rep_insw, port_rep_insl
