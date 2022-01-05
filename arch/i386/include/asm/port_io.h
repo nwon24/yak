@@ -87,7 +87,7 @@ void port_outw(uint16_t data, uint16_t port);
 uint16_t port_inw(uint16_t port);
 
 void port_outl(uint32_t data, uint16_t port);
-uint16_t port_inl(uint16_t port);
+uint32_t port_inl(uint16_t port);
 
 void port_rep_insb(uint16_t port, void *buf, int count);
 void port_rep_insw(uint16_t port, void *buf, int count);
