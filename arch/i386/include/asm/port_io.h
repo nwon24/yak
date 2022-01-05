@@ -8,13 +8,13 @@
 
 #ifdef CONFIG_USE_INLINE_ASM
 static inline void
-outb(uint8_t data, uint32_t port)
+outb(uint8_t data, uint16_t port)
 {
 	__asm__ volatile("outb %0, %1" : : "a" (data), "Nd" (port));
 }
 
 static inline uint8_t
-inb(uint32_t port)
+inb(uint16_t port)
 {
 	uint8_t ret;
 
@@ -23,13 +23,13 @@ inb(uint32_t port)
 }
 
 static inline void
-outw(uint16_t data, uint32_t port)
+outw(uint16_t data, uint16_t port)
 {
 	__asm__ volatile("outw %0, %1" : : "a" (data), "Nd" (port));
 }
 
 static inline uint16_t
-inw(uint32_t port)
+inw(uint16_t port)
 {
 	uint16_t ret;
 
@@ -38,13 +38,13 @@ inw(uint32_t port)
 }
 
 static inline void
-outl(uint32_t data, uint32_t port)
+outl(uint32_t data, uint16_t port)
 {
 	__asm__ volatile("outl %0, %1" : : "a" (data), "Nd" (port));
 }
 
 static inline uint32_t
-inl(uint32_t port)
+inl(uint16_t port)
 {
 	uint32_t ret;
 
@@ -53,19 +53,19 @@ inl(uint32_t port)
 }
 
 static inline void
-rep_insb(uint32_t port, void *buf, int count)
+rep_insb(uint16_t port, void *buf, int count)
 {
 	__asm__ volatile("cld; rep; insb" : : "d" (port), "D" (buf), "c" (count));
 }
 
 static inline void
-rep_insw(uint32_t port, void *buf, int count)
+rep_insw(uint16_t port, void *buf, int count)
 {
 	__asm__ volatile("cld; rep; insw" : : "d" (port), "D" (buf), "c" (count));
 }
 
 static inline void
-rep_insl(uint32_t port, void *buf, int count)
+rep_insl(uint16_t port, void *buf, int count)
 {
 	__asm__ volatile("cld; rep; insl" : : "d" (port), "D" (buf), "c" (count));
 }
@@ -80,18 +80,18 @@ io_delay(void)
 
 #else /* CONFIG_USE_INLINE_ASM */
 
-void port_outb(uint8_t data, uint32_t port);
+void port_outb(uint8_t data, uint16_t port);
 uint8_t port_inb(uint16_t port);
 
-void port_outw(uint16_t data, uint32_t port);
+void port_outw(uint16_t data, uint16_t port);
 uint16_t port_inw(uint16_t port);
 
-void port_outl(uint32_t data, uint32_t port);
-uint32_t port_inl(uint32_t port);
+void port_outl(uint32_t data, uint16_t port);
+uint16_t port_inl(uint16_t port);
 
-void port_rep_insb(uint32_t port, void *buf);
-void port_rep_insw(uint32_t port, void *buf);
-void port_rep_insl(uint32_t port, void *buf);
+void port_rep_insb(uint16_t port, void *buf, int count);
+void port_rep_insw(uint16_t port, void *buf, int count);
+void port_rep_insl(uint16_t port, void *buf, int count);
 
 void io_delay(void);
 
