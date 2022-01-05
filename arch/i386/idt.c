@@ -49,9 +49,13 @@ void
 idt_init(void)
 {
 	int i;
+	struct {
+		uint16_t limit;
+		uint32_t base;
+	}__attribute__((packed)) idt_desc = { IDT_LIMIT, (uint32_t)idt };
 
 	for (i = IRQ_BASE; i < IDT_ENTRIES; i++)
 		set_idt_entry(i, (uint32_t)ignore_interrupt, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
 	exceptions_init();
-	load_idt((void *)idt);
+	load_idt(&idt_desc);
 }
