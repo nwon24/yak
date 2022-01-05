@@ -28,7 +28,7 @@
 /* Compiled in font */
 #define CONFIG_FONT_8X16_PSFU
 
-#ifdef __GNUC__
+#if defined(__GNUC__)
 /* A little bit of inline assembly doesn't hurt. As long as it is all in the arch/ directory. */
 #define CONFIG_USE_INLINE_ASM
 #endif /* __GNUC__ */
