@@ -58,11 +58,22 @@ struct ext2_superblock {
 	uint32_t s_last_orphan;
 };
 
+struct ext2_blk_group_desc {
+	uint32_t blk_bitmap;
+	uint32_t ino_bitmap;
+	uint32_t ino_table;
+	uint16_t nr_unalloc_blk;
+	uint16_t nr_unalloc_ino;
+	uint16_t nr_dir;
+	char unused[14];
+};
+
 /*
  * ext2 superblock as kept in memory.
  */
 struct ext2_superblock_m {
 	struct ext2_superblock sb;
+	struct ext2_blk_group_desc *bgd_table;
 	mutex mutex;
 	int modified;
 };
