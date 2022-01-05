@@ -50,9 +50,9 @@ port_rep_insb:
 	movl	%esp, %ebp
 	pushl	%edi
 
-	movl	8(%esi), %edx
-	movl	12(%esp), %edi
-	movl	16(%esp), %ecx
+	movl	8(%ebp), %edx
+	movl	12(%ebp), %edi
+	movl	16(%ebp), %ecx
 	cld
 	rep
 	insb
@@ -67,9 +67,9 @@ port_rep_insw:
 	movl	%esp, %ebp
 	pushl	%edi
 
-	movl	8(%esi), %edx
-	movl	12(%esp), %edi
-	movl	16(%esp), %ecx
+	movl	8(%ebp), %edx
+	movl	12(%ebp), %edi
+	movl	16(%ebp), %ecx
 	cld
 	rep
 	insw
@@ -84,9 +84,9 @@ port_rep_insl:
 	movl	%esp, %ebp
 	pushl	%edi
 
-	movl	8(%esi), %edx
-	movl	12(%esp), %edi
-	movl	16(%esp), %ecx
+	movl	8(%ebp), %edx
+	movl	12(%ebp), %edi
+	movl	16(%ebp), %ecx
 	cld
 	rep
 	insl
