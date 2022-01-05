@@ -104,9 +104,25 @@ tty_write(int n, char *buf, int count)
 		return -1;
 	i = count;
 	p = buf;
-	while (*p && i--)
+	while (*p && i-- && !tty_queue_full(&tp->t_writeq))
 		tty_putch(*p++, tp);
 	tty_flush(tp);
 	tty_queue_reset(&tp->t_writeq);
 	return p - buf;
 }
+
+int
+tty_read(int n, char *buf, int count)
+{
+	struct tty *tp;
+	char *p;
+	int i;
+
+	if ((tp = &tty_tab[n]) >= &tty_tab[NR_TTY])
+		return -1;
+	i = count;
+	p = buf;
+	while (i-- && !tty_queue_empty(&tp->t_readq))
+		*p++ = tty_getch(tp);
+	return p - buf;
+}	
