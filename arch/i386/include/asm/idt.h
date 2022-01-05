@@ -22,16 +22,12 @@ void idt_init(void);
 
 #ifdef CONFIG_USE_INLINE_ASM
 static inline void
-load_idt(void *idt_ptr)
+load_idt(void *idt_desc)
 {
-	struct {
-		uint16_t limit;
-		uint32_t base;
-	}__attribute__((packed)) idt_desc = { IDT_LIMIT, (uint32_t)idt_ptr };
-	__asm__ volatile("lidt %0" : : "m" (idt_desc));
+ 	__asm__ volatile("lidt %0" : : "m" (*(uint32_t *)idt_desc));
 }
 #else
-void load_idt(void *idt_ptr);
+void load_idt(void *idt_desc);
 #endif /* CONFIG_USE_INLINE_ASM */
 
 #endif /* __ASSEMBLER__ */
