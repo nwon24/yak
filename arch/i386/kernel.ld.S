@@ -41,7 +41,12 @@ SECTIONS
 
 	.rodata ALIGN(PAGE_SIZE) : AT(ADDR(.rodata) - KERNEL_VIRT_BASE) {
 		_start_rodata = .;
-		*(.rodata)
+		/*
+		 * When using lld, it didn't put all the .rodata sections together
+		 * for some reason, resulting in string constants ending up in unmapped low memory.
+		 * Make sure all .rodata sections are placed here with the '*' at the end.
+		 */
+		*(.rodata*)
 		_end_rodata = .;
 	}
 
