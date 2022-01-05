@@ -24,7 +24,7 @@ ext2_init(void)
 {
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
-	unsigned int nr_blk_group;
+	int tmp1, tmp2;
 
 	/*
 	 * Since the ext2 block size is in the superblock, just set
@@ -43,16 +43,30 @@ ext2_init(void)
 	ext2_fs_struct.f_driver = &ext2_driver_ops;
 	ext2_fs_struct.f_super = kvmalloc(sizeof(struct ext2_superblock_m));
 	memmove(ext2_fs_struct.f_super, bp->b_data, sizeof(struct ext2_superblock_m));
-	brelse(bp);
 	if (register_filesystem(&ext2_fs_struct) == NULL)
 		panic("ext2_init: unable to register filesystem");
 	sb = ext2_fs_struct.f_super;
 	if (sb->sb.s_magic != EXT2_MAGIC)
 		panic("ext2_init: Root device not an ext2 filesystem");
-	if ((nr_blk_group = sb->sb.s_inodes_count / sb->sb.s_inodes_per_group + 1) != sb->sb.s_blocks_count / sb->sb.s_blocks_per_group)
+	if ((sb->sb.s_inodes_count % sb->sb.s_inodes_per_group) == 0)
+		tmp1 = sb->sb.s_inodes_count / sb->sb.s_inodes_per_group;
+	else
+		tmp1 = sb->sb.s_inodes_count / sb->sb.s_inodes_per_group + 1;
+	if ((sb->sb.s_blocks_count % sb->sb.s_blocks_per_group) == 0)
+		tmp2 = sb->sb.s_blocks_count / sb->sb.s_blocks_per_group;
+	else
+		tmp2 = sb->sb.s_blocks_count / sb->sb.s_blocks_per_group + 1;
+	if (tmp1 != tmp2)
 		panic("ext2_init: Superblock corrupted");
-	if ((sb->bgd_table = kvmalloc(nr_blk_group * sizeof(*sb->bgd_table))) == NULL)
+	if ((sb->bgd_table = kvmalloc(tmp1 * sizeof(*sb->bgd_table))) == NULL)
 		panic("ext2_init: Unable to allocate memory for block group descriptor table");
+	bp->b_blksize = 1024 << sb->sb.s_log_block_size;
+	if (bp->b_blksize == 1024)
+		bp->b_blknr = 2;
+	else
+		bp->b_blknr = 1;
+	blk_devio(bp, READ);
+	memmove(sb->bgd_table, bp->b_data, tmp1 * sizeof(*sb->bgd_table));
 	return 0;
 }
 
