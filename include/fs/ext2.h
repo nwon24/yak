@@ -10,7 +10,36 @@
 /* Number of bytes from start of volume */
 #define EXT2_SB_OFF	1024
 
+/* Used to determine if it is actually ext2 */
 #define EXT2_MAGIC	0xEF53
+
+/* Root inode number */
+#define EXT2_ROOT_INO	2
+
+/*
+ * Values in 'i_mode' field of an inode.
+ */
+#define EXT2_S_IFSOCK	0xC000	/* socket */
+#define EXT2_S_IFLNK	0xA000	/* symbolic link */
+#define EXT2_S_IFREG	0x8000	/* regular file */
+#define EXT2_S_IFBLK	0x6000	/* block device */
+#define EXT2_S_IFDIR	0x4000	/* directory */
+#define EXT2_S_IFCHR	0x2000	/* character device */
+#define EXT2_S_IFIFO	0x1000	/* fifo */
+
+#define EXT2_S_ISUID	0x0800	/* Set process User ID */
+#define EXT2_S_ISGID	0x0400	/* Set process Group ID */
+#define EXT2_S_ISVTX	0x0200	/* sticky bit */
+
+#define EXT2_S_IRUSR	0x0100	/* user read */
+#define EXT2_S_IWUSR	0x0080	/* user write */
+#define EXT2_S_IXUSR	0x0040	/* user execute */
+#define EXT2_S_IRGRP	0x0020	/* group read */
+#define EXT2_S_IWGRP	0x0010	/* group write */
+#define EXT2_S_IXGRP	0x0008	/* group execute */
+#define EXT2_S_IROTH	0x0004	/* others read */
+#define EXT2_S_IWOTH	0x0002	/* others write */
+#define EXT2_S_IXOTH	0x0001	/* others execute */
 
 struct ext2_superblock {
 	uint32_t s_inodes_count;
@@ -59,13 +88,13 @@ struct ext2_superblock {
 };
 
 struct ext2_blk_group_desc {
-	uint32_t blk_bitmap;
-	uint32_t ino_bitmap;
-	uint32_t ino_table;
-	uint16_t nr_unalloc_blk;
-	uint16_t nr_unalloc_ino;
-	uint16_t nr_dir;
-	char unused[14];
+	uint32_t bg_block_bitmap;
+	uint32_t bg_inode_bitmap;
+	uint32_t bg_inode_table;
+	uint16_t bg_free_blocks_count;
+	uint16_t bg_free_inodes_count;
+	uint16_t bg_used_dirs_count;
+	char bg_reserved[14];
 };
 
 /*
@@ -76,6 +105,27 @@ struct ext2_superblock_m {
 	struct ext2_blk_group_desc *bgd_table;
 	mutex mutex;
 	int modified;
+};
+
+struct ext2_inode {
+	uint16_t i_mode;
+	uint16_t i_uid;
+	uint32_t i_size;
+	uint32_t i_atime;
+	uint32_t i_ctime;
+	uint32_t i_mtime;
+	uint32_t i_dtime;
+	uint16_t i_gid;
+	uint16_t i_links_count;
+	uint32_t i_blocks;
+	uint32_t i_flags;
+	uint32_t i_osd1;
+	uint32_t i_block[15];
+	uint32_t i_generation;
+	uint32_t i_file_acl;
+	uint32_t i_dir_acl;
+	uint32_t i_faddr;
+	uint32_t i_osd2;
 };
 
 int ext2_init(void);
