@@ -309,7 +309,7 @@ fbcon_set_attr_32bpp(struct vc_attr *attr, enum vc_attr_type type)
                 /* Only works with indexed color */
                 current_fbcon->fbcon_fg = ansi_colors_bright_fg_32rgb[attr->fg_indexed - ANSI_FG_COLOR_BASE];
         if ((attr->attr & VC_DIM))
-                current_fbcon->fbcon_fg = ansi_colors_bright_fg_32rgb[ANSI_FG_BLACK];
+                current_fbcon->fbcon_fg = ansi_colors_bright_fg_32rgb[ANSI_FG_BLACK - ANSI_FG_COLOR_BASE];
         if ((attr->attr & VC_REVERSE)) {
                 uint32_t tmp;
 
@@ -343,7 +343,7 @@ fbcon_set_attr_16bpp(struct vc_attr *attr, enum vc_attr_type type)
         if ((attr->attr & VC_BOLD) && (type == INDEXED_COLOR) && (type <= ANSI_FG_WHITE))
                 current_fbcon->fbcon_fg = ansi_colors_bright_fg_16rgb[attr->fg_indexed - ANSI_FG_COLOR_BASE];
         if ((attr->attr & VC_DIM))
-                current_fbcon->fbcon_fg = ansi_colors_bright_fg_16rgb[ANSI_FG_BLACK];
+                current_fbcon->fbcon_fg = ansi_colors_bright_fg_16rgb[ANSI_FG_BLACK - ANSI_FG_COLOR_BASE];
         if ((attr->attr & VC_REVERSE)) {
                 uint32_t tmp;
 
