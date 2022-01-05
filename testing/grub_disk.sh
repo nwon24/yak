@@ -1,7 +1,7 @@
 #!/bin/bash
 
 dd if=/dev/zero of=$1 bs=1024 count=$2
-printf ",,L,*" | sfdisk $1
+printf ",,L,*" | sudo sfdisk $1
 LOOP_UNUSED1=$(sudo losetup -f)
 sudo losetup $LOOP_UNUSED1 $1
 LOOP_UNUSED2=$(sudo losetup -f)
