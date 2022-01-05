@@ -1,7 +1,7 @@
 TARGET_TRIPLET := i686-elf
 TARGET_ARCH := i386
 
-TOOLCHAIN ?= GNU
+TOOLCHAIN ?= LLVM
 
 ifeq ($(TOOLCHAIN), GNU)
 CC := $(TARGET_TRIPLET)-gcc
@@ -20,7 +20,7 @@ CFLAGS :=  -std=c99 -ffreestanding -O2 -Wall -Wextra -Werror -Winit-self -Wundef
 CPPFLAGS := -ffreestanding -P
 # Still C compiler flags as we assemble .S files using GCC
 ASFLAGS := -ffreestanding -MMD -MP
-LDFLAGS := -nostdlib -O2
+LDFLAGS := -nostdlib -O2 
 ifeq ($(CC), $(TARGET_TRIPLET)-gcc)
 LDFLAGS += -lgcc
 endif
