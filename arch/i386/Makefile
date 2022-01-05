@@ -23,8 +23,13 @@ ARCH_INC_DIR := $(ARCH_DIR)/include
 
 CRTI_OBJ := $(ARCH_DIR)/crti.o
 CRTN_OBJ := $(ARCH_DIR)/crtn.o
+ifeq ($(CC), $(TARGET_TRIPLET)-gcc)
 CRTBEGIN_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+else
+CRTBEGIN_OBJ :=
+CRTEND_OBJ :=
+endif
 
 DEP_FILES += $(ARCH_DIR)/crti.d
 DEP_FILES += $(ARCH_DIR)/crtn.d
