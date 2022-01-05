@@ -22,7 +22,9 @@ CPPFLAGS := -ffreestanding -P
 ASFLAGS := -ffreestanding -MMD -MP
 LDFLAGS := -nostdlib -O2 
 ifeq ($(CC), $(TARGET_TRIPLET)-gcc)
-LDFLAGS += -lgcc
+LDFLAGS += -lgcc -Xlinker -Map=kernel.map
+else
+LDFLAGS += -Map kernel.map
 endif
 
 ARCH_DIR := arch/$(TARGET_ARCH)
