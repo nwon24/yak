@@ -8,6 +8,7 @@
 	/* Some stuff if we don't want to use the inline assembly equivalents. */
 #ifndef CONFIG_USE_INLINE_ASM
 #include <asm/segment.h>
+#include <asm/idt.h>
 
 	.global enable_intr
 enable_intr:
@@ -21,7 +22,7 @@ disable_intr:
 
 	.global load_idt
 load_idt:
-	movl	4(%ebp), %eax
+	movl	4(%esp), %eax
 	lidtl	(%eax)
 	ret
 
