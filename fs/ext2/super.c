@@ -100,7 +100,10 @@ get_ext2_superblock(dev_t dev)
 static void
 ext2_mount_root(void)
 {
-	current_process->root_inode = ext2_iget(CONFIG_FS_ROOT_DEV, EXT2_ROOT_INO);
+	struct ext2_inode_m *ip;
+
+	ip = ext2_iget(CONFIG_FS_ROOT_DEV, EXT2_ROOT_INO);
+	current_process->root_inode = ip;
 	if (current_process->root_inode == NULL)
 		panic("ext2_mount_root: unable to get root inode");
 	current_process->cwd_inode = current_process->root_inode;
