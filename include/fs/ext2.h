@@ -145,6 +145,17 @@ struct ext2_inode_m {
 	struct ext2_inode_m *i_prev;
 };
 
+/*
+ * Contains only the header fields, since the name
+ * can be abitrarily long (up to 255)
+ */
+struct ext2_dir_entry {
+	uint32_t d_inode;
+	uint16_t d_rec_len;
+	uint8_t d_name_len;
+	uint8_t d_file_type;
+};
+
 #define I_MODIFIED	(1 << 0)
 #define I_MOUNT		(1 << 1)
 
