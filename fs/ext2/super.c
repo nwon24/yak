@@ -8,6 +8,7 @@
 #include <fs/fs.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 #include <generic/string.h>
 
@@ -17,13 +18,20 @@ static struct fs_driver_ops ext2_driver_ops = {
 	.fs_get_attribute = ext2_get_attribute
 };
 
+/*
+ * Statically allocated for root filesystem.
+ * Mounts should be dynamically allocated since they can
+ * be unmounted during the system's life. Root is only
+ * unmounted at shutdown.
+ */
 static struct generic_filesystem ext2_fs_struct;
+
+static void ext2_mount_root(void);
 
 int
 ext2_init(void)
 {
 	struct buffer *bp;
-	struct ext2_inode_m *ip;
 	struct ext2_superblock_m *sb;
 	int tmp1, tmp2;
 
@@ -69,8 +77,7 @@ ext2_init(void)
 	blk_devio(bp, READ);
 	memmove(sb->bgd_table, bp->b_data, tmp1 * sizeof(*sb->bgd_table));
 	ext2_inodes_init();
-	if ((ip = ext2_iget(CONFIG_FS_ROOT_DEV, EXT2_ROOT_INO)) == NULL)
-		panic("ext2_init: Unable to get root inode");
+	register_mount_root_routine(ext2_mount_root);
 	return 0;
 }
 
@@ -88,4 +95,13 @@ get_ext2_superblock(dev_t dev)
 	if (fs->f_fs != EXT2)
 		panic("get_ext2_superblock: mount table corrupted");
 	return (struct ext2_superblock_m *)fs->f_super;
+}
+
+static void
+ext2_mount_root(void)
+{
+	current_process->root_inode = ext2_iget(CONFIG_FS_ROOT_DEV, EXT2_ROOT_INO);
+	if (current_process->root_inode == NULL)
+		panic("ext2_mount_root: unable to get root inode");
+	current_process->cwd_inode = current_process->root_inode;
 }
