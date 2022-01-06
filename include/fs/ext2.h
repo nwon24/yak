@@ -125,15 +125,45 @@ struct ext2_inode {
 	uint32_t i_file_acl;
 	uint32_t i_dir_acl;
 	uint32_t i_faddr;
-	uint32_t i_osd2;
+	uint32_t i_osd2[3];
 };
 
+/*
+ * Structure of inode in memory.
+ */
+struct ext2_inode_m {
+	struct ext2_inode i_ino;
+	mutex i_mutex;
+	dev_t i_dev;
+	ino_t i_num;
+	int i_flags;
+	int i_count;
+
+	struct ext2_inode_m *i_prev_free;
+	struct ext2_inode_m *i_next_free;
+	struct ext2_inode_m *i_next;
+	struct ext2_inode_m *i_prev;
+};
+
+#define I_MODIFIED	(1 << 0)
+#define I_MOUNT		(1 << 1)
+
 int ext2_init(void);
-struct ext2_superblock *get_ext2_superblock(struct generic_filesystem *fs);
+struct ext2_superblock_m *get_ext2_superblock(dev_t dev);
 size_t ext2_get_attribute(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
 
-#define EXT2_BLOCKSIZE(dev)	(1024 << (get_ext2_superblock((dev)))->s_log_block_size)
-#define EXT2_MTIME(dev)		(get_ext2_superblock((dev))->s_mtime)
-#define EXT2_WTIME(dev)		(get_ext2_superblock((dev))->s_wtime)
+struct ext2_inode_m *ext2_iget(dev_t dev, ino_t num);
+void ext2_inodes_init(void);
+
+#define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
+#define EXT2_MTIME(s)		((s)->sb.s_mtime)
+#define EXT2_WTIME(s)		((s)->sb.s_wtime)
+
+#define EXT2_INODE_SIZE(s)	((s)->sb.s_rev_level >= 1 ? (s)->sb.s_inode_size : 128)
+#define EXT2_INODES_PER_BLOCK(s)	(EXT2_BLOCKSIZE((s)) / EXT2_INODE_SIZE((s)))
+#define EXT2_INODES_PER_GROUP(s)	((s)->sb.s_inodes_per_group)
+#define EXT2_BLOCK_GROUP(ino, s)	(((ino)->i_num - 1) / EXT2_INODES_PER_GROUP((s)))
+#define EXT2_INODE_INDEX(ino, s)	(((ino)->i_num - 1) % EXT2_INODES_PER_GROUP((s)))
+#define EXT2_INODE_BLOCK(ind, s)	((ind) * EXT2_INODE_SIZE((s)) / EXT2_BLOCKSIZE((s)))
 
 #endif /* FS_EXT2_H */
