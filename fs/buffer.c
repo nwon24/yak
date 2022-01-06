@@ -30,7 +30,6 @@ static void remove_from_free_list(struct buffer *bp);
 static void remove_from_hash_queue(struct buffer *bp);
 static void put_into_free_list(struct buffer *bp);
 static void put_into_hash_queue(struct buffer *bp);
-static void bwrite(struct buffer *bp);
 
 struct buffer *
 getblk(dev_t dev, size_t blknr)
@@ -54,6 +53,7 @@ getblk(dev_t dev, size_t blknr)
 		}
 		remove_from_free_list(bp);
 		if (bp->b_flags & B_DWRITE) {
+			bp->b_flags &= ~B_DWRITE;
 			bwrite(bp);
 			continue;
 		}
@@ -203,8 +203,23 @@ put_into_hash_queue(struct buffer *bp)
 static void
 put_into_free_list(struct buffer *bp)
 {
-	bp->b_prev_free = free_list.b_prev_free;
-	bp->b_next_free = &free_list;
-	free_list.b_prev_free->b_next_free = bp;
-	free_list.b_prev_free = bp;
+	if (!(bp->b_flags & B_DWRITE) && !(bp->b_flags & B_ERROR)) {
+		/*
+		 * Contents are valid and there has bee no error.
+		 * Put it at the end of the free list.
+		 */
+		bp->b_prev_free = free_list.b_prev_free;
+		bp->b_next_free = &free_list;
+		free_list.b_prev_free->b_next_free = bp;
+		free_list.b_prev_free = bp;
+	} else {
+		/*
+		 * Buffer contents are old.
+		 * Put it at the start of the free list.
+		 */
+		bp->b_prev_free = &free_list;
+		bp->b_next_free = free_list.b_next_free;
+		free_list.b_next_free->b_prev_free = bp;
+		free_list.b_next_free = bp;
+	}
 }
