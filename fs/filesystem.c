@@ -17,6 +17,8 @@ find_filesystem(dev_t dev)
 	struct generic_filesystem **fs;
 
 	for (fs = mount_table; fs < mount_table + NR_MOUNTS; fs++) {
+		if (*fs == NULL)
+			continue;
 		if ((*fs)->f_dev == dev)
 			return *fs;
 	}
