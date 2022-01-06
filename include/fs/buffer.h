@@ -38,5 +38,6 @@ void buffer_init(void);
 struct buffer *bread(dev_t dev, size_t blknr);
 struct buffer *getblk(dev_t dev, size_t blknr);
 void brelse(struct buffer *bp);
+void bwrite(struct buffer *bp);
 
 #endif /* BUFFER_H */
