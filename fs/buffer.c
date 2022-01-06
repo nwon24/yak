@@ -60,6 +60,9 @@ getblk(dev_t dev, size_t blknr)
 		mutex_lock(&bp->b_mutex);
 		bp->b_dev = dev;
 		bp->b_blknr = blknr;
+		bp->b_blksize = filesystem_get_attr(dev, GET_BLOCKSIZE);
+		if (bp->b_blksize)
+			bp->b_data = kvmalloc(bp->b_blksize);
 		bp->b_flags = 0;
 		remove_from_hash_queue(bp);
 		put_into_hash_queue(bp);
@@ -141,14 +144,17 @@ bread(dev_t dev, size_t blknr)
 static struct buffer *
 in_hash_queue(dev_t dev, size_t blknr)
 {
-	struct buffer *bp;
+	struct buffer *bp, *tmp;
 
 	bp = hash_queues[BUF_HASH(dev, blknr)];
-	while (bp != NULL) {
+	if (bp == NULL)
+		return NULL;
+	tmp = bp;
+	do {
 		if (bp->b_dev == dev && bp->b_blknr == blknr)
 			return bp;
 		bp = bp->b_next;
-	}
+	} while (bp != tmp);
 	return NULL;
 }
 
