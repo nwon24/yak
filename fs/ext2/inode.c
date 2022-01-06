@@ -197,7 +197,8 @@ write_inode(struct ext2_inode_m *ip)
 	i = (struct ext2_inode *)(bp->b_data + EXT2_INODE_SIZE(sb) * (index % EXT2_INODES_PER_BLOCK(sb)));
 	*i = ip->i_ino;
 	ip->i_flags &= ~I_MODIFIED;
-	brelse(bp);
+	/* bwrite() releases the buffer */
+	bwrite(bp);
 }
 
 static struct ext2_inode_m *
