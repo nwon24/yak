@@ -23,6 +23,7 @@ int
 ext2_init(void)
 {
 	struct buffer *bp;
+	struct ext2_inode_m *ip;
 	struct ext2_superblock_m *sb;
 	int tmp1, tmp2;
 
@@ -67,6 +68,9 @@ ext2_init(void)
 		bp->b_blknr = 1;
 	blk_devio(bp, READ);
 	memmove(sb->bgd_table, bp->b_data, tmp1 * sizeof(*sb->bgd_table));
+	ext2_inodes_init();
+	if ((ip = ext2_iget(CONFIG_FS_ROOT_DEV, EXT2_ROOT_INO)) == NULL)
+		panic("ext2_init: Unable to get root inode");
 	return 0;
 }
 
@@ -74,10 +78,14 @@ ext2_init(void)
  * We have to make sure this never fails as we use
  * macros that depend on it.
  */
-struct ext2_superblock *
-get_ext2_superblock(struct generic_filesystem *fs)
+struct ext2_superblock_m *
+get_ext2_superblock(dev_t dev)
 {
+	struct generic_filesystem *fs;
+
+	if ((fs = find_filesystem(dev)) == NULL)
+		panic("get_ext2_superblock: invalid device");
 	if (fs->f_fs != EXT2)
 		panic("get_ext2_superblock: mount table corrupted");
-	return (struct ext2_superblock *)fs->f_super;
+	return (struct ext2_superblock_m *)fs->f_super;
 }
