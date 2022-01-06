@@ -9,6 +9,8 @@
 
 #include <drivers/timer.h>
 
+#include <fs/fs.h>
+
 #include <generic/errno.h>
 #include <generic/string.h>
 
@@ -95,6 +97,7 @@ processes_init(void)
 	proc->queue_next = proc->queue_prev = NULL;
 	system_change_state(SYSTEM_MULTITASKING);
 	run_multitasking_hooks();
+	do_mount_root();
 	/* Timer init should be called from 'arch_processes_init' */
 	if (arch_processes_init((uint32_t)&_start_user_head, &_end_user_head - &_start_user_head) < 0)
 		panic("Unable to initialise processes");;
