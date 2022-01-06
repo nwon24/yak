@@ -11,6 +11,8 @@
 struct generic_filesystem *mount_table[NR_MOUNTS];
 int nr_mounts = 0;
 
+void (*do_mount_root)(void);
+
 struct generic_filesystem *
 find_filesystem(dev_t dev)
 {
@@ -42,4 +44,10 @@ filesystem_get_attr(dev_t dev, enum fs_attribute_cmd cmd)
 	if ((fs = find_filesystem(dev)) == NULL)
 		return 0;
 	return fs->f_driver->fs_get_attribute(fs, cmd);
+}
+
+void
+register_mount_root_routine(void (*routine)(void))
+{
+	do_mount_root = routine;
 }
