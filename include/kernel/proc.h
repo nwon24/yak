@@ -30,6 +30,9 @@ struct process {
 	struct proc_image image;
 	struct process *queue_next;
 	struct process *queue_prev;
+
+	void *root_inode;
+	void *cwd_inode;
 };
 
 extern struct process *current_process;
