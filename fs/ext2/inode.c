@@ -29,7 +29,9 @@ static struct ext2_inode_m *in_hash_queue(dev_t dev, ino_t num);
 static void remove_from_free_list(struct ext2_inode_m *ip);
 static void remove_from_hash_queue(struct ext2_inode_m *ip);
 static void put_into_hash_queue(struct ext2_inode_m *ip);
+static void put_into_free_list(struct ext2_inode_m *ip);
 static void read_inode(struct ext2_inode_m *ip);
+static void write_inode(struct ext2_inode_m *ip);
 
 /*
  * Pretty much the same as how the buffer cache
@@ -98,6 +100,23 @@ ext2_iget(dev_t dev, ino_t num)
 	}
 }
 
+void
+ext2_iput(struct ext2_inode_m *ip)
+{
+	if (ip->i_mutex != MUTEX_LOCKED)
+		mutex_lock(&ip->i_mutex);
+	if (ip->i_count-- == 0)
+		panic("ext2_iput: ip->i_count = 0");
+	if (ip->i_count == 0) {
+		if (ip->i_ino.i_links_count == 0)
+			printk("ext2_iput: TODO: ifree");
+		if (ip->i_flags & I_MODIFIED)
+			write_inode(ip);
+		put_into_free_list(ip);
+	}
+	mutex_unlock(&ip->i_mutex);
+}
+
 static void
 remove_from_free_list(struct ext2_inode_m *ip)
 {
@@ -161,6 +180,26 @@ read_inode(struct ext2_inode_m *ip)
 	brelse(bp);
 }
 
+static void
+write_inode(struct ext2_inode_m *ip)
+{
+	struct ext2_superblock_m *sb;
+	struct ext2_inode *i;
+	struct buffer *bp;
+	struct ext2_blk_group_desc *bgd;
+	int index, block;
+
+	sb = get_ext2_superblock(ip->i_dev);
+	bgd = sb->bgd_table + EXT2_BLOCK_GROUP(ip, sb);
+	index = EXT2_INODE_INDEX(ip, sb);
+	block = EXT2_INODE_BLOCK(index, sb);
+	bp = bread(ip->i_dev, block + bgd->bg_inode_table);
+	i = (struct ext2_inode *)(bp->b_data + EXT2_INODE_SIZE(sb) * (index % EXT2_INODES_PER_BLOCK(sb)));
+	*i = ip->i_ino;
+	ip->i_flags &= ~I_MODIFIED;
+	brelse(bp);
+}
+
 static struct ext2_inode_m *
 in_hash_queue(dev_t dev, ino_t num)
 {
@@ -179,4 +218,15 @@ in_hash_queue(dev_t dev, ino_t num)
 		ip = ip->i_next;
 	} while (ip != tmp);
 	return NULL;
+}
+
+static void
+put_into_free_list(struct ext2_inode_m *ip)
+{
+	if (ip->i_count)
+		panic("put_into_free_list: inode reference count is not zero");
+	ip->i_next_free = &free_list;
+	ip->i_prev_free = free_list.i_prev_free;
+	free_list.i_prev_free->i_next_free = ip;
+	free_list.i_prev_free = ip;
 }
