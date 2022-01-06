@@ -46,5 +46,7 @@ struct generic_filesystem {
 struct generic_filesystem *find_filesystem(dev_t dev);
 struct generic_filesystem *register_filesystem(struct generic_filesystem *fs);
 size_t filesystem_get_attr(dev_t dev, enum fs_attribute_cmd cmd);
+void register_mount_root_routine(void (*routine)(void));
+extern void (*do_mount_root)(void);
 
 #endif /* FS_H */
