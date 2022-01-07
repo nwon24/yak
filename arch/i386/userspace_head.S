@@ -13,7 +13,11 @@ first_user_code:
 	test	%eax, %eax
 	jz	2f
 1:	jmp	.
-2:	movl	$0, %eax
-	movl	$1, %ebx
+2:	movl	$__NR_open, %eax
+	movl	$file, %ebx
+	movl	$0, %ecx
+	movl	$0, %edx
 	int	$0x80
 3:	jmp	.
+
+file:	.asciz	"/root"
