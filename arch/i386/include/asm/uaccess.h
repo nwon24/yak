@@ -10,7 +10,7 @@
  * ever changes. We always just need to check the pointer
  * is okay and mapped.
  */
-#define get_ubyte(ptr)	(*(uin8_t *)(ptr))
+#define get_ubyte(ptr)	(*(uint8_t *)(ptr))
 #define get_uword(ptr)	(*(uint16_t *)(ptr))
 #define get_ulong(ptr)	(*(uint32_t *)(ptr))
 
