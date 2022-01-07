@@ -103,6 +103,7 @@ struct ext2_blk_group_desc {
 struct ext2_superblock_m {
 	struct ext2_superblock sb;
 	struct ext2_blk_group_desc *bgd_table;
+	int nr_blk_group;
 	mutex mutex;
 	int modified;
 };
@@ -164,7 +165,10 @@ struct ext2_superblock_m *get_ext2_superblock(dev_t dev);
 size_t ext2_get_attribute(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
 
 struct ext2_inode_m *ext2_iget(dev_t dev, ino_t num);
+void ext2_iput(struct ext2_inode_m *ip);
 void ext2_inodes_init(void);
+
+ssize_t ext2_balloc(dev_t dev, ino_t num);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
