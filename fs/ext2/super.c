@@ -67,6 +67,7 @@ ext2_init(void)
 		tmp2 = sb->sb.s_blocks_count / sb->sb.s_blocks_per_group + 1;
 	if (tmp1 != tmp2)
 		panic("ext2_init: Superblock corrupted");
+	sb->nr_blk_group = tmp1;
 	if ((sb->bgd_table = kvmalloc(tmp1 * sizeof(*sb->bgd_table))) == NULL)
 		panic("ext2_init: Unable to allocate memory for block group descriptor table");
 	bp->b_blksize = 1024 << sb->sb.s_log_block_size;
