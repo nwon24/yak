@@ -33,7 +33,9 @@ struct process {
 	struct process *queue_next;
 	struct process *queue_prev;
 
+	struct generic_filesystem *root_fs;
 	void *root_inode;
+	struct generic_filesystem *cwd_fs;
 	void *cwd_inode;
 
 	struct file *file_table[NR_OPEN];
