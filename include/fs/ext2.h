@@ -168,6 +168,8 @@ struct ext2_inode_m *ext2_iget(dev_t dev, ino_t num);
 void ext2_iput(struct ext2_inode_m *ip);
 void ext2_inodes_init(void);
 
+struct ext2_inode_m *ext2_namei(const char *path);
+
 ssize_t ext2_balloc(dev_t dev, ino_t num);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
