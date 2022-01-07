@@ -5,6 +5,8 @@
 
 #include <asm/cpu_state.h>
 
+#include <fs/fs.h>
+
 #include <kernel/mutex.h>
 
 #define NR_PROC	64
@@ -33,6 +35,8 @@ struct process {
 
 	void *root_inode;
 	void *cwd_inode;
+
+	struct file *file_table[NR_OPEN];
 };
 
 extern struct process *current_process;
