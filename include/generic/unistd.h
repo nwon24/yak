@@ -1,6 +1,6 @@
 #ifndef UNISTD_H
 #define UNISTD_H
 
-#define __NR_fork	1
+#include <asm/unistd.h>
 
 #endif /* UNISTD_H */
