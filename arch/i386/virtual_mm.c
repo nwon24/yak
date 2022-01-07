@@ -5,6 +5,7 @@
 
 #include <stddef.h>
 
+#include <asm/cpu_state.h>
 #include <asm/paging.h>
 
 #include <kernel/debug.h>
@@ -203,4 +204,37 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 	}
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
+}
+
+/*
+ * Check that a pointer provided by userspace is valid.
+ */
+int
+check_user_ptr(void *addr)
+{
+	uint32_t *pg_dir, *pg_table, tmp, old;
+	int ret = 0;
+
+	tmp = (uint32_t)addr;
+	old = get_tmp_page();
+
+	pg_dir = (uint32_t *)(current_cpu_state->cr3);
+	tmp_map_page((uint32_t)pg_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	tmp >>= VIRT_ADDR_PG_DIR_SHIFT;
+	pg_dir = (uint32_t *)VIRT_ADDR_TMP_PAGE;
+	if (!(pg_dir[tmp] & PAGE_PRESENT) || !(pg_dir[tmp] & PAGE_USER))
+		goto out;
+	pg_table = (uint32_t *)(pg_dir[tmp] & 0xFFFFF000);
+	tmp >>= VIRT_ADDR_PG_TAB_SHIFT;
+	tmp_map_page((uint32_t)pg_table);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	pg_table = (uint32_t *)VIRT_ADDR_TMP_PAGE;
+	if (!(pg_table[tmp] & PAGE_PRESENT) || !(pg_table[tmp] & PAGE_USER))
+		goto out;
+	ret = pg_table[tmp] & VIRT_ADDR_FRAME_MASK;
+ out:
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	return ret;
 }
