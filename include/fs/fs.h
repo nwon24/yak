@@ -43,6 +43,14 @@ struct generic_filesystem {
 	struct fs_driver_ops *f_driver;
 };
 
+struct file {
+	void *f_inode;	/* Filesystem inode */
+	off_t f_pos;	/* Position in file */
+	int f_mode;
+	int f_flags;
+	unsigned int f_count;
+};
+
 struct generic_filesystem *find_filesystem(dev_t dev);
 struct generic_filesystem *register_filesystem(struct generic_filesystem *fs);
 size_t filesystem_get_attr(dev_t dev, enum fs_attribute_cmd cmd);
