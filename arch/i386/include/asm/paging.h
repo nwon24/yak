@@ -17,6 +17,7 @@ uint32_t virt_map_phys(uint32_t phys);
 void virt_unmap_virt(uint32_t virt);
 uint32_t virt_map_first_proc(uint32_t start, uint32_t len);
 void copy_address_space(uint32_t from_pg_dir, uint32_t to_pg_dir);
+int check_user_ptr(void *addr);
 
 extern uint32_t current_page_directory;
 
