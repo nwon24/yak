@@ -4,12 +4,20 @@
 #include <stddef.h>
 
 #include <asm/types.h>
+#include <asm/syscall.h>
+
+#include <fs/buffer.h>
+
+#include <generic/unistd.h>
 
 #include <kernel/mutex.h>
 
 #define DEFAULT_BLOCK_SIZE	1024
 
 #define NR_MOUNTS	10
+
+#define NR_FILE		64
+#define NR_OPEN		20
 
 enum {
 	READ,
@@ -55,6 +63,16 @@ struct generic_filesystem *find_filesystem(dev_t dev);
 struct generic_filesystem *register_filesystem(struct generic_filesystem *fs);
 size_t filesystem_get_attr(dev_t dev, enum fs_attribute_cmd cmd);
 void register_mount_root_routine(void (*routine)(void));
+
 extern void (*do_mount_root)(void);
+
+int kernel_open(const char *path, int flags, int mode);
+
+static inline void
+fs_init(void)
+{
+	buffer_init();
+	register_syscall(__NR_open, (uint32_t)kernel_open, 3);
+}
 
 #endif /* FS_H */
