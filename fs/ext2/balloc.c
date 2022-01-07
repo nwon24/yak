@@ -67,7 +67,7 @@ balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *
 			block = 0;
 			goto out;
 		}
-		if (i == 8) {
+		if (i == 7) {
 			i = 0;
 			p++;
 		} else {
