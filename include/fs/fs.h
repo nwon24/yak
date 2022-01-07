@@ -51,6 +51,8 @@ struct generic_filesystem {
 	struct fs_driver_ops *f_driver;
 };
 
+extern struct generic_filesystem *mount_table[];
+
 struct file {
 	void *f_inode;	/* Filesystem inode */
 	off_t f_pos;	/* Position in file */
