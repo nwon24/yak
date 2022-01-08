@@ -19,7 +19,7 @@ i386_move_to_user(uint32_t entry, uint32_t esp)
 		"pushl %2\n\t"
 		"pushl %3\n\t"
 		"iret\n\t"
-		: : "a" (USER_DS_SELECTOR), "i" (esp), "i" (USER_CS_SELECTOR), "i" (entry));
+		: : "a" (USER_DS_SELECTOR), "g" (esp), "i" (USER_CS_SELECTOR), "g" (entry));
 }
 #else
 void i386_move_to_user(uint32_t entry, uint32_t esp);
