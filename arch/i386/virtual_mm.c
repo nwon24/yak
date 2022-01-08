@@ -136,7 +136,7 @@ uint32_t
 virt_map_first_proc(uint32_t start, uint32_t size)
 {
 	uint32_t pg_table, pg_dir, old, tmp;
-	int nr_tables, i, j;
+	int nr_tables, i, j, index;
 
 	old = get_tmp_page();
 	if ((pg_dir = page_frame_alloc()) == NO_FREE_PAGE) {
@@ -159,14 +159,15 @@ virt_map_first_proc(uint32_t start, uint32_t size)
 		tmp_map_page(pg_table);
 		tlb_flush(VIRT_ADDR_TMP_PAGE);
 		memset((void *)VIRT_ADDR_TMP_PAGE, 0, PAGE_SIZE);
-		for (i = 0; i < PAGE_SIZE; i += 4, tmp += PAGE_SIZE) {
+		index = tmp >> VIRT_ADDR_PG_DIR_SHIFT;
+		for (i = ((tmp >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK) << 2; i < PAGE_SIZE; i += 4, tmp += PAGE_SIZE) {
 			if (tmp > start + size)
 				break;
 			*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = tmp | PAGE_PRESENT | PAGE_USER;
 		}
 		tmp_map_page(pg_dir);
 		tlb_flush(VIRT_ADDR_TMP_PAGE);
-		*(uint32_t *)(VIRT_ADDR_TMP_PAGE + (j << 2)) = pg_table | PAGE_PRESENT | PAGE_USER;
+		*(uint32_t *)(VIRT_ADDR_TMP_PAGE + (index << 2) + (j << 2)) = pg_table | PAGE_PRESENT | PAGE_USER;
 	}
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
