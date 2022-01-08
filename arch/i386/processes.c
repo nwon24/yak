@@ -65,7 +65,7 @@ arch_processes_init(uint32_t start, uint32_t size)
 	 * This is really quite ugly...
 	 */
 	timer_init();
-	move_to_user(0, 4096);
+	move_to_user(start, start + PAGE_SIZE);
 	return 0;
 }
 
@@ -91,7 +91,7 @@ arch_fork(int child, struct process *proc)
 	memmove((void *)new->kernel_stack, new, IRET_FRAME_SIZE);
 	new->kernel_stack -= sizeof(*proc->context);
 	proc->context = (struct context *)new->kernel_stack;
-	memmove(proc->context, 0, sizeof(uint32_t) * NR_REGS);
+	memset(proc->context, 1, sizeof(uint32_t) * NR_REGS);
 	proc->context->eip = (uint32_t)restart;
 	return child;
 }
