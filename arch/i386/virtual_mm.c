@@ -130,7 +130,8 @@ virt_unmap_virt(uint32_t virt)
 
 /*
  * Used for the setting up of the first process.
- * It is simply mapped to virtual address 0.
+ * It is mapped to a virtual address that corresponds to its physical
+ * address, as provided by the argument START.
  */
 uint32_t
 virt_map_first_proc(uint32_t start, uint32_t size)
