@@ -41,6 +41,11 @@
 #define EXT2_S_IWOTH	0x0002	/* others write */
 #define EXT2_S_IXOTH	0x0001	/* others execute */
 
+#define EXT2_DIRECT_BLOCKS	11
+#define EXT2_INDIRECT_BLOCK	12
+#define EXT2_DINDIRECT_BLOCK	13
+#define EXT2_TINDIRECT_BLOCK	14
+
 struct ext2_superblock {
 	uint32_t s_inodes_count;
 	uint32_t s_blocks_count;
@@ -168,9 +173,11 @@ struct ext2_inode_m *ext2_iget(dev_t dev, ino_t num);
 void ext2_iput(struct ext2_inode_m *ip);
 void ext2_inodes_init(void);
 
-struct ext2_inode_m *ext2_namei(const char *path);
+struct ext2_inode_m *ext2_namei(const char *path, int *error);
 
 ssize_t ext2_balloc(dev_t dev, ino_t num);
+
+void *ext2_open(const char *path, int flags, int mode, int *err);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
