@@ -41,6 +41,7 @@ struct generic_filesystem;
  */
 struct fs_driver_ops {
 	size_t (*fs_get_attribute)(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
+	void *(*fs_open)(const char *path, int flags, int mode, int *err);
 };
 
 struct generic_filesystem {
