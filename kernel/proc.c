@@ -128,6 +128,10 @@ kernel_fork(void)
 	proc->tty = current_process->tty;
 	proc->counter = current_process->quanta;
 	proc->queue_next = proc->queue_prev = NULL;
+	proc->root_inode = current_process->root_inode;
+	proc->cwd_inode = current_process->cwd_inode;
+	proc->root_fs = current_process->root_fs;
+	proc->cwd_fs = current_process->cwd_fs;
 	memmove(&proc->image, &current_process->image, sizeof(proc->image));
 	adjust_proc_queues(proc);
 	return last_pid;
