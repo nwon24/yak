@@ -7,7 +7,7 @@
 static inline void *
 __arch_memcpy(void *dst, const void *src, size_t n)
 {
-	__asm__("cld; rep; movsb" : : "c" (n), "D" ((uint32_t)dst), "S" ((uint32_t)src));
+	__asm__("cld; rep; movsb" : : "c" (n), "D" ((uint32_t)dst), "S" ((uint32_t)src) :);
         return dst;
 }
 
@@ -39,7 +39,7 @@ static inline void *
 __arch_memset(void *bufp, int c, size_t n)
 {
         __asm__("cld; rep; stosb\n\t"
-                : : "D" (bufp), "a" (c), "c" (n));
+                : "+D" (bufp), "+c" (n) : "a" (c));
         return bufp;
 }
 
