@@ -83,6 +83,8 @@ ata_poll_drq(struct ata_device *dev)
 int
 ata_error(struct ata_device *dev)
 {
+	if (dev == NULL)
+		panic("Bizzare error: dev == NULL");
 	return ata_reg_read(dev, ATA_REG_ALT_STATUS) & ATA_STATUS_ERR;
 }
 
