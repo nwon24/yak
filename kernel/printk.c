@@ -127,7 +127,7 @@ vsprintf(char *buf, const char *fmt, va_list args)
 			p = itoa(p, n, 16, UNSIGNED);
 			break;
 		case 'c':
-			*p = (char)va_arg(args, int);
+			*p++ = (char)va_arg(args, int);
 			break;
 		case 's':
 			tmp = va_arg(args, char *);
