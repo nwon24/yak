@@ -188,5 +188,6 @@ drive_rw(int minor, size_t block_off, char *buf, size_t count, int rw)
 	if (block_off > dev->lba_len)
 		return -1;
 	block = dev->lba_start + block_off;
+	current_driver = dev->driver;
 	return dev->driver->drive_start(disk, buf, count, block, rw);
 }
