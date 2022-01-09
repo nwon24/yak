@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include <asm/paging.h>
+#include <asm/interrupts.h>
 
 #include <generic/string.h>
 
@@ -116,6 +117,7 @@ ata_dma_start_request(struct ata_request *req)
 				 bus_master_read(req->dev, BUS_MASTER_STATUS_SEC) & ~BUS_MASTER_STATUS_IRQ & ~BUS_MASTER_STATUS_ERR,
 				 BUS_MASTER_STATUS_SEC);
 	}
+	disable_intr();
 	ata_start_request(req);
 	if (req->dev->drive == ATA_BUS_DRIVE1)
 		bus_master_write(req->dev, BUS_MASTER_CMD_START | rw_bit, BUS_MASTER_CMD_PRI);
