@@ -102,11 +102,15 @@ ata_dma_start_request(struct ata_request *req)
 	ata_dma_current_prdt.bcount = req->count * SECTOR_SIZE;
 	ata_dma_current_prdt.reserved = 1 << 15;
 	if (req->dev->drive == ATA_BUS_DRIVE1) {
+		if (bus_master_read(req->dev, BUS_MASTER_CMD_PRI) & BUS_MASTER_CMD_START)
+			panic("ata_dma_start: start bit is set");
 		bus_master_write(req->dev, PHYS_ADDR(&ata_dma_current_prdt), BUS_MASTER_PRDT_PRI);
 		bus_master_write(req->dev,
 				 bus_master_read(req->dev, BUS_MASTER_STATUS_PRI) & ~BUS_MASTER_STATUS_IRQ & ~BUS_MASTER_STATUS_ERR,
 				 BUS_MASTER_STATUS_PRI);
 	} else {
+		if (bus_master_read(req->dev, BUS_MASTER_CMD_SEC) & BUS_MASTER_CMD_START)
+			panic("ata_dma_start: start bit is set");
 		bus_master_write(req->dev, PHYS_ADDR(&ata_dma_current_prdt), BUS_MASTER_PRDT_SEC);
 		bus_master_write(req->dev,
 				 bus_master_read(req->dev, BUS_MASTER_STATUS_SEC) & ~BUS_MASTER_STATUS_IRQ & ~BUS_MASTER_STATUS_ERR,
