@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 #include <asm/port_io.h>
+#include <asm/interrupts.h>
 
 #include <drivers/ata.h>
 #include <drivers/drive.h>
@@ -67,7 +68,7 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 	if (system_is_multitasking()) {
 		/* Use IRQs */
 		if (ata_add_request(req))
-			ata_pio_start_request(req);
+			ata_pio_start_request(ata_current_req);
 	} else {
 		ata_start_request(req);
 		if (rw == 0)
@@ -111,12 +112,15 @@ ata_pio_read_intr(void)
 	ata_reg_read(ata_current_req->dev, ATA_REG_STATUS);
 	ata_pio_transfer(ata_current_req->dev, ata_current_req->buf, ATA_PIO_IN);
 	ata_current_req->buf = (char *)ata_current_req->buf + SECTOR_SIZE;
-	if (!ata_current_req->count--) {
+	ata_current_req->count--;
+	if (ata_current_req->count == 0) {
 		ata_finish_request(ata_current_req);
 		wakeup(ata_current_req);
 		ata_current_req = ata_current_req->next;
 		if (ata_current_req != NULL)
 			ata_pio_start_request(ata_current_req);
+		else
+			ata_pio_driver.drive_intr = NULL;
 	}
 }
 
@@ -126,13 +130,16 @@ ata_pio_write_intr(void)
 	ata_reg_read(ata_current_req->dev, ATA_REG_STATUS);
 	ata_pio_transfer(ata_current_req->dev, ata_current_req->buf, ATA_PIO_OUT);
 	ata_current_req->buf = (char *)ata_current_req->buf + SECTOR_SIZE;
-	if (!ata_current_req->count--) {
+	ata_current_req->count--;
+	if (ata_current_req->count == 0) {
 		ata_flush(ata_current_req->dev);
 		ata_finish_request(ata_current_req);
 		wakeup(ata_current_req);
 		ata_current_req = ata_current_req->next;
 		if (ata_current_req != NULL)
 			ata_pio_start_request(ata_current_req);
+		else
+			ata_pio_driver.drive_intr = NULL;
 	}
 }
 
