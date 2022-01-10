@@ -178,8 +178,13 @@ remove_from_hash_queue(struct buffer *bp)
 		return;
 	if (bp->b_prev == NULL || bp->b_next == NULL)
 		panic("remove_from_hash_queue: bp is not on a hash queue or queue has been corrupted!");
-	bp->b_prev->b_next = bp->b_next;
-	bp->b_next->b_prev = bp->b_prev;
+	if (bp->b_prev == bp && bp->b_next == bp) {
+		hash_queues[BUF_HASH(bp->b_dev, bp->b_blknr)] = NULL;
+	} else {
+		bp->b_prev->b_next = bp->b_next;
+		bp->b_next->b_prev = bp->b_prev;
+	}
+	bp->b_prev = bp->b_next = NULL;
 }
 
 static void
