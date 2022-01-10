@@ -13,7 +13,7 @@
 
 #include <kernel/debug.h>
 
-#define IN_A_QUEUE(proc)	((proc)->queue_next != NULL || (proc)->queue_prev != NULL)
+#define IN_A_QUEUE(proc)	((proc)->queue_next != NULL && (proc)->queue_prev != NULL)
 
 void arch_switch_to(struct process *prev, struct process *new);
 
@@ -31,6 +31,8 @@ schedule(void)
 	for (proc = process_queues[HIGHEST_PRIORITY]; proc >= process_queues[LOWEST_PRIORITY]; proc--) {
 		if (!proc)
 			continue;
+		if (proc->state == PROC_BLOCKED)
+			__asm__("cli; hlt");
 		proc->state = PROC_RUNNING;
 		if (current_process != FIRST_PROC && current_process->quanta != current_process->counter)
 			current_process->priority = current_process->quanta / (current_process->quanta - current_process->counter);
@@ -65,6 +67,7 @@ wakeup(void *addr)
 	struct process *proc;
 	int sched = 0;
 
+	printk("wakeup %p\r\n", addr);
 	disable_intr();
 	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
 		if (proc->sleeping_on == addr) {
@@ -88,21 +91,26 @@ adjust_proc_queues(struct process *proc)
 		add_to_queue(proc);
 }
 
+/*
+ * The process queues are doubly linked lists. If a process is on a queue,
+ * both of its pointers should not be NULL.
+ */
 static void
 remove_from_queue(struct process *proc)
 {
-	if (!proc->queue_prev && !proc->queue_next)
+	if (proc->queue_prev == NULL && proc->queue_next == NULL)
+		/* Not in a queue, should not happen */
 		return;
-	if (!proc->queue_prev && proc->queue_next) {
-		/* First process in queue */
-		process_queues[proc->priority] = proc->queue_next;
-	} else if (proc->queue_prev && !proc->queue_next) {
-		/* End process in queue */
-		proc->queue_prev->queue_next = NULL;
+	if (proc->queue_prev == NULL || proc->queue_next == NULL) {
+		panic("Process queues corrupted");
 	} else {
-		/* Middle of queue */
-		proc->queue_next->queue_prev = proc->queue_prev;
-		proc->queue_prev->queue_next = proc->queue_next;
+		if (proc->queue_next == proc && proc->queue_prev == proc) {
+			/* Only process in queue */
+			process_queues[proc->priority] = NULL;
+	        } else {
+			proc->queue_next->queue_prev = proc->queue_prev;
+			proc->queue_prev->queue_next = proc->queue_next;
+		}
 	}
 	proc->queue_next = proc->queue_prev = NULL;
 }
@@ -110,15 +118,16 @@ remove_from_queue(struct process *proc)
 static void
 add_to_queue(struct process *proc)
 {
-	struct process *p;
+	struct process *p, *tmp;
 
 	if ((p = process_queues[proc->priority]) == NULL) {
 		process_queues[proc->priority] = proc;
-		proc->queue_prev = proc->queue_next = NULL;
+		proc->queue_prev = proc->queue_next = proc;
 		return;
 	}
-	for ( ; p->queue_next != NULL; p = p->queue_next);
+	tmp = p;
+	for ( ; p->queue_next != tmp; p = p->queue_next);
 	p->queue_next = proc;
 	proc->queue_prev = p;
-	proc->queue_next = NULL;
+	proc->queue_next = tmp;
 }
