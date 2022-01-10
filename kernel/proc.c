@@ -94,7 +94,8 @@ processes_init(void)
 	proc->image.vir_code_base = (uint32_t)&_start_user_head;
 	proc->image.vir_code_len = &_end_user_head - &_start_user_head;
 	process_queues[proc->priority] = proc;
-	proc->queue_next = proc->queue_prev = NULL;
+	/* Doubly linked list that just points to itself. */
+	proc->queue_next = proc->queue_prev = proc;
 	do_mount_root();
 	run_multitasking_hooks();
 	system_change_state(SYSTEM_MULTITASKING);
@@ -132,6 +133,8 @@ kernel_fork(void)
 	proc->cwd_inode = current_process->cwd_inode;
 	proc->root_fs = current_process->root_fs;
 	proc->cwd_fs = current_process->cwd_fs;
+	/* Not in queue, let 'adjust_proc_queues' take care of that. */
+	proc->queue_prev = proc->queue_next = NULL;
 	memmove(&proc->image, &current_process->image, sizeof(proc->image));
 	adjust_proc_queues(proc);
 	return last_pid;
