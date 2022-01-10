@@ -53,6 +53,8 @@ switch_proc:
 void
 sleep(void *addr)
 {
+	if (current_process == FIRST_PROC)
+		panic("Trying to sleep on first process");
 	disable_intr();
 	current_process->state = PROC_BLOCKED;
 	current_process->sleeping_on = addr;
@@ -67,10 +69,9 @@ wakeup(void *addr)
 	struct process *proc;
 	int sched = 0;
 
-	printk("wakeup %p\r\n", addr);
 	disable_intr();
 	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
-		if (proc->sleeping_on == addr) {
+		if (proc->state == PROC_BLOCKED && proc->sleeping_on == addr) {
 			sched = 1;
 			proc->state = PROC_RUNNABLE;
 			proc->sleeping_on = NULL;
