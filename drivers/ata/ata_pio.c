@@ -87,6 +87,7 @@ ata_pio_start_request(struct ata_request *req)
 {
 	ata_enable_intr(req->dev);
 	ata_pio_driver.drive_intr = (req->cmd == ATA_CMD_WRITE_SECTORS || req->cmd == ATA_CMD_WRITE_SECTORS_EXT) ? ata_pio_write_intr : ata_pio_read_intr;
+	disable_intr();
 	ata_start_request(req);
 	if (ata_error(req->dev)) {
 		ata_reset_bus(req->dev);
