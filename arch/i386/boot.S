@@ -141,6 +141,9 @@ higher_half:
 	/* Reload cr3 to force TLB flush */
 	movl	%cr3, %eax
 	movl	%eax, %cr3
+
+	pushf
+	popl	saved_eflags
 	calll	_init
 	/* Initialise and load GDT */
 	calll	gdt_init
