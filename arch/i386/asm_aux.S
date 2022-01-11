@@ -17,7 +17,15 @@ enable_intr:
 
 	.global disable_intr
 disable_intr:
+	pushf
 	cli
+	popl	saved_eflags
+	ret
+
+	.global	restore_eflags
+restore_eflags:
+	pushl	saved_eflags
+	popf
 	ret
 
 	.global load_idt
@@ -60,4 +68,9 @@ i386_move_to_user:
 	pushl	$1f
 	iret
 1:	ret
+
 #endif /* CONFIG_USE_INLINE_ASM */
+	.section .data
+	.global	saved_eflags
+saved_eflags:
+	.long	0
