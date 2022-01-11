@@ -131,14 +131,12 @@ remove_from_free_list(struct ext2_inode_m *ip)
 static void
 remove_from_hash_queue(struct ext2_inode_m *ip)
 {
-	struct ext2_inode_m **ipp;
-
 	if (ip->i_prev == NULL && ip->i_next == NULL)
 		return;
 	if (ip->i_prev == NULL || ip->i_prev == NULL)
 		panic("remove_from_hash_queue: inode hash queue corrupted");
-	if (*(ipp = &hash_queues[INODE_HASH(ip->i_dev, ip->i_num)]) == NULL) {
-		*ipp = NULL;
+	if (ip->i_next == ip && ip->i_prev == ip) {
+		hash_queues[INODE_HASH(ip->i_dev, ip->i_num)] = NULL;
 	} else {
 		ip->i_prev->i_next = ip->i_next;
 		ip->i_next->i_prev = ip->i_prev;
