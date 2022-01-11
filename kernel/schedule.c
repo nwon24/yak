@@ -60,7 +60,7 @@ sleep(void *addr)
 	current_process->sleeping_on = addr;
 	adjust_proc_queues(current_process);
 	schedule();
-	enable_intr();
+	restore_intr_state();
 }
 
 void
@@ -80,7 +80,7 @@ wakeup(void *addr)
 	}
 	if (sched)
 		schedule();
-	enable_intr();
+	restore_intr_state();
 }
 
 void
