@@ -109,10 +109,12 @@ remove_from_queue(struct process *proc)
 			/* Only process in queue */
 			process_queues[proc->priority] = NULL;
 	        } else {
+			process_queues[proc->priority] = proc->queue_next;
 			proc->queue_next->queue_prev = proc->queue_prev;
 			proc->queue_prev->queue_next = proc->queue_next;
 		}
 	}
+	/* Make it clear that it is not in a queue. */
 	proc->queue_next = proc->queue_prev = NULL;
 }
 
