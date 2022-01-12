@@ -52,7 +52,7 @@ int kernel_fork(void);
 
 void schedule(void);
 void sleep(void *addr);
-void wakeup(void *addr);
+void wakeup(void *addr, int ret);
 
 void adjust_proc_queues(struct process *proc);
 
@@ -65,6 +65,11 @@ enum system_state {
 int system_is_multitasking(void);
 int system_is_panicing(void);
 void system_change_state(enum system_state state);
+
+enum {
+	WAKEUP_RETURN,
+	WAKEUP_SWITCH
+};
 
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
