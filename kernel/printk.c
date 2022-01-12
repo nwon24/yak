@@ -6,9 +6,12 @@
 
 #include <stdarg.h>
 
+#include <asm/interrupts.h>
+
 #include <drivers/tty.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 /*
  * Need this defined somewhere in the architecture dependent files.
@@ -48,7 +51,14 @@ change_printk_tty(int tty)
 void
 panic(const char *msg)
 {
+	/*
+	 * Once the system state is changed to SYSTEM_PANIC
+	 * only serial interrupts are allowed.
+	 */
+	system_change_state(SYSTEM_PANIC);
 	printk("Kernel panic: %s\r\n", msg);
+	if (!intr_enabled())
+		enable_intr();
 	cpu_stop();
 }
 
