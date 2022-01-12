@@ -122,11 +122,11 @@ ata_pio_read_intr(void)
 		ata_current_req = ata_current_req->next;
 		if (ata_current_req != NULL) {
 			if (!ata_pio_start_request(ata_current_req))
-				wakeup(ata_current_req);
+				wakeup(ata_current_req, WAKEUP_RETURN);
 		} else {
 			ata_pio_driver.drive_intr = NULL;
 		}
-		wakeup(old);
+		wakeup(old, WAKEUP_RETURN);
 	}
 }
 
@@ -144,11 +144,11 @@ ata_pio_write_intr(void)
 		ata_current_req = ata_current_req->next;
 		if (ata_current_req != NULL) {
 			if (ata_pio_start_request(ata_current_req))
-				wakeup(ata_current_req);
+				wakeup(ata_current_req, WAKEUP_RETURN);
 		} else {
 			ata_pio_driver.drive_intr = NULL;
 		}
-		wakeup(old);
+		wakeup(old, WAKEUP_RETURN);
 	}
 }
 
