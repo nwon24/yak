@@ -17,14 +17,16 @@ enable_intr:
 
 	.global disable_intr
 disable_intr:
+	movl	current_cpu_state, %eax
 	pushf
 	cli
-	popl	saved_eflags
+	popl	KERNEL_EFLAGS_OFF(%eax)
 	ret
 
 	.global	restore_eflags
 restore_eflags:
-	pushl	saved_eflags
+	movl	current_cpu_state, %.eax
+	pushl	KERNEL_EFLAGS_OFF(%eax)
 	popf
 	ret
 
@@ -79,7 +81,3 @@ i386_move_to_user:
 1:	ret
 
 #endif /* CONFIG_USE_INLINE_ASM */
-	.section .data
-	.global	saved_eflags
-saved_eflags:
-	.long	0
