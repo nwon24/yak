@@ -56,7 +56,15 @@ void wakeup(void *addr);
 
 void adjust_proc_queues(struct process *proc);
 
+enum system_state {
+	SYSTEM_SINGLETASKING,
+	SYSTEM_MULTITASKING,
+	SYSTEM_PANIC,
+};
+
 int system_is_multitasking(void);
+int system_is_panicing(void);
+void system_change_state(enum system_state state);
 
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
