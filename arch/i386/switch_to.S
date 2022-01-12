@@ -21,9 +21,18 @@
 	.section .text
 	.global asm_switch_to
 asm_switch_to:
-	movl	4(%esp), %eax
-	movl	8(%esp), %edx
+	pushl	%ebp
+	movl	%esp, %ebp
+	pushl	%eax
+	movl	8(%ebp), %eax
+	movl	%eax, old_context
+	movl	12(%ebp), %eax
+	movl	%eax, new_context
+	popl	%eax
+	movl	%ebp, %esp
+	popl	%ebp
 
+	pushf
 	push	%eax
 	push	%ebx
 	push	%ecx
@@ -32,8 +41,8 @@ asm_switch_to:
 	push	%esi
 	push	%ebp
 
-	movl	%esp, (%eax)
-	movl	%edx, %esp
+	movl	%esp, (old_context)
+	movl	new_context, %esp
 
 	pop	%ebp
 	pop	%esi
@@ -42,5 +51,12 @@ asm_switch_to:
 	pop	%ecx
 	pop	%ebx
 	pop	%eax
+	popf
+
 	ret
 
+	.section .data
+old_context:
+	.long	0
+new_context:
+	.long	0
