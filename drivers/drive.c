@@ -13,6 +13,7 @@
 #include <fs/fs.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 static struct drive_driver *current_driver = NULL;
 static struct generic_disk_dev disk_dev_table[MAX_NR_DRIVES * MAX_NR_PARTITIONS];
@@ -123,6 +124,8 @@ drive_init(void)
 static void
 drive_irq_handler(void)
 {
+	if (system_is_panicing())
+		return;
 	if (current_driver != NULL && current_driver->drive_intr != NULL)
 		current_driver->drive_intr();
 }
