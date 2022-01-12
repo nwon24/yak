@@ -118,8 +118,8 @@ brelse(struct buffer *bp)
 		bp->b_data = NULL;
 	}
 	mutex_unlock(&bp->b_mutex);
-	wakeup(bp);
-	wakeup(&free_list);
+	wakeup(bp, WAKEUP_SWITCH);
+	wakeup(&free_list, WAKEUP_SWITCH);
 }
 
 void
