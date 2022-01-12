@@ -32,10 +32,25 @@ restore_eflags(void)
 	__asm__("pushl saved_eflags\n\t"
 		"popf" : :);
 }
+
+static inline int
+intr_enabled(void)
+{
+	int ret;
+
+	__asm__("pushf\n\t"
+		"popl %0\n\t"
+		"andl $0x200, %0\n\t"
+		"jz 1f\n\t"
+		"movl $1, %0\n\t"
+		"1:" : "=g" (ret));
+	return ret;
+}
 #else
 void enable_intr(void);
 void disable_intr(void);
 void restore_eflags(void);
+int intr_enabled(void);
 #endif /* CONFIG_USE_INLINE_ASM */
 
 #define restore_intr_state	restore_eflags
