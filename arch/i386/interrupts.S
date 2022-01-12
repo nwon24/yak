@@ -143,7 +143,6 @@ irq15_handler:
 
 	.global cpu_stop
 cpu_stop:
-	cli
 	hlt
 	jmp	cpu_stop
 
