@@ -62,7 +62,7 @@ sleep(void *addr)
 }
 
 void
-wakeup(void *addr)
+wakeup(void *addr, int ret)
 {
 	struct process *proc;
 	int sched = 0;
@@ -76,7 +76,7 @@ wakeup(void *addr)
 			adjust_proc_queues(proc);
 		}
 	}
-	if (sched)
+	if (sched && ret == WAKEUP_SWITCH)
 		schedule();
 	restore_intr_state();
 }
