@@ -40,7 +40,7 @@ static struct dma_prd ata_dma_current_prdt __attribute__((aligned(PAGE_SIZE)));
 void
 ata_dma_init(void)
 {
-	drive_driver_register(&ata_dma_driver);
+	/*	drive_driver_register(&ata_dma_driver); */
 }
 
 static int
@@ -77,6 +77,8 @@ ata_dma_start(int drive, char *buf, size_t count, size_t lba, int rw)
 	}
 	if (ata_add_request(req))
 		 ata_dma_start_request(req);
+	else
+		printk("Not starting straight away\r\n");
 	if (req->error)
 		return -1;
 	return 0;
@@ -150,7 +152,7 @@ ata_dma_write_intr(void)
 	}
 	ata_flush(ata_current_req->dev);
 	ata_finish_request(ata_current_req);
-	wakeup(ata_current_req);
+	wakeup(ata_current_req, WAKEUP_RETURN);
 	if ((ata_current_req = ata_current_req->next) != NULL)
 		ata_dma_start_request(ata_current_req);
 	else
@@ -182,7 +184,7 @@ ata_dma_read_intr(void)
 	memmove(ata_current_req->buf, ata_dma_current_buf.dma_buf, ata_dma_current_prdt.bcount);
 wakeup_proc:
 	ata_finish_request(ata_current_req);
-	wakeup(ata_current_req);
+	wakeup(ata_current_req, WAKEUP_RETURN);
 	if ((ata_current_req = ata_current_req->next) != NULL)
 		ata_dma_start_request(ata_current_req);
 	else
