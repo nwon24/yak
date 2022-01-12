@@ -23,12 +23,12 @@ mutex_lock(mutex *m)
 	while (*m == MUTEX_LOCKED)
 		sleep(m);
 	*m = MUTEX_LOCKED;
-	enable_intr();
+	restore_intr_state();
 }
 
 void
 mutex_unlock(mutex *m)
 {
 	*m = MUTEX_UNLOCKED;
-	wakeup(m);
+	wakeup(m, WAKEUP_SWITCH);
 }
