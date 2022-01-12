@@ -27,11 +27,6 @@ static int last_pid = 0;
 struct process process_table[NR_PROC];
 struct process *current_process;
 
-enum system_state {
-	SYSTEM_SINGLETASKING,
-	SYSTEM_MULTITASKING,
-};
-
 enum system_state system_state = SYSTEM_SINGLETASKING;
 
 extern uint32_t _start_user_head, _end_user_head;
@@ -40,7 +35,6 @@ int arch_processes_init(uint32_t start, uint32_t size);
 int arch_fork(int child, struct process *proc);
 
 static struct process *get_free_proc(void);
-static void system_change_state(enum system_state state);
 static void run_multitasking_hooks(void);
 
 extern struct process *process_queues[];
@@ -49,6 +43,11 @@ int
 system_is_multitasking(void)
 {
 	return system_state == SYSTEM_MULTITASKING;
+}
+
+int system_is_panicing(void)
+{
+	return system_state == SYSTEM_PANIC;
 }
 
 /*
@@ -70,7 +69,7 @@ run_multitasking_hooks(void)
 		multitasking_hooks[i]();
 }
 
-static void
+void
 system_change_state(enum system_state state)
 {
 	system_state = state;
@@ -128,7 +127,6 @@ kernel_fork(void)
 	proc->state = PROC_RUNNABLE;
 	proc->tty = current_process->tty;
 	proc->counter = current_process->quanta;
-	proc->queue_next = proc->queue_prev = NULL;
 	proc->root_inode = current_process->root_inode;
 	proc->cwd_inode = current_process->cwd_inode;
 	proc->root_fs = current_process->root_fs;
