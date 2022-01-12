@@ -35,7 +35,7 @@ struct i386_cpu_state {
 	uint32_t iret_frame;
 };
 
-#define NR_REGS	7
+#define NR_REGS	8
 
 struct context {
 	uint32_t regs[NR_REGS];
