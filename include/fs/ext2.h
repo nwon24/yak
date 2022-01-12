@@ -176,6 +176,10 @@ void ext2_inodes_init(void);
 struct ext2_inode_m *ext2_namei(const char *path, int *error);
 
 ssize_t ext2_balloc(dev_t dev, ino_t num);
+void ext2_bfree(dev_t dev, ino_t num, ssize_t block);
+
+ino_t ext2_ialloc(dev_t dev);
+void ext2_ifree(dev_t dev, ino_t num);
 
 void *ext2_open(const char *path, int flags, int mode, int *err);
 
@@ -189,5 +193,6 @@ void *ext2_open(const char *path, int flags, int mode, int *err);
 #define EXT2_BLOCK_GROUP(ino, s)	(((ino)->i_num - 1) / EXT2_INODES_PER_GROUP((s)))
 #define EXT2_INODE_INDEX(ino, s)	(((ino)->i_num - 1) % EXT2_INODES_PER_GROUP((s)))
 #define EXT2_INODE_BLOCK(ind, s)	((ind) * EXT2_INODE_SIZE((s)) / EXT2_BLOCKSIZE((s)))
+#define EXT2_FIRST_FREE_INO(s)	((s)->sb.s_rev_level >= 1 ? (s)->sb.s_first_ino : 11)
 
 #endif /* FS_EXT2_H */
