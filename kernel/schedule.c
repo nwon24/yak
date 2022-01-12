@@ -25,21 +25,19 @@ static void remove_from_queue(struct process *proc);
 void
 schedule(void)
 {
-	struct process *proc, *old;
+	struct process **proc, *old;
 
 	old = current_process;
-	for (proc = process_queues[HIGHEST_PRIORITY]; proc >= process_queues[LOWEST_PRIORITY]; proc--) {
-		if (!proc)
+	for (proc = process_queues + HIGHEST_PRIORITY; proc >= process_queues + LOWEST_PRIORITY; proc--) {
+		if (*proc == NULL)
 			continue;
-		if (proc->state == PROC_BLOCKED)
-			__asm__("cli; hlt");
-		proc->state = PROC_RUNNING;
+		(*proc)->state = PROC_RUNNING;
 		if (current_process != FIRST_PROC && current_process->quanta != current_process->counter)
 			current_process->priority = current_process->quanta / (current_process->quanta - current_process->counter);
 		current_process->quanta = current_process->priority;
 		current_process->counter = current_process->quanta;
 		adjust_proc_queues(current_process);
-		current_process = proc;
+		current_process = *proc;
 		goto switch_proc;
 	}
 	/* No processes available to run. Resort to idle */
@@ -109,7 +107,6 @@ remove_from_queue(struct process *proc)
 			/* Only process in queue */
 			process_queues[proc->priority] = NULL;
 	        } else {
-			process_queues[proc->priority] = proc->queue_next;
 			proc->queue_next->queue_prev = proc->queue_prev;
 			proc->queue_prev->queue_next = proc->queue_next;
 		}
