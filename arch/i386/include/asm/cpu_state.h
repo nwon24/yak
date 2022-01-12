@@ -33,6 +33,7 @@ struct i386_cpu_state {
 	uint32_t cr3;
 	uint32_t kernel_stack;
 	uint32_t iret_frame;
+	uint32_t kernel_eflags;
 };
 
 #define NR_REGS	8
@@ -49,5 +50,7 @@ extern struct i386_cpu_state *current_cpu_state;
 extern struct i386_cpu_state cpu_states[];
 
 #endif /* __ASSEMBLER__ */
+
+#define KERNEL_EFLAGS_OFF	80
 
 #endif /* CPU_STATE_H */
