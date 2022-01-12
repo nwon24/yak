@@ -3,6 +3,7 @@
 
 #ifndef __ASSEMBLER__
 
+#include <asm/cpu_state.h>
 #include <asm/pic_8259.h>
 #include <asm/idt.h>
 
@@ -14,7 +15,7 @@ disable_intr(void)
 {
 	__asm__("pushf\n\t"
 		"cli\n\t"
-		"popl saved_eflags\n\t" ::);
+		"popl %0\n\t" : : "g" (&current_cpu_state->kernel_eflags));
 }
 
 static inline void
@@ -29,8 +30,8 @@ enable_intr(void)
 static inline void
 restore_eflags(void)
 {
-	__asm__("pushl saved_eflags\n\t"
-		"popf" : :);
+	__asm__("pushl %0\n\t"
+		"popf" : : "g" (&current_cpu_state->kernel_eflags));
 }
 
 static inline int
