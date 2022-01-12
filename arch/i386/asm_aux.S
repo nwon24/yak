@@ -28,6 +28,15 @@ restore_eflags:
 	popf
 	ret
 
+	.global	intr_enabled
+intr_enabled:
+	pushf
+	popl	%eax
+	andl	$0x200, %eax
+	jz	1f
+	movl	$1, %eax
+1:	ret
+
 	.global load_idt
 load_idt:
 	movl	4(%esp), %eax
