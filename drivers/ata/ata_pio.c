@@ -88,13 +88,21 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 static int
 ata_pio_start_request(struct ata_request *req)
 {
+	int ret;
+
 	ata_enable_intr(req->dev);
 	ata_pio_driver.drive_intr = (req->cmd == ATA_CMD_WRITE_SECTORS || req->cmd == ATA_CMD_WRITE_SECTORS_EXT) ? ata_pio_write_intr : ata_pio_read_intr;
+	/*
+	 * Disable interrupts for now because they might go off and finish the request before
+	 * we return to 'ata_pio_start' (which calls 'sleep'), which could cause problems.
+	 */
+	disable_intr();
 	ata_start_request(req);
 	if (ata_error(req->dev)) {
 		ata_reset_bus(req->dev);
 		req->error = 1;
-		return 0;
+		ret = 0;
+		goto out;
 	}
 	if (req->cmd == ATA_CMD_WRITE_SECTORS) {
 		ata_poll_drq(req->dev);
@@ -103,10 +111,14 @@ ata_pio_start_request(struct ata_request *req)
 			ata_finish_request(req);
 			ata_current_req = ata_current_req->next;
 			ata_pio_driver.drive_intr = NULL;
-			return 0;
+			ret = 0;
+			goto out;
 		}
 	}
-	return 1;
+	ret = 1;
+ out:
+	restore_intr_state();
+	return ret;
 }
 
 static void
