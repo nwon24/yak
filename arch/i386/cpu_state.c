@@ -27,6 +27,7 @@ cpu_state_init(void)
 {
 	current_cpu_state = &cpu_states[0];
 	current_cpu_state->kernel_stack = (uint32_t)&boot_stack;
+	disable_intr();
 	tss.ss0 = KERNEL_SS_SELECTOR;
 	tss.esp0 = (uint32_t)&boot_stack;
 }
