@@ -102,7 +102,6 @@ arch_fork(int child, struct process *proc)
 void
 arch_switch_to(struct process *prev, struct process *new)
 {
-	printk("Switch to %d from %d\r\n", new->pid, prev->pid);
 	current_cpu_state = cpu_states + new->pid;
 	load_cr3(current_cpu_state->cr3);
 	tss.esp0 = current_cpu_state->kernel_stack;
