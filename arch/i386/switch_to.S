@@ -32,7 +32,7 @@ asm_switch_to:
 	movl	%ebp, %esp
 	popl	%ebp
 
-	pushf
+	pushfl
 	push	%eax
 	push	%ebx
 	push	%ecx
@@ -41,7 +41,8 @@ asm_switch_to:
 	push	%esi
 	push	%ebp
 
-	movl	%esp, (old_context)
+	movl	old_context, %eax
+	movl	%esp, (%eax)
 	movl	new_context, %esp
 
 	pop	%ebp
@@ -51,8 +52,12 @@ asm_switch_to:
 	pop	%ecx
 	pop	%ebx
 	pop	%eax
-	popf
+	popfl
 
+	cmpl	$0x60000000, (%esp)
+	jl	1f
+	cli; hlt
+1:
 	ret
 
 	.section .data
