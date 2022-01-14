@@ -15,7 +15,7 @@ disable_intr(void)
 {
 	__asm__("pushf\n\t"
 		"cli\n\t"
-		"popl %0\n\t" : : "g" (&current_cpu_state->kernel_eflags));
+		"popl %0\n\t" : "=m" (current_cpu_state->kernel_eflags) :);
 }
 
 static inline void
@@ -31,7 +31,7 @@ static inline void
 restore_eflags(void)
 {
 	__asm__("pushl %0\n\t"
-		"popf" : : "g" (&current_cpu_state->kernel_eflags));
+		"popf" : : "g" (current_cpu_state->kernel_eflags));
 }
 
 static inline int
