@@ -135,6 +135,8 @@ bread(dev_t dev, size_t blknr)
 	struct buffer *bp;
 
 	bp = getblk(dev, blknr);
+	if (bp == NULL)
+		panic("bread: getblk returned NULL");
 	if (bp->b_flags & B_DONE)
 		return bp;
 	blk_devio(bp, READ);
