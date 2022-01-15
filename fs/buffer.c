@@ -37,6 +37,8 @@ getblk(dev_t dev, size_t blknr)
 	struct buffer *bp = NULL;
 
 	while (1) {
+		int old_blksize;
+
 		if ((bp = in_hash_queue(dev, blknr)) != NULL) {
 			if (bp->b_mutex == MUTEX_LOCKED) {
 				sleep(bp);
@@ -60,9 +62,13 @@ getblk(dev_t dev, size_t blknr)
 		mutex_lock(&bp->b_mutex);
 		bp->b_dev = dev;
 		bp->b_blknr = blknr;
+		old_blksize = bp->b_blksize;
 		bp->b_blksize = filesystem_get_attr(dev, GET_BLOCKSIZE);
-		if (bp->b_blksize)
+		if (bp->b_blksize && old_blksize != bp->b_blksize) {
+			if (bp->b_data != NULL)
+				kvmfree(bp->b_data);
 			bp->b_data = kvmalloc(bp->b_blksize);
+		}
 		bp->b_flags = 0;
 		remove_from_hash_queue(bp);
 		put_into_hash_queue(bp);
@@ -112,11 +118,6 @@ brelse(struct buffer *bp)
 	disable_intr();
 	put_into_free_list(bp);
 	enable_intr();
-	if (bp->b_data != NULL) {
-		kvmfree(bp->b_data);
-		/* So we can't write to it by accident */
-		bp->b_data = NULL;
-	}
 	mutex_unlock(&bp->b_mutex);
 	wakeup(bp, WAKEUP_SWITCH);
 	wakeup(&free_list, WAKEUP_SWITCH);
