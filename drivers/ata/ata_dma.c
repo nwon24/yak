@@ -40,7 +40,7 @@ static struct dma_prd ata_dma_current_prdt __attribute__((aligned(PAGE_SIZE)));
 void
 ata_dma_init(void)
 {
-	/*	drive_driver_register(&ata_dma_driver); */
+	drive_driver_register(&ata_dma_driver);
 }
 
 static int
@@ -89,6 +89,7 @@ ata_dma_start_request(struct ata_request *req)
 {
 	int rw_bit;
 
+retry:
 	if (req->cmd == ATA_CMD_READ_SECTORS_DMA || req->cmd == ATA_CMD_READ_SECTORS_DMA_EXT) {
 		rw_bit = BUS_MASTER_CMD_READ;
 		ata_dma_driver.drive_intr = ata_dma_read_intr;
@@ -119,23 +120,31 @@ ata_dma_start_request(struct ata_request *req)
 				 bus_master_read(req->dev, BUS_MASTER_STATUS_SEC) & ~BUS_MASTER_STATUS_IRQ & ~BUS_MASTER_STATUS_ERR,
 				 BUS_MASTER_STATUS_SEC);
 	}
-	disable_intr();
 	ata_start_request(req);
+	/*
+	 * Before beginning the operation by setting the start bit in the bus master register,
+	 * check if the command sent to the ATA controller errored out.
+	 */
+	if (ata_error(req->dev)) {
+		req->error = 1;
+		if (req->retry < ATA_MAX_ERROR) {
+			req->retry++;
+			goto retry;
+		}
+		return;
+	}
 	if (req->dev->drive == ATA_BUS_DRIVE1)
 		bus_master_write(req->dev, BUS_MASTER_CMD_START | rw_bit, BUS_MASTER_CMD_PRI);
 	else
 		bus_master_write(req->dev, BUS_MASTER_CMD_START | rw_bit, BUS_MASTER_CMD_SEC);
-	if (ata_error(req->dev)) {
-		req->error = 1;
-		return;
-	}
-	sleep(req);
+	ata_wait_on_req(req);
 }
 
 static void
 ata_dma_write_intr(void)
 {
 	struct ata_device *dev = ata_current_req->dev;
+	struct ata_request *old;
 
 	if (dev->drive == ATA_BUS_DRIVE1) {
 		bus_master_write(dev, 0, BUS_MASTER_CMD_PRI);
@@ -152,17 +161,19 @@ ata_dma_write_intr(void)
 	}
 	ata_flush(ata_current_req->dev);
 	ata_finish_request(ata_current_req);
-	wakeup(ata_current_req, WAKEUP_RETURN);
+	old = ata_current_req;
 	if ((ata_current_req = ata_current_req->next) != NULL)
 		ata_dma_start_request(ata_current_req);
 	else
 		ata_dma_driver.drive_intr = NULL;
+	wakeup(old, WAKEUP_RETURN);
 }
 
 static void
 ata_dma_read_intr(void)
 {
 	struct ata_device *dev = ata_current_req->dev;
+	struct ata_request *old;
 
 	if (dev->drive == ATA_BUS_DRIVE1) {
 		bus_master_write(dev, 0, BUS_MASTER_CMD_PRI);
@@ -184,9 +195,10 @@ ata_dma_read_intr(void)
 	memmove(ata_current_req->buf, ata_dma_current_buf.dma_buf, ata_dma_current_prdt.bcount);
 wakeup_proc:
 	ata_finish_request(ata_current_req);
-	wakeup(ata_current_req, WAKEUP_RETURN);
+	old = ata_current_req;
 	if ((ata_current_req = ata_current_req->next) != NULL)
 		ata_dma_start_request(ata_current_req);
 	else
 		ata_dma_driver.drive_intr = NULL;
+	wakeup(old, WAKEUP_RETURN);
 }
