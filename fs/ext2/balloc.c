@@ -1,6 +1,6 @@
 /*
  * ext2/balloc.c
- * Block allocation routines for ext2.
+ * Block allocation and free routines for ext2.
  */
 #include <asm/types.h>
 
@@ -91,8 +91,12 @@ balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *
 	return block;
 }
 
+/*
+ * Don't rely on inode number as an inode may be assigned a block outside of its block group,
+ * if there were no free blocks in its block group at the time of allocation.
+ */
 void
-ext2_bfree(dev_t dev, ino_t ino, ssize_t block)
+ext2_bfree(dev_t dev, ssize_t block)
 {
 	struct ext2_blk_group_desc *bgd;
 	struct ext2_superblock_m *sb;
@@ -105,7 +109,7 @@ ext2_bfree(dev_t dev, ino_t ino, ssize_t block)
 		return;
 	sb = get_ext2_superblock(dev);
 	mutex_lock(&sb->mutex);
-	bgd = sb->bgd_table + ((ino - 1) % EXT2_INODES_PER_GROUP(sb));
+	bgd = sb->bgd_table + (block / sb->sb.s_blocks_per_group);
 	bp = bread(dev, bgd->bg_block_bitmap);
 	b = block;
 	b -= EXT2_INODES_PER_GROUP(sb) / EXT2_INODES_PER_BLOCK(sb) + bgd->bg_inode_table;
@@ -120,5 +124,53 @@ ext2_bfree(dev_t dev, ino_t ino, ssize_t block)
 	sb->modified = 1;
 	bp->b_flags |= B_DWRITE;
 	mutex_unlock(&sb->mutex);
+	brelse(bp);
+}
+
+void
+ext2_bfree_indirect(dev_t dev, ssize_t block)
+{
+	struct buffer *bp;
+	struct ext2_superblock_m *sb;
+	uint32_t *b;
+
+	if (block == 0)
+		return;
+	sb = get_ext2_superblock(dev);
+	bp = bread(dev, block);
+	for (b = (uint32_t *)bp->b_data; b < (uint32_t *)bp->b_data + (EXT2_BLOCKSIZE(sb) / sizeof(uint32_t)); b++)
+		ext2_bfree(dev, *b);
+	brelse(bp);
+}
+
+void
+ext2_bfree_dindirect(dev_t dev, ssize_t block)
+{
+	struct buffer *bp;
+	struct ext2_superblock_m *sb;
+	uint32_t *b;
+
+	if (block == 0)
+		return;
+	sb = get_ext2_superblock(dev);
+	bp = bread(dev, block);
+	for (b = (uint32_t *)bp->b_data; b < (uint32_t *)bp->b_data + (EXT2_BLOCKSIZE(sb) / sizeof(uint32_t)); b++)
+		ext2_bfree_indirect(dev, *b);
+	brelse(bp);
+}
+
+void
+ext2_bfree_tindirect(dev_t dev, ssize_t block)
+{
+	struct buffer *bp;
+	struct ext2_superblock_m *sb;
+	uint32_t *b;
+
+	if (block == 0)
+		return;
+	sb = get_ext2_superblock(dev);
+	bp = bread(dev, block);
+	for (b = (uint32_t *)bp->b_data; b < (uint32_t *)bp->b_data + (EXT2_BLOCKSIZE(sb) / sizeof(uint32_t)); b++)
+		ext2_bfree_dindirect(dev, *b);
 	brelse(bp);
 }
