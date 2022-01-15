@@ -42,6 +42,7 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 	struct ata_request *req;
 	int cmd;
 
+retry:
 	if (drive >= ATA_MAX_DRIVES)
 		return -1;
 	if ((dev = ata_find_device(drive / ATA_DRIVES_PER_BUS, drive % ATA_DRIVES_PER_BUS)) == NULL) {
@@ -68,9 +69,9 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 		/* Use IRQs */
 		if (ata_add_request(req)) {
 			if (ata_pio_start_request(ata_current_req))
-				sleep(ata_current_req);
+				ata_wait_on_req(ata_current_req);
 		} else {
-			sleep(req);
+			ata_wait_on_req(req);
 		}
 	} else {
 		ata_start_request(req);
@@ -80,15 +81,19 @@ ata_pio_start(int drive, char *buf, size_t count, size_t lba, int rw)
 			ata_pio_poll_write(req);
 		ata_finish_request(req);
 	}
-	if (req->error)
+	if (req->error && req->retry < ATA_MAX_ERROR) {
+		req->error = 0;
+		goto retry;
+	} else if (req->error) {
 		return -1;
+	}
 	return 0;
 }
 
 static int
 ata_pio_start_request(struct ata_request *req)
 {
-	int ret;
+	int ret = 0;
 
 	ata_enable_intr(req->dev);
 	ata_pio_driver.drive_intr = (req->cmd == ATA_CMD_WRITE_SECTORS || req->cmd == ATA_CMD_WRITE_SECTORS_EXT) ? ata_pio_write_intr : ata_pio_read_intr;
@@ -96,10 +101,10 @@ ata_pio_start_request(struct ata_request *req)
 	 * Disable interrupts for now because they might go off and finish the request before
 	 * we return to 'ata_pio_start' (which calls 'sleep'), which could cause problems.
 	 */
-	disable_intr();
 	ata_start_request(req);
 	if (ata_error(req->dev)) {
 		ata_reset_bus(req->dev);
+		req->retry++;
 		req->error = 1;
 		ret = 0;
 		goto out;
@@ -115,9 +120,9 @@ ata_pio_start_request(struct ata_request *req)
 			goto out;
 		}
 	}
-	ret = 1;
+	if (req->dev != NULL)
+		ret = 1;
  out:
-	restore_intr_state();
 	return ret;
 }
 
