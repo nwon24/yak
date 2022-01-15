@@ -183,6 +183,7 @@ void ext2_bfree_tindirect(dev_t dev, ssize_t block);
 
 ino_t ext2_ialloc(dev_t dev);
 void ext2_ifree(dev_t dev, ino_t num);
+void ext2_itrunc(struct ext2_inode_m *ip);
 
 void *ext2_open(const char *path, int flags, int mode, int *err);
 
