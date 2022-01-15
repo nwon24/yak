@@ -171,6 +171,8 @@ read_inode(struct ext2_inode_m *ip)
 	struct buffer *bp;
 	int block, index;
 
+	if (ip == NULL)
+		panic("ext2 read_inode: pointer is NULL");
 	/*
 	 * 'get_ext2_superblock' never fails. If it does, the kernel panics.
 	 * See super.c
@@ -194,6 +196,8 @@ write_inode(struct ext2_inode_m *ip)
 	struct ext2_blk_group_desc *bgd;
 	int index, block;
 
+	if (ip == NULL)
+		panic("ext2 write_inode: pointer is NULL");
 	sb = get_ext2_superblock(ip->i_dev);
 	bgd = sb->bgd_table + EXT2_BLOCK_GROUP(ip, sb);
 	index = EXT2_INODE_INDEX(ip, sb);
