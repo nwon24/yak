@@ -140,6 +140,7 @@ ext2_bfree_indirect(dev_t dev, ssize_t block)
 	bp = bread(dev, block);
 	for (b = (uint32_t *)bp->b_data; b < (uint32_t *)bp->b_data + (EXT2_BLOCKSIZE(sb) / sizeof(uint32_t)); b++)
 		ext2_bfree(dev, *b);
+	ext2_bfree(dev, block);
 	brelse(bp);
 }
 
@@ -156,6 +157,7 @@ ext2_bfree_dindirect(dev_t dev, ssize_t block)
 	bp = bread(dev, block);
 	for (b = (uint32_t *)bp->b_data; b < (uint32_t *)bp->b_data + (EXT2_BLOCKSIZE(sb) / sizeof(uint32_t)); b++)
 		ext2_bfree_indirect(dev, *b);
+	ext2_bfree(dev, block);
 	brelse(bp);
 }
 
@@ -172,5 +174,6 @@ ext2_bfree_tindirect(dev_t dev, ssize_t block)
 	bp = bread(dev, block);
 	for (b = (uint32_t *)bp->b_data; b < (uint32_t *)bp->b_data + (EXT2_BLOCKSIZE(sb) / sizeof(uint32_t)); b++)
 		ext2_bfree_dindirect(dev, *b);
+	ext2_bfree(dev, block);
 	brelse(bp);
 }
