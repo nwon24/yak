@@ -279,14 +279,14 @@ loop:
                 if (vc->vc_cy + par[0] < vc->vc_height)
                         vc->vc_cy += par[0];
                 else
-                        vc->vc_cy = vc->vc_height;
+                        vc->vc_cy = vc->vc_height - 1;
                 return p;
         case 'a':
         case 'C':
                 if (vc->vc_cx + par[0] < vc->vc_width)
                         vc->vc_cx += par[0];
                 else
-                        vc->vc_cx = vc->vc_width;
+                        vc->vc_cx = vc->vc_width - 1;
                 return p;
         case 'D':
                 if (vc->vc_cx >= par[0])
@@ -298,7 +298,7 @@ loop:
                 if (vc->vc_cy + par[0] < vc->vc_height)
                         vc->vc_cy += par[0];
                 else
-                        vc->vc_cy = vc->vc_height;
+                        vc->vc_cy = vc->vc_height - 1;
                 vc->vc_cx = 0;
                 return p;
         case 'F':
