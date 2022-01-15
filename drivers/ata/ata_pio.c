@@ -98,8 +98,10 @@ ata_pio_start_request(struct ata_request *req)
 	ata_enable_intr(req->dev);
 	ata_pio_driver.drive_intr = (req->cmd == ATA_CMD_WRITE_SECTORS || req->cmd == ATA_CMD_WRITE_SECTORS_EXT) ? ata_pio_write_intr : ata_pio_read_intr;
 	/*
-	 * Disable interrupts for now because they might go off and finish the request before
-	 * we return to 'ata_pio_start' (which calls 'sleep'), which could cause problems.
+	 * No need to disable interrupts before calling 'ata_start_request' (after which we expect an interrupt).
+	 * This is because we call 'ata_wait_on_req' to sleep. If interrupts do occur before that is reached,
+	 * there will be no deadlock, as the interrupt handler sets 'req->dev' to NULL, so 'ata_wait_on_req'
+	 * returns immediately.
 	 */
 	ata_start_request(req);
 	if (ata_error(req->dev)) {
