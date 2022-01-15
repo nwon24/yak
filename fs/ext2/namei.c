@@ -43,7 +43,6 @@ ext2_namei(const char *path, int *error)
 		panic("ext2_namei: current_process has no root inode or working directory inode");
 	p1++;
 loop:
-	printk("ino mode %x\r\n", ip->i_ino.i_mode);
 	if (get_ubyte(p1) != '\0' && !(ip->i_ino.i_mode & EXT2_S_IFDIR)) {
 		*error = -ENOTDIR;
 		return NULL;
@@ -68,10 +67,8 @@ find_entry(struct ext2_inode_m *dir, const char *entry)
 {
 	struct ext2_inode_m *ip;
 
-	if ((ip = find_entry_direct(dir, entry)) != NULL) {
-		printk("find_entry returning %p\r\n", ip);
+	if ((ip = find_entry_direct(dir, entry)) != NULL)
 		return ip;
-	}
 	if ((ip = find_entry_indirect(dir, dir->i_ino.i_block[EXT2_INDIRECT_BLOCK], entry)) != NULL)
 		return ip;
 	if ((ip = find_entry_dindirect(dir, dir->i_ino.i_block[EXT2_DINDIRECT_BLOCK], entry)) != NULL)
