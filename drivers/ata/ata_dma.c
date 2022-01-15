@@ -77,8 +77,6 @@ ata_dma_start(int drive, char *buf, size_t count, size_t lba, int rw)
 	}
 	if (ata_add_request(req))
 		 ata_dma_start_request(req);
-	else
-		printk("Not starting straight away\r\n");
 	if (req->error)
 		return -1;
 	return 0;
