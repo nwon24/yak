@@ -34,6 +34,7 @@ ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, cha
 	req->cmd = cmd;
 	req->buf = buf;
 	req->error = 0;
+	req->retry = 0;
 	req->next = NULL;
 	return req;
 }
@@ -62,6 +63,13 @@ void
 ata_finish_request(struct ata_request *req)
 {
 	req->dev = NULL;
+}
+
+void
+ata_wait_on_req(struct ata_request *req)
+{
+	while (req->dev != NULL)
+		sleep(req);
 }
 
 void
