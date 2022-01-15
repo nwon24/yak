@@ -7,6 +7,8 @@
 #include <fs/ext2.h>
 #include <fs/buffer.h>
 
+#include <generic/string.h>
+
 #include <kernel/debug.h>
 #include <kernel/mutex.h>
 
@@ -17,6 +19,7 @@ ext2_balloc(dev_t dev, ino_t num)
 {
 	struct ext2_superblock_m *sb;
 	struct ext2_blk_group_desc *bgd, *tmp;
+	struct buffer *bp;
 	ssize_t block;
 
 	/*
@@ -36,8 +39,13 @@ ext2_balloc(dev_t dev, ino_t num)
 	for (bgd = sb->bgd_table; bgd < sb->bgd_table + sb->nr_blk_group; bgd++) {
 		if (bgd == tmp)
 			continue;
-		if ((block = balloc_bgd(dev, sb, bgd)) != 0)
+		if ((block = balloc_bgd(dev, sb, bgd)) != 0) {
+			bp = getblk(dev, block);
+			memset(bp->b_data, 0, EXT2_BLOCKSIZE(sb));
+			bp->b_flags |= B_DWRITE;
+			brelse(bp);
 			goto out;
+		}
 	}
 	block = 0;
  out:
