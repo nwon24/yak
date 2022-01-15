@@ -9,6 +9,8 @@
 #include <fs/dev.h>
 #include <fs/ext2.h>
 
+#include <drivers/timer.h>
+
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
@@ -106,15 +108,32 @@ ext2_iput(struct ext2_inode_m *ip)
 	if (ip->i_mutex != MUTEX_LOCKED)
 		mutex_lock(&ip->i_mutex);
 	if (ip->i_count-- == 0)
-		panic("ext2_iput: ip->i_count = 0");
+		panic("ext2_iput: ip->i_count == 0");
 	if (ip->i_count == 0) {
-		if (ip->i_ino.i_links_count == 0)
-			printk("ext2_iput: TODO: ifree");
+		if (ip->i_ino.i_links_count == 0) {
+			ext2_itrunc(ip);
+			ext2_ifree(ip->i_dev, ip->i_num);
+		}
 		if (ip->i_flags & I_MODIFIED)
 			write_inode(ip);
 		put_into_free_list(ip);
 	}
 	mutex_unlock(&ip->i_mutex);
+}
+
+void
+ext2_itrunc(struct ext2_inode_m *ip)
+{
+	uint32_t *b;
+
+	for (b = ip->i_ino.i_block; b <= ip->i_ino.i_block + EXT2_DIRECT_BLOCKS; b++)
+		     ext2_bfree(ip->i_dev, *b);
+	ext2_bfree_indirect(ip->i_dev, ip->i_ino.i_block[EXT2_INDIRECT_BLOCK]);
+	ext2_bfree_dindirect(ip->i_dev, ip->i_ino.i_block[EXT2_DINDIRECT_BLOCK]);
+	ext2_bfree_tindirect(ip->i_dev, ip->i_ino.i_block[EXT2_TINDIRECT_BLOCK]);
+	ip->i_ino.i_blocks = 0;
+	ip->i_ino.i_mtime = CURRENT_TIME;
+	ip->i_flags |= I_MODIFIED;
 }
 
 static void
