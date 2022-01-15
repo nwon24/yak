@@ -93,6 +93,8 @@ enum ata_drive {
 #define ATA_PRI_IRQ		0xE
 #define ATA_SEC_IRQ		0xF
 
+#define ATA_MAX_ERROR		3
+
 enum ata_device_type {
 	ATA_DEV_PATA,
 	ATA_DEV_SATA,
@@ -132,6 +134,7 @@ struct ata_request {
 	size_t lba;			/* LBA */
 	void *buf;			/* Buffer to r/w from */
 	int error;			/* Has there been an error */
+	int retry;			/* How many times this request has been retried */
 
 	struct ata_request *next;	/* Next request in queue */
 };
@@ -162,6 +165,7 @@ int ata_add_request(struct ata_request *req);
 struct ata_request *ata_build_request(struct ata_device *dev, size_t lba, size_t count, int cmd, char *buf);
 struct ata_device *ata_find_device(unsigned int chan, unsigned int drive);
 void ata_start_request(struct ata_request *req);
+void ata_wait_on_req(struct ata_request *req);
 void ata_finish_request(struct ata_request *req);
 void ata_reset_bus(struct ata_device *dev);
 void ata_enable_intr(struct ata_device *dev);
