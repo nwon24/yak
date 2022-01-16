@@ -31,7 +31,7 @@ bmap_create_indirect(struct ext2_inode_m *ip, ext2_block lblk, int create)
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 	}
 	if (*b == 0)
 		goto out;
@@ -43,7 +43,7 @@ bmap_create_indirect(struct ext2_inode_m *ip, ext2_block lblk, int create)
 		ret = bp->b_data[lblk];
 		bp->b_flags |= B_DWRITE;
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 	}
 out:
 	if (bp != NULL)
@@ -67,7 +67,7 @@ bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 	}
 	if (*b == 0)
 		goto out;
@@ -78,7 +78,7 @@ bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 		bp->b_flags |= B_DWRITE;
 	}
 	if (*b == 0)
@@ -92,7 +92,7 @@ bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 		bp->b_flags |= B_DWRITE;
 	}
 	if (*b == 0)
@@ -121,7 +121,7 @@ bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 	}
 	if (*b == 0)
 		goto out;
@@ -132,7 +132,7 @@ bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 		bp->b_flags |= B_DWRITE;
 	}
 	if (*b == 0)
@@ -144,7 +144,7 @@ bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 		bp->b_flags |= B_DWRITE;
 	}
 	if (*b == 0)
@@ -158,7 +158,7 @@ bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
-		ip->i_ino.i_ctime = CURRENT_TIME;
+		ip->i_ino.i_mtime = CURRENT_TIME;
 		bp->b_flags |= B_DWRITE;
 	}
 	if (*b == 0)
@@ -194,7 +194,7 @@ bmap_create(struct ext2_inode_m *ip, off_t off, int create)
 		if (*b == 0 && create) {
 			*b = ext2_balloc(ip->i_dev, ip->i_num);
 			ip->i_flags |= I_MODIFIED;
-			ip->i_ino.i_ctime = CURRENT_TIME;
+			ip->i_ino.i_mtime = CURRENT_TIME;
 		}
 		return *b;
 	}
