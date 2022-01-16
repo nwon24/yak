@@ -22,12 +22,31 @@ static struct ext2_inode_m *find_entry_dindirect(struct ext2_inode_m *dir, ssize
 static struct ext2_inode_m *find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry);
 static int namei_match(const void *p1, const void *p2, size_t n);
 
+int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
+{
+	int mode = ip->i_ino.i_mode;
+
+	if (!(current_process->uid && current_process->euid))
+		/* Super user, nothing matters. */
+		return 0;
+	if (current_process->uid == ip->i_ino.i_uid || current_process->euid == ip->i_ino.i_uid)
+		mode >>= 6;
+	else if (current_process->gid == ip->i_ino.i_gid || current_process->egid == ip->i_ino.i_gid)
+		mode >>= 3;
+	mode &= 7;
+	if ((mode & mask) != 0)
+		return 0;
+	return -1;
+}
+
 struct ext2_inode_m *
 ext2_namei(const char *path, int *error)
 {
 	struct ext2_inode_m *ip, *dp;
 	const char *p1, *p2;
 
+	if (current_process->root_inode == NULL || current_process->cwd_inode == NULL)
+		panic("Current process has no root directory or working directory");
 	if (current_process->root_fs->f_fs != EXT2 && current_process->root_fs->f_fs != EXT2) {
 		/*
 		 * Should probably panic here.
@@ -42,6 +61,7 @@ ext2_namei(const char *path, int *error)
 	if (ip == NULL)
 		panic("ext2_namei: current_process has no root inode or working directory inode");
 	p1++;
+	ip->i_count++;
 loop:
 	if (get_ubyte(p1) != '\0' && !EXT2_S_ISDIR(ip->i_ino.i_mode)) {
 		*error = -ENOTDIR;
@@ -49,6 +69,11 @@ loop:
 	}
 	if (get_ubyte(p1) == '\0')
 		return ip;
+	if (ext2_permission(ip, PERM_SRCH) < 0) {
+		ext2_iput(ip);
+		*error = -EACCES;
+		return NULL;
+	}
 	while (get_ubyte(p1) == '/')
 		p1++;
 	p2 = p1;
