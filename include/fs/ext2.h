@@ -46,6 +46,9 @@
 #define EXT2_DINDIRECT_BLOCK	13
 #define EXT2_TINDIRECT_BLOCK	14
 
+/* ext2 blocks are 32 bit */
+typedef uint32_t ext2_block;
+
 struct ext2_superblock {
 	uint32_t s_inodes_count;
 	uint32_t s_blocks_count;
@@ -126,7 +129,7 @@ struct ext2_inode {
 	uint32_t i_blocks;
 	uint32_t i_flags;
 	uint32_t i_osd1;
-	uint32_t i_block[15];
+	ext2_block i_block[15];
 	uint32_t i_generation;
 	uint32_t i_file_acl;
 	uint32_t i_dir_acl;
@@ -175,18 +178,18 @@ void ext2_inodes_init(void);
 
 struct ext2_inode_m *ext2_namei(const char *path, int *error);
 
-ssize_t ext2_balloc(dev_t dev, ino_t num);
-void ext2_bfree(dev_t dev, ssize_t block);
-void ext2_bfree_indirect(dev_t dev, ssize_t block);
-void ext2_bfree_dindirect(dev_t dev, ssize_t block);
-void ext2_bfree_tindirect(dev_t dev, ssize_t block);
+ext2_block ext2_balloc(dev_t dev, ino_t num);
+void ext2_bfree(dev_t dev, ext2_block block);
+void ext2_bfree_indirect(dev_t dev, ext2_block block);
+void ext2_bfree_dindirect(dev_t dev, ext2_block block);
+void ext2_bfree_tindirect(dev_t dev, ext2_block block);
 
 ino_t ext2_ialloc(dev_t dev);
 void ext2_ifree(dev_t dev, ino_t num);
 void ext2_itrunc(struct ext2_inode_m *ip);
 
-uint32_t ext2_bmap(struct ext2_inode_m *ip, off_t off);
-uint32_t ext2_create_block(struct ext2_inode_m *ip, off_t off);
+ext2_block ext2_bmap(struct ext2_inode_m *ip, off_t off);
+ext2_block ext2_create_block(struct ext2_inode_m *ip, off_t off);
 
 void *ext2_open(const char *path, int flags, int mode, int *err);
 
