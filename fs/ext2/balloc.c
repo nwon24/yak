@@ -12,15 +12,15 @@
 #include <kernel/debug.h>
 #include <kernel/mutex.h>
 
-static ssize_t balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *bgd);
+static ext2_block balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *bgd);
 
-ssize_t
+ext2_block
 ext2_balloc(dev_t dev, ino_t num)
 {
 	struct ext2_superblock_m *sb;
 	struct ext2_blk_group_desc *bgd, *tmp;
 	struct buffer *bp;
-	ssize_t block;
+	ext2_block block;
 
 	/*
 	 * First try to allocate a block from the inode's block group.
@@ -57,12 +57,12 @@ ext2_balloc(dev_t dev, ino_t num)
  * Allocate a block from the given block group descriptor table.
  * Must be called with the superblock locked.
  */
-static ssize_t
+static ext2_block
 balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *bgd)
 {
 	struct buffer *bp = NULL;
 	char *p;
-	ssize_t block;
+	ext2_block block;
 	int i;
 
 	if (bgd->bg_free_blocks_count == 0) {
@@ -104,12 +104,12 @@ balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *
  * if there were no free blocks in its block group at the time of allocation.
  */
 void
-ext2_bfree(dev_t dev, ssize_t block)
+ext2_bfree(dev_t dev, ext2_block block)
 {
 	struct ext2_blk_group_desc *bgd;
 	struct ext2_superblock_m *sb;
 	struct buffer *bp;
-	ssize_t b;
+	ext2_block b;
 	char *p;
 	int i;
 
@@ -136,7 +136,7 @@ ext2_bfree(dev_t dev, ssize_t block)
 }
 
 void
-ext2_bfree_indirect(dev_t dev, ssize_t block)
+ext2_bfree_indirect(dev_t dev, ext2_block block)
 {
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
@@ -153,7 +153,7 @@ ext2_bfree_indirect(dev_t dev, ssize_t block)
 }
 
 void
-ext2_bfree_dindirect(dev_t dev, ssize_t block)
+ext2_bfree_dindirect(dev_t dev, ext2_block block)
 {
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
@@ -170,7 +170,7 @@ ext2_bfree_dindirect(dev_t dev, ssize_t block)
 }
 
 void
-ext2_bfree_tindirect(dev_t dev, ssize_t block)
+ext2_bfree_tindirect(dev_t dev, ext2_block block)
 {
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
