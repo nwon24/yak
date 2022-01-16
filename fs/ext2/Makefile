@@ -5,4 +5,5 @@ OBJ_FILES += $(FS_DIR)/ext2/attribute.o \
 	     $(FS_DIR)/ext2/namei.o \
              $(FS_DIR)/ext2/open.o \
              $(FS_DIR)/ext2/ialloc.o \
-             $(FS_DIR)/ext2/bmap.o
+             $(FS_DIR)/ext2/bmap.o \
+             $(FS_DIR)/ext2/dir.o
