@@ -18,7 +18,10 @@
 
 /*
  * Values in 'i_mode' field of an inode.
+ * Type occupy top 4 bits (15 to 12).
+ * Permissions occupy bottom 12 bits.
  */
+#define EXT2_S_IFMT	0xF000	/* Top 4 bits */
 #define EXT2_S_IFSOCK	0xC000	/* socket */
 #define EXT2_S_IFLNK	0xA000	/* symbolic link */
 #define EXT2_S_IFREG	0x8000	/* regular file */
@@ -40,6 +43,18 @@
 #define EXT2_S_IROTH	0x0004	/* others read */
 #define EXT2_S_IWOTH	0x0002	/* others write */
 #define EXT2_S_IXOTH	0x0001	/* others execute */
+
+#define EXT2_S_IRWXU	(EXT2_S_IRUSR | EXT2_S_IWUSR | EXT2_S_IXUSR)
+#define EXT2_S_IRWXG	(EXT2_S_IRGRP | EXT2_S_IWGRP | EXT2_S_IXGRP)
+#define EXT2_S_IRWXO	(EXT2_S_IROTH | EXT2_S_IWOTH | EXT2_S_IXOTH)
+
+#define EXT2_S_ISSOCK(m)	(((m) & EXT2_S_IFMT) == EXT2_S_IFSOCK)
+#define EXT2_S_ISLNK(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFLNK
+#define EXT2_S_ISREG(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFREG)
+#define EXT2_S_ISBLK(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFBLK)
+#define EXT2_S_ISCHR(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFCHR)
+#define EXT2_S_ISFIFO(m)	(((m) & EXT2_S_IFMT) == EXT2_S_IFIFO)
+#define EXT2_S_ISDIR(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFDIR)
 
 #define EXT2_DIRECT_BLOCKS	11
 #define EXT2_INDIRECT_BLOCK	12
