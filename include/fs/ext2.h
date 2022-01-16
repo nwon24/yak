@@ -183,6 +183,13 @@ struct ext2_dir_entry {
 #define I_MODIFIED	(1 << 0)
 #define I_MOUNT		(1 << 1)
 
+enum ext2_perm_mask {
+	PERM_EXEC = 4,
+	PERM_SRCH = 4,
+	PERM_WRITE = 2,
+	PERM_READ = 1,
+};
+
 int ext2_init(void);
 struct ext2_superblock_m *get_ext2_superblock(dev_t dev);
 size_t ext2_get_attribute(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
