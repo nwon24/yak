@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include <asm/cpu_state.h>
+#include <asm/types.h>
 
 #include <fs/fs.h>
 
@@ -20,6 +21,13 @@ struct proc_image {
 
 struct process {
 	int pid;
+	int ppid;
+	uid_t uid;
+	uid_t euid;
+	uid_t suid;
+	uid_t gid;
+	uid_t egid;
+	uid_t sgid;
 	int state;
 	int tty;
 	int priority;
