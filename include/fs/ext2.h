@@ -185,6 +185,9 @@ ino_t ext2_ialloc(dev_t dev);
 void ext2_ifree(dev_t dev, ino_t num);
 void ext2_itrunc(struct ext2_inode_m *ip);
 
+uint32_t ext2_bmap(struct ext2_inode_m *ip, off_t off);
+uint32_t ext2_create_block(struct ext2_inode_m *ip, off_t off);
+
 void *ext2_open(const char *path, int flags, int mode, int *err);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
