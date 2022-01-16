@@ -85,6 +85,8 @@ processes_init(void)
 		process_queues[i] = NULL;
 	current_process = proc;
 	proc->pid = 0;
+	proc->uid = proc->euid = proc->suid = 0;
+	proc->gid = proc->egid = proc->sgid = 0;
 	proc->priority = 0;
 	proc->state = PROC_RUNNABLE;
 	proc->tty = 0;
@@ -113,8 +115,17 @@ kernel_fork(void)
 
 	if ((proc = get_free_proc()) == NULL)
 		return -EAGAIN;
-	if (arch_fork(last_pid, proc) < 0)
+	/*
+	 * Copy most things over.
+	 * Only change the things that need to be changed.
+	 * This must be done 'arch_fork' as otherwise the 'context
+	 * field would be overwritten.
+	 */
+	memmove(proc, current_process, sizeof(*proc));
+	if (arch_fork(last_pid, proc) < 0) {
+		proc->state = 0;
 		return -EAGAIN;
+	}
 	if (!current_process->priority) {
 		/* First fork */
 		proc->priority = PROC_QUANTA - 1;
@@ -124,13 +135,8 @@ kernel_fork(void)
 		proc->quanta = current_process->priority;
 	}
 	proc->pid = last_pid;
+	proc->ppid = current_process->pid;
 	proc->state = PROC_RUNNABLE;
-	proc->tty = current_process->tty;
-	proc->counter = current_process->quanta;
-	proc->root_inode = current_process->root_inode;
-	proc->cwd_inode = current_process->cwd_inode;
-	proc->root_fs = current_process->root_fs;
-	proc->cwd_fs = current_process->cwd_fs;
 	/* Not in queue, let 'adjust_proc_queues' take care of that. */
 	proc->queue_prev = proc->queue_next = NULL;
 	memmove(&proc->image, &current_process->image, sizeof(proc->image));
