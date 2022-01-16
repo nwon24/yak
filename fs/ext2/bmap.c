@@ -10,21 +10,21 @@
 
 #include <kernel/debug.h>
 
-static uint32_t bmap_create(struct ext2_inode_m *ip, off_t off, int create);
-static uint32_t bmap_create_indirect(struct ext2_inode_m *ip, uint32_t lblk, int create);
-static uint32_t bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uint32_t lblk, int create);
-static uint32_t bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uint32_t lblk, int create);
+static ext2_block bmap_create(struct ext2_inode_m *ip, off_t off, int create);
+static ext2_block bmap_create_indirect(struct ext2_inode_m *ip, ext2_block lblk, int create);
+static ext2_block bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext2_block lblk, int create);
+static ext2_block bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext2_block lblk, int create);
 
 /*
  * This should definitely work.
  * It looks simple enough.
  */
-static uint32_t
-bmap_create_indirect(struct ext2_inode_m *ip, uint32_t lblk, int create)
+static ext2_block
+bmap_create_indirect(struct ext2_inode_m *ip, ext2_block lblk, int create)
 {
 	struct buffer *bp = NULL;
-	uint32_t *b;
-	uint32_t ret = 0;
+	ext2_block *b;
+	ext2_block ret = 0;
 
 	lblk -= EXT2_DIRECT_BLOCKS + 1;
 	b = &ip->i_ino.i_block[EXT2_INDIRECT_BLOCK];
@@ -54,14 +54,14 @@ out:
 /*
  * I think this works. Hopefully.
  */
-static uint32_t
-bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uint32_t lblk, int create)
+static ext2_block
+bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext2_block lblk, int create)
 {
 	struct buffer *bp = NULL;
-	uint32_t indir_blocks, *b, tmp;
-	uint32_t ret = 0;
+	ext2_block indir_blocks, *b, tmp;
+	ext2_block ret = 0;
 
-	indir_blocks = EXT2_BLOCKSIZE(sb) / sizeof(uint32_t);
+	indir_blocks = EXT2_BLOCKSIZE(sb) / sizeof(ext2_block);
 	lblk -= EXT2_DIRECT_BLOCKS + indir_blocks+ 1;
 	b = &ip->i_ino.i_block[EXT2_DINDIRECT_BLOCK];
 	if (create && *b == 0) {
@@ -74,7 +74,7 @@ bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uin
 	bp = bread(ip->i_dev, *b);
 	if (bp == NULL)
 		goto out;
-	b = &(((uint32_t *)bp->b_data)[lblk / indir_blocks]);
+	b = &(((ext2_block *)bp->b_data)[lblk / indir_blocks]);
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
@@ -88,7 +88,7 @@ bmap_create_dindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uin
 	bp = bread(ip->i_dev, tmp);
 	if (bp == NULL)
 		goto out;
-	b = &(((uint32_t *)bp->b_data)[lblk % indir_blocks]);
+	b = &(((ext2_block *)bp->b_data)[lblk % indir_blocks]);
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
@@ -107,14 +107,14 @@ out:
 /*
  * I really have no idea if this works.
  */
-static uint32_t
-bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uint32_t lblk, int create)
+static ext2_block
+bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, ext2_block lblk, int create)
 {
 	struct buffer *bp = NULL;
-	uint32_t dindir_blocks, indir_blocks, *b, tmp;
-	uint32_t ret = 0;
+	ext2_block dindir_blocks, indir_blocks, *b, tmp;
+	ext2_block ret = 0;
 
-	indir_blocks = EXT2_BLOCKSIZE(sb) / sizeof(uint32_t);
+	indir_blocks = EXT2_BLOCKSIZE(sb) / sizeof(ext2_block);
 	dindir_blocks = indir_blocks * indir_blocks;
 	lblk -= EXT2_DIRECT_BLOCKS + indir_blocks + dindir_blocks + 1;
 	b = &ip->i_ino.i_block[EXT2_TINDIRECT_BLOCK];
@@ -128,7 +128,7 @@ bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uin
 	bp = bread(ip->i_dev, *b);
 	if (bp == NULL)
 		goto out;
-	b = &(((uint32_t *)bp->b_data)[lblk / dindir_blocks]);
+	b = &(((ext2_block *)bp->b_data)[lblk / dindir_blocks]);
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
@@ -140,7 +140,7 @@ bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uin
 	tmp = *b;
 	brelse(bp);
 	bp = bread(ip->i_dev, tmp);
-	b = &(((uint32_t *)bp->b_data)[lblk / indir_blocks]);
+	b = &(((ext2_block *)bp->b_data)[lblk / indir_blocks]);
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
@@ -154,7 +154,7 @@ bmap_create_tindirect(struct ext2_inode_m *ip, struct ext2_superblock_m *sb, uin
 	bp = bread(ip->i_dev, *b);
 	if (bp == NULL)
 		goto out;
-	b = &(((uint32_t *)bp->b_data)[lblk % indir_blocks]);
+	b = &(((ext2_block *)bp->b_data)[lblk % indir_blocks]);
 	if (create && *b == 0) {
 		*b = ext2_balloc(ip->i_dev, ip->i_num);
 		ip->i_flags |= I_MODIFIED;
@@ -174,12 +174,12 @@ out:
  * Looks simple enough, but once you get into doubly indirect blocks
  * and then triply indirect blocks things become a mess quickly.
  */
-static uint32_t
+static ext2_block
 bmap_create(struct ext2_inode_m *ip, off_t off, int create)
 {
 	/* Logical block offset */
-	uint32_t lblk, *b;
-	uint32_t indir_blocks, dindir_blocks;
+	ext2_block lblk, *b;
+	ext2_block indir_blocks, dindir_blocks;
 	struct ext2_superblock_m *sb;
 
 	sb = get_ext2_superblock(ip->i_dev);
@@ -204,7 +204,7 @@ bmap_create(struct ext2_inode_m *ip, off_t off, int create)
 	 * so 'lblk' == 268 is actually the 269th block of the file, and thus
 	 * needs double indirection.
 	 */
-	indir_blocks = EXT2_BLOCKSIZE(sb) / sizeof(uint32_t);
+	indir_blocks = EXT2_BLOCKSIZE(sb) / sizeof(ext2_block);
 	if (lblk < indir_blocks + EXT2_DIRECT_BLOCKS + 1)
 		return bmap_create_indirect(ip, lblk, create);
 	dindir_blocks = indir_blocks * indir_blocks;
@@ -217,7 +217,7 @@ bmap_create(struct ext2_inode_m *ip, off_t off, int create)
  * Used in read routines because if the block is not there, we want to return
  * an error rather than creating it automatically.
  */
-uint32_t
+ext2_block
 ext2_bmap(struct ext2_inode_m *ip, off_t off)
 {
 	return bmap_create(ip, off, 0);
@@ -227,7 +227,7 @@ ext2_bmap(struct ext2_inode_m *ip, off_t off)
  * Used in write routines because the file should be naturally expanded as
  * more data is written to it.
  */
-uint32_t
+ext2_block
 ext2_create_block(struct ext2_inode_m *ip, off_t off)
 {
 	return bmap_create(ip, off, 1);
