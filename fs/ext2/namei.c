@@ -43,7 +43,7 @@ ext2_namei(const char *path, int *error)
 		panic("ext2_namei: current_process has no root inode or working directory inode");
 	p1++;
 loop:
-	if (get_ubyte(p1) != '\0' && !(ip->i_ino.i_mode & EXT2_S_IFDIR)) {
+	if (get_ubyte(p1) != '\0' && !EXT2_S_ISDIR(ip->i_ino.i_mode)) {
 		*error = -ENOTDIR;
 		return NULL;
 	}
