@@ -58,6 +58,7 @@ loop:
 		*error = -ENOENT;
 		return NULL;
 	}
+	ext2_iput(ip);
 	ip = dp;
 	goto loop;
 }
