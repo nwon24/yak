@@ -56,6 +56,16 @@
 #define EXT2_S_ISFIFO(m)	(((m) & EXT2_S_IFMT) == EXT2_S_IFIFO)
 #define EXT2_S_ISDIR(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFDIR)
 
+/* Inode type values in directory entries */
+#define EXT2_FT_UNKNOWN		0
+#define EXT2_FT_REG_FILE	1
+#define EXT2_FT_DIR		2
+#define EXT2_FT_CHRDEV		3
+#define EXT2_FT_BLKDEV		4
+#define EXT2_FT_FIFO		5
+#define EXT2_FT_SOCK		6
+#define EXT2_FT_SYMLINK		7
+
 #define EXT2_DIRECT_BLOCKS	11
 #define EXT2_INDIRECT_BLOCK	12
 #define EXT2_DINDIRECT_BLOCK	13
@@ -169,6 +179,7 @@ struct ext2_inode_m {
 	struct ext2_inode_m *i_prev;
 };
 
+#define EXT2_MAX_NAME_LEN	255
 /*
  * Contains only the header fields, since the name
  * can be abitrarily long (up to 255)
