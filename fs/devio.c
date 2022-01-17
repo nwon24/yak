@@ -6,6 +6,8 @@
 
 #include <drivers/drive.h>
 
+#include <generic/errno.h>
+
 #include <fs/buffer.h>
 #include <fs/dev.h>
 
@@ -18,13 +20,30 @@ static struct blk_dev_ops blk_dev_table[] = {
 	[HD_DEV] = { .d_rw = hddev_physio }
 };
 
+static struct chr_dev_ops chr_dev_table[] = {
+	[TTY_DEV] = { .d_open = tty_open, .d_rw = tty_rw, .d_close = tty_close },
+	[TTYX_DEV] = { .d_open = tty_open, .d_rw = ttyx_rw, .d_close = tty_close},
+};
+
 int
 blk_devio(struct buffer *bp, int rw)
 {
 	if (blk_dev_table[DEV_MAJOR(bp->b_dev)].d_rw)
 		return (*blk_dev_table[DEV_MAJOR(bp->b_dev)].d_rw)(bp, rw);
 	bp->b_flags |= B_ERROR;
-	return -1;
+	return -ENODEV;
+}
+
+int
+chr_devio(dev_t dev, char *buf, int count, int rw)
+{
+	int major = DEV_MAJOR(dev);
+
+	if (!is_chardev(dev))
+		return -ENODEV;
+	if (chr_dev_table[major].d_rw)
+		return (*chr_dev_table[major].d_rw)(DEV_MINOR(dev), buf, count, rw);
+	return -ENODEV;
 }
 
 static int
