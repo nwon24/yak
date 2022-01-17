@@ -4,7 +4,7 @@ GRUBCFG := $(TESTING_DIR)/grub.cfg
 DISK := $(TESTING_DIR)/disk.img
 
 $(SYSROOT_DIR): $(GRUBCFG) $(KERNEL_BIN)
-	$(Q)mkdir -p $@/boot/grub
+	$(Q)$(TESTING_DIR)/build_sysroot.sh $@
 	$(Q)cp $(GRUBCFG) $@/boot/grub/
 	$(Q)cp $(KERNEL_BIN) $@/boot/
 	$(E) " GEN	" $@
