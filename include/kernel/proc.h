@@ -28,6 +28,7 @@ struct process {
 	uid_t gid;
 	uid_t egid;
 	uid_t sgid;
+	int umask;
 	int state;
 	int tty;
 	int priority;
