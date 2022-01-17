@@ -19,6 +19,7 @@ static struct fs_driver_ops ext2_driver_ops = {
 	.fs_open = ext2_open,
 	.fs_read = ext2_read,
 	.fs_write = ext2_write,
+	.fs_sync = ext2_sync,
 };
 
 /*
@@ -30,6 +31,8 @@ static struct fs_driver_ops ext2_driver_ops = {
 static struct generic_filesystem ext2_fs_struct;
 
 static void ext2_mount_root(void);
+static int ext2_sync_super(dev_t dev, struct ext2_superblock_m *sb);
+static int ext2_sync_bgd_table(dev_t dev, struct ext2_superblock_m *sb);
 
 int
 ext2_init(void)
@@ -82,6 +85,65 @@ ext2_init(void)
 	memmove(sb->bgd_table, bp->b_data, tmp1 * sizeof(*sb->bgd_table));
 	ext2_inodes_init();
 	register_mount_root_routine(ext2_mount_root);
+	return 0;
+}
+
+int
+ext2_sync(struct generic_filesystem *fs)
+{
+	struct ext2_superblock_m *sb;
+
+	if (fs->f_fs != EXT2)
+		return -1;
+	sb = fs->f_super;
+	if (sb == NULL)
+		return -1;
+	ext2_sync_super(fs->f_dev, sb);
+	ext2_sync_bgd_table(fs->f_dev, sb);
+	ext2_inode_sync();
+	return 0;
+}
+
+static int
+ext2_sync_super(dev_t dev, struct ext2_superblock_m *sb)
+{
+	struct buffer *bp;
+	ext2_block block;
+	int off;
+
+	block = EXT2_BLOCKSIZE(sb) / EXT2_SB_OFF;
+	off = EXT2_BLOCKSIZE(sb) % EXT2_SB_OFF;
+	if (sb->modified) {
+		bp = bread(dev, block);
+		if (bp == NULL)
+			return -1;
+		*(struct ext2_superblock *)(bp->b_data + off) = sb->sb;
+		/*
+		 * Just mark it for delayed write like normal.
+		 * Assume that the higher-level 'sync' routine will
+		 * flush the buffer cache.
+		 */
+		bp->b_flags |= B_DWRITE;
+		brelse(bp);
+	}
+	return 0;
+}
+
+static int
+ext2_sync_bgd_table(dev_t dev, struct ext2_superblock_m *sb)
+{
+	struct buffer *bp;
+	ext2_block block;
+
+	block = (EXT2_BLOCKSIZE(sb) / EXT2_SB_OFF) + 1;
+	if (sb->modified) {
+		bp = bread(dev, block);
+		if (bp == NULL)
+			return -1;
+		memmove(bp->b_data, sb->bgd_table, sb->nr_blk_group * sizeof(*sb->bgd_table));
+		bp->b_flags |= B_DWRITE;
+		brelse(bp);
+	}
 	return 0;
 }
 
