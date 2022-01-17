@@ -20,4 +20,4 @@ first_user_code:
 	int	$0x80
 3:	jmp	.
 
-file:	.asciz	"/boot/grub/grub.cfg"
+file:	.asciz	"/dev/tty"
