@@ -136,6 +136,24 @@ ext2_itrunc(struct ext2_inode_m *ip)
 	ip->i_flags |= I_MODIFIED;
 }
 
+void
+ext2_inode_sync(void)
+{
+	struct ext2_inode_m *ip;
+
+	ip = free_list.i_next_free;
+	while (ip < free_list.i_next_free + NR_INODE_CACHE) {
+		if (ip->i_count) {
+			mutex_lock(&ip->i_mutex);
+			ip->i_count++;
+			write_inode(ip);
+			ext2_iput(ip);
+			mutex_unlock(&ip->i_mutex);
+		}
+		ip++;
+	}
+}
+
 static void
 remove_from_free_list(struct ext2_inode_m *ip)
 {
