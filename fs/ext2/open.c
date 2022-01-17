@@ -46,5 +46,6 @@ ext2_open(const char *path, int flags, int mode, int *err)
 	if (EXT2_S_ISCHR(ip->i_ino.i_mode))
 		chr_dev_open(ip->i_ino.i_block[0]);
 	printk("ext2_open: ip->i_mode %x\r\n", ip->i_ino.i_mode);
+	mutex_unlock(&ip->i_mutex);
 	return ip;
 }
