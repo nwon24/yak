@@ -55,7 +55,7 @@ include $(TESTING_DIR)/Makefile
 
 distclean:
 	$(Q)make clean
-	$(Q)rm -rf $(SYSROOT_DIR) $(DISK) qemu.log *.tar
+	$(Q)rm -rf $(SYSROOT_DIR) $(DISK) qemu.log kernel_*.tar
 	$(E) " DISTCLEAN"
 dist: distclean
 	$(Q)./dist.sh $(KERNEL_TAR)
