@@ -41,5 +41,7 @@ struct chr_dev_ops {
 };
 
 int blk_devio(struct buffer *bp, int rw);
+int chr_devio(dev_t dev, char *buf, int count, int rw);
+int chr_dev_open(dev_t dev);
 
 #endif /* DEV_H */
