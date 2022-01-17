@@ -9,7 +9,8 @@
 
 /* Number of bytes from start of volume */
 #define EXT2_SB_OFF	1024
-
+/* Size of superblock */
+#define EXT2_SB_SIZE	1024
 /* Used to determine if it is actually ext2 */
 #define EXT2_MAGIC	0xEF53
 
@@ -229,6 +230,9 @@ int ext2_read(struct file *file, void *buf, size_t count);
 int ext2_write(struct file *file, void *buf, size_t count);
 
 int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask);
+
+int ext2_sync(struct generic_filesystem *fs);
+void ext2_inode_sync(void);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
