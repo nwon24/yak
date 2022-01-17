@@ -149,7 +149,7 @@ tty_rw(int minor, char *buf, int count, int rw)
 	 */
 	if (minor != 0)
 		return -EINVAL;
-	return (rw == WRITE) ? tty_write(minor, buf, count) : tty_read(minor, buf, count);
+	return (rw == WRITE) ? tty_write(current_process->tty, buf, count) : tty_read(current_process->tty, buf, count);
 }
 
 int
