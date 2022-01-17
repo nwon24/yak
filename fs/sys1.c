@@ -1,6 +1,6 @@
 /*
- * open.c
- * The 'open' system call.
+ * sys1.c
+ * Some file system system calls.
  */
 #include <asm/uaccess.h>
 #include <asm/paging.h>
@@ -75,6 +75,7 @@ kernel_open(const char *path, int flags, mode_t mode)
 		return -ENFILE;
 	if ((fs = get_fs_from_path(path)) == NULL)
 		return -EINVAL;
+	fp->f_fs = fs;
 	fp->f_inode = fs->f_driver->fs_open(path, flags, mode, &err);
 	if (fp->f_inode == NULL)
 		return err;
@@ -84,4 +85,34 @@ kernel_open(const char *path, int flags, mode_t mode)
 	fp->f_flags = flags;
 	fp->f_count = 1;
 	return fd;
+}
+
+ssize_t
+kernel_read(int fd, void *buf, size_t count)
+{
+	struct file *fp;
+
+	if (buf == NULL || !check_user_ptr(buf))
+		return -EFAULT;
+	fp = current_process->file_table[fd];
+	if (fp == NULL)
+		return -EBADF;
+	if (count == 0)
+		return 0;
+	return fp->f_fs->f_driver->fs_read(fp, buf, count);
+}
+
+ssize_t
+kernel_write(int fd, void *buf, size_t count)
+{
+	struct file *fp;
+
+	if (buf == NULL || !check_user_ptr(buf))
+		return -EFAULT;
+	fp = current_process->file_table[fd];
+	if (fp == NULL)
+		return -EBADF;
+	if (count == 0)
+		return 0;
+	return fp->f_fs->f_driver->fs_write(fp, buf, count);
 }
