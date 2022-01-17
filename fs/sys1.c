@@ -9,6 +9,7 @@
 #include <fs/fs.h>
 
 #include <generic/errno.h>
+#include <generic/fcntl.h>
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
@@ -95,7 +96,7 @@ kernel_read(int fd, void *buf, size_t count)
 	if (buf == NULL || !check_user_ptr(buf))
 		return -EFAULT;
 	fp = current_process->file_table[fd];
-	if (fp == NULL)
+	if (fp == NULL || (fp->f_flags & O_ACCMODE) == O_WRONLY)
 		return -EBADF;
 	if (count == 0)
 		return 0;
@@ -110,7 +111,7 @@ kernel_write(int fd, void *buf, size_t count)
 	if (buf == NULL || !check_user_ptr(buf))
 		return -EFAULT;
 	fp = current_process->file_table[fd];
-	if (fp == NULL)
+	if (fp == NULL || (fp->f_flags & O_ACCMODE) == O_RDONLY)
 		return -EBADF;
 	if (count == 0)
 		return 0;
