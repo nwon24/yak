@@ -39,9 +39,13 @@ struct generic_filesystem;
 /*
  * Will add to this.
  */
+struct file;
+
 struct fs_driver_ops {
 	size_t (*fs_get_attribute)(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
 	void *(*fs_open)(const char *path, int flags, int mode, int *err);
+	int (*fs_read)(struct file *file, void *buf, size_t count);
+	int (*fs_write)(struct file *file, void *buf, size_t count);
 };
 
 struct generic_filesystem {
@@ -55,6 +59,7 @@ struct generic_filesystem {
 extern struct generic_filesystem *mount_table[];
 
 struct file {
+	struct generic_filesystem *f_fs;
 	void *f_inode;	/* Filesystem inode */
 	off_t f_pos;	/* Position in file */
 	int f_mode;
@@ -70,12 +75,16 @@ void register_mount_root_routine(void (*routine)(void));
 extern void (*do_mount_root)(void);
 
 int kernel_open(const char *path, int flags, int mode);
+ssize_t kernel_read(int fd, void *buf, size_t count);
+ssize_t kernel_write(int fd, void *buf, size_t count);
 
 static inline void
 fs_init(void)
 {
 	buffer_init();
 	register_syscall(__NR_open, (uint32_t)kernel_open, 3);
+	register_syscall(__NR_read, (uint32_t)kernel_read, 3);
+	register_syscall(__NR_write, (uint32_t)kernel_write, 3);
 }
 
 #endif /* FS_H */
