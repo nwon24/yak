@@ -6,6 +6,13 @@
 
 #include <drivers/tty.h>
 
+#include <fs/dev.h>
+
+#include <generic/errno.h>
+
+#include <kernel/debug.h>
+#include <kernel/proc.h>
+
 #define NR_TTY	6
 
 static struct tty tty_tab[NR_TTY];
@@ -102,6 +109,11 @@ tty_write(int n, char *buf, int count)
 
 	if ((tp = &tty_tab[n]) >= &tty_tab[NR_TTY])
 		return -1;
+	/*
+	 * Should not be here, which is why we panic.
+	 */
+	if (tp->t_open == 0 && n != DEBUG_TTY)
+		panic("tty_write: TTY is not open!");
 	i = count;
 	p = buf;
 	while (*p && i-- && !tty_queue_full(&tp->t_writeq))
@@ -120,9 +132,52 @@ tty_read(int n, char *buf, int count)
 
 	if ((tp = &tty_tab[n]) >= &tty_tab[NR_TTY])
 		return -1;
+	if (tp->t_open == 0 && n != DEBUG_TTY)
+		panic("tty_read: TTY is not open!");
 	i = count;
 	p = buf;
 	while (i-- && !tty_queue_empty(&tp->t_readq))
 		*p++ = tty_getch(tp);
 	return p - buf;
-}	
+}
+
+int
+tty_rw(int minor, char *buf, int count, int rw)
+{
+	/*
+	 * Not really needed.
+	 */
+	if (minor != 0)
+		return -EINVAL;
+	return (rw == WRITE) ? tty_write(minor, buf, count) : tty_read(minor, buf, count);
+}
+
+int
+ttyx_rw(int minor, char *buf, int count, int rw)
+{
+	return (rw == WRITE) ? tty_write(minor, buf, count) : tty_read(minor, buf, count);
+}
+
+int
+tty_open(int minor)
+{
+	struct tty *tp;
+
+	if (minor < 0 || minor > NR_TTY)
+		return -EINVAL;
+	tp = tty_tab + minor;
+	tp->t_open = 1;
+	return minor;
+}
+
+int
+tty_close(int minor)
+{
+	struct tty *tp;
+
+	if (minor < 0 || minor > NR_TTY)
+		return -EINVAL;
+	tp = tty_tab + minor;
+	tp->t_open = 0;
+	return minor;
+}
