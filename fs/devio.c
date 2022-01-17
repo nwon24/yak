@@ -46,6 +46,13 @@ chr_devio(dev_t dev, char *buf, int count, int rw)
 	return -ENODEV;
 }
 
+int chr_dev_open(dev_t dev)
+{
+	if (!is_chardev(dev))
+		return -1;
+	return (*chr_dev_table[DEV_MAJOR(dev)].d_open)(DEV_MINOR(dev));
+}
+
 static int
 hddev_physio(struct buffer *bp, int rw)
 {
