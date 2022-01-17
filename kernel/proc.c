@@ -90,6 +90,7 @@ processes_init(void)
 	proc->priority = 0;
 	proc->state = PROC_RUNNABLE;
 	proc->tty = 0;
+	proc->umask = 0;
 	proc->quanta = proc->priority;
 	proc->counter = proc->quanta;
 	proc->image.vir_code_base = (uint32_t)&_start_user_head;
