@@ -184,7 +184,21 @@ syscall:
 	pushl	current_cpu_state
 	call	handle_syscall
 	addl	$8, %esp
-	jmp	restart
+	/* Can't use 'restart' here as %eax needs to be preserved. */
+	popl	%ebp
+	popl	%edi
+	popl	%esi
+	popl	%edx
+	popl	%ecx
+	popl	%ebx
+	/* Skip over %eax as that is the return value of the syscall */
+	addl	$4, %esp
+	popl	%gs
+	popl	%fs
+	popl	%es
+	popl	%ds
+	addl	$4, %esp
+	iret
 
 	.global	restart
 restart:
