@@ -61,7 +61,7 @@ extern struct generic_filesystem *mount_table[];
 struct file {
 	struct generic_filesystem *f_fs;
 	void *f_inode;	/* Filesystem inode */
-	off_t f_pos;	/* Position in file */
+	size_t f_pos;	/* Position in file */
 	int f_mode;
 	int f_flags;
 	unsigned int f_count;
