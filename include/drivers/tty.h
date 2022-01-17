@@ -24,10 +24,15 @@ struct tty {
 	struct tty_queue t_writeq;
 	struct tty_queue t_readq;
 	int t_stopped;
+	int t_open;
 };
 
 struct tty *tty_driver_register(int n, struct tty_driver *driver);
 int tty_write(int n, char *buf, int count);
 int tty_init(void);
+int tty_open(int minor);
+int tty_close(int minor);
+int tty_rw(int minor, char *buf, int count, int rw);
+int ttyx_rw(int minor, char *buf, int count, int rw);
 
 #endif /* TTY_H */
