@@ -18,6 +18,12 @@ first_user_code:
 	movl	$0, %ecx
 	movl	$0, %edx
 	int	$0x80
+	movl	$__NR_write, %eax
+	movl	$0, %ebx
+	movl	$msg, %ecx
+	movl	$13, %edx
+	int	$0x80
 3:	jmp	.
 
 file:	.asciz	"/dev/tty"
+msg:	.asciz	"Hello, world!"
