@@ -113,6 +113,25 @@ buffer_init(void)
 }
 
 void
+buffer_sync(void)
+{
+	struct buffer *bp;
+
+	bp = free_list.b_next_free;
+	while (bp != &free_list) {
+		if (bp == NULL)
+			panic("buffer_sync: free list corrupted");
+		mutex_lock(&bp->b_mutex);
+		if (bp->b_flags & B_DWRITE) {
+			bp->b_flags &= ~B_DWRITE;
+			bwrite(bp);
+		}
+		mutex_unlock(&bp->b_mutex);
+		bp = bp->b_next_free;
+	}
+}
+
+void
 brelse(struct buffer *bp)
 {
 	disable_intr();
