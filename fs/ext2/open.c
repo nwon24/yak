@@ -22,20 +22,21 @@ ext2_open(const char *path, int flags, int mode, int *err)
 	struct ext2_inode_m *ip;
 
 	if ((ip = ext2_namei(path, err)) == NULL) {
-		printk("not found err ret %p %d\r\n", ip, *err);
-		return NULL;
+		if (!(flags & O_CREAT))
+			return NULL;
+		panic("TODO: Implement creation of files using open()");
 	}
 	mode &= ~current_process->umask & 0777;
-	if (((flags & O_RDONLY) || (flags & O_RDWR)) && ext2_permission(ip, PERM_READ) < 0) {
+	if (!((flags & O_ACCMODE) == O_WRONLY) && ext2_permission(ip, PERM_READ) < 0) {
 		*err = -EACCES;
 		return NULL;
 	}
-	if (((flags & O_WRONLY) || (flags & O_RDWR)) && ext2_permission(ip, PERM_WRITE) < 0) {
+	if (!((flags & O_ACCMODE) == O_RDONLY) && ext2_permission(ip, PERM_WRITE) < 0) {
 		*err = -EACCES;
 		return NULL;
 	}
 
-	if (((flags & O_RDWR) || (flags & O_WRONLY)) && EXT2_S_ISDIR(ip->i_ino.i_mode)) {
+	if (!((flags & O_ACCMODE) == O_RDONLY) && EXT2_S_ISDIR(ip->i_ino.i_mode)) {
 		*err = -EISDIR;
 		return NULL;
 	}
