@@ -4,6 +4,7 @@
  * It is put in its own section in the kernel image so that it is easy to map.
  */
 #include <generic/unistd.h>
+#include <generic/fcntl.h>
 
 	.section .user_head, "a"
 	.global	first_user_code
@@ -15,12 +16,12 @@ first_user_code:
 1:	jmp	.
 2:	movl	$__NR_open, %eax
 	movl	$file, %ebx
-	movl	$0, %ecx
+	movl	$O_RDWR, %ecx
 	movl	$0, %edx
 	int	$0x80
 	movl	$__NR_open, %eax
 	movl	$file2, %ebx
-	movl	$0, %ecx
+	movl	$O_RDONLY, %ecx
 	movl	$0, %edx
 	int	$0x80
 	movl	%eax, %esi
