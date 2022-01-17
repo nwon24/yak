@@ -9,6 +9,7 @@
 #include <asm/paging.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 #include <generic/string.h>
 
@@ -164,11 +165,11 @@ virt_map_first_proc(uint32_t start, uint32_t size)
 		for (i = ((tmp >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK) << 2; i < PAGE_SIZE; i += 4, tmp += PAGE_SIZE) {
 			if (tmp > start + size)
 				break;
-			*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = tmp | PAGE_PRESENT | PAGE_USER;
+			*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = tmp | PAGE_PRESENT | PAGE_USER | PAGE_WRITABLE;
 		}
 		tmp_map_page(pg_dir);
 		tlb_flush(VIRT_ADDR_TMP_PAGE);
-		*(uint32_t *)(VIRT_ADDR_TMP_PAGE + (index << 2) + (j << 2)) = pg_table | PAGE_PRESENT | PAGE_USER;
+		*(uint32_t *)(VIRT_ADDR_TMP_PAGE + (index << 2) + (j << 2)) = pg_table | PAGE_PRESENT | PAGE_USER | PAGE_WRITABLE;
 	}
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
@@ -197,6 +198,13 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
 	/*
+	 * If we are doing the first fork, don't bother with copy on write as it should
+	 * only be a single page. And because the first process after doing the fork is idle
+	 * and therefore doesn't write to any memory, we don't even have to copy the page itself.
+	 */
+	if (current_process->pid == 0)
+		goto out;
+	/*
 	 * Setting the write bit to 0 makes the entire 4 MiB region mapped by the page
 	 * table unwritable.
 	 */
@@ -204,6 +212,7 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 		if (*p & PAGE_PRESENT && *p & PAGE_USER)
 			*p &= ~PAGE_WRITABLE;
 	}
+out:
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 }
