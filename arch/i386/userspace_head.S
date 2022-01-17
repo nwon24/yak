@@ -23,11 +23,7 @@ first_user_code:
 	movl	$0, %ecx
 	movl	$0, %edx
 	int	$0x80
-	cmpl	$5, %eax
-	jne	1f
-	cli
-	hlt
-1:	movl	%eax, %esi
+	movl	%eax, %esi
 	movl	$__NR_read, %eax
 	movl	%esi, %ebx
 	movl	$buf, %ecx
