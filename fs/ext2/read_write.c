@@ -106,6 +106,7 @@ file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 	 * in 'ext2_iget', whcih it should be.
 	 */
 	ip->i_ino.i_atime = CURRENT_TIME;
+	ip->i_flags |= I_MODIFIED;
 	mutex_unlock(&ip->i_mutex);
 	if (err != 0)
 		return err;
@@ -126,7 +127,7 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 	sb = file->f_fs->f_super;
 	p = buf;
 	while (c) {
-		block = ext2_bmap(ip, pos);
+		block = ext2_create_block(ip, pos);
 		if (block) {
 			bp = bread(ip->i_dev, block);
 			if (bp == NULL) {
@@ -142,7 +143,7 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 		c -= nr;
 		pos += nr;
 		while (nr--) {
-			*p = get_ubyte(s);
+			*s = get_ubyte(p);
 			p++;
 			s++;
 		}
@@ -151,6 +152,8 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 		bp = NULL;
 	}
 	ip->i_ino.i_mtime = CURRENT_TIME;
+	ip->i_ino.i_size += count - c;
+	ip->i_flags |= I_MODIFIED;
 	mutex_unlock(&ip->i_mutex);
 	file->f_pos = pos;
 	if (bp != NULL)
