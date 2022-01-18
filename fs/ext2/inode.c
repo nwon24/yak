@@ -143,7 +143,7 @@ ext2_inode_sync(void)
 
 	ip = free_list.i_next_free;
 	while (ip < free_list.i_next_free + NR_INODE_CACHE) {
-		if (ip->i_count) {
+		if (ip->i_count && ip->i_dev != NODEV) {
 			mutex_lock(&ip->i_mutex);
 			ip->i_count++;
 			write_inode(ip);
