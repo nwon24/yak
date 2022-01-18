@@ -21,12 +21,12 @@ first_user_code:
 	int	$0x80
 	movl	$__NR_open, %eax
 	movl	$file2, %ebx
-	movl	$O_RDONLY, %ecx
-	movl	$0, %edx
+	movl	$O_RDWR | O_CREAT, %ecx
+	movl	$100664, %edx
 	int	$0x80
-	movl	%eax, %esi
+	movl	%eax, fd
 	movl	$__NR_read, %eax
-	movl	%esi, %ebx
+	movl	fd, %ebx
 	movl	$buf, %ecx
 	movl	$5, %edx
 	int	$0x80
@@ -35,9 +35,18 @@ first_user_code:
 	movl	$buf, %ecx
 	movl	$5, %edx
 	int	$0x80
+	movl	$__NR_write, %eax
+	movl	fd, %ebx
+	movl	$buf2, %ecx
+	movl	$5, %edx
+	int	$0x80
+	movl	$__NR_sync, %eax
+	int	$0x80
 3:	jmp	.
 
 file:	.asciz	"/dev/tty"
-file2:	.asciz 	"/boot/grub/grub.cfg"
+file2:	.asciz 	"/test"
 msg:	.asciz	"Hello, world!"
+fd:	.long	0
 buf:	.space	5
+buf2:	.asciz	"hahaa"
