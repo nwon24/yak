@@ -63,36 +63,55 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 	bp = bread(dir->i_dev, block);
 	if (bp == NULL)
 		return NULL;
+	rec_len = 8 + len;
+	if (rec_len % 4 != 0)
+		rec_len += 4 - (len % 4);
 	sb = get_ext2_superblock(dir->i_dev);
 	dentry = (struct ext2_dir_entry *)bp->b_data;
-	rec_len = 8 + len + (4 - (len % 4));
+	if (dentry->d_inode == 0) {
+		dentry->d_inode = ip->i_num;
+		dentry->d_name_len = len;
+		dentry->d_rec_len = EXT2_BLOCKSIZE(sb);
+		dentry->d_file_type = dentry_file_type(ip);
+		brelse(bp);
+		return ip;
+	}
+
 	off = 0;
 	while (1) {
 		/*
 		 * If we have gone off the end of the block, there is no more space for the
 		 * directory entry, so create a new block.
 		 */
+		printk("dentry inode %d type %d\r\n", dentry->d_inode, dentry->d_file_type);
 		if ((char *)dentry >= bp->b_data + EXT2_BLOCKSIZE(sb)) {
+			printk("Here create\r\n");
 			block = ext2_create_block(dir, off);
 			brelse(bp);
 			bp = bread(dir->i_dev, block);
 			if (bp == NULL)
-				return NULL;
+				break;
 			dentry = (struct ext2_dir_entry *)bp->b_data;
 		}
 		/*
 		 * An inode value of 0 indicates that the entry is not present.
 		 */
-		if (dentry->d_inode == 0 && (char *)dentry + rec_len - bp->b_data < EXT2_BLOCKSIZE(sb)) {
+		if ((char *)dentry + dentry->d_rec_len >= bp->b_data + EXT2_BLOCKSIZE(sb) && (char *)dentry + rec_len - bp->b_data < EXT2_BLOCKSIZE(sb)) {
+			dentry->d_rec_len = dentry->d_name_len + 8;
+			if (dentry->d_rec_len % 4 != 0)
+				dentry->d_rec_len += 4 - (dentry->d_rec_len % 4);
+			dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
 			dentry->d_inode = ip->i_num;
 			dentry->d_file_type = dentry_file_type(ip);
 			dentry->d_name_len = len;
-			dentry->d_rec_len = rec_len;
+			dentry->d_rec_len = EXT2_BLOCKSIZE(sb) - ((char *)dentry - bp->b_data);
 			memmove((char *)dentry + 8, name, len);
 			bp->b_flags |= B_DWRITE;
+			brelse(bp);
 			dir->i_ino.i_mtime = CURRENT_TIME;
+			ip->i_flags |= I_MODIFIED;
 			return ip;
-		} else if (dentry->d_inode == 0) {
+		} else if (dentry->d_inode == 0 || dentry->d_file_type == EXT2_FT_UNKNOWN) {
 			block = ext2_create_block(dir, off);
 			brelse(bp);
 			bp = bread(dir->i_dev, block);
