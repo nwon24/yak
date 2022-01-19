@@ -26,6 +26,7 @@
 
 static struct ext2_inode_m free_list;
 static struct ext2_inode_m **hash_queues;
+static struct ext2_inode_m *cache_start;
 
 static struct ext2_inode_m *in_hash_queue(dev_t dev, ino_t num);
 static void remove_from_free_list(struct ext2_inode_m *ip);
@@ -50,7 +51,8 @@ ext2_inodes_init(void)
 		panic("Unable to allocate hash table for inodes: kvamlloc returned NULL");
 	for (i = 0; i < NR_BUF_HASH; i++)
 		hash_queues[i] = NULL;
-	free_list.i_next_free = kvmalloc(NR_INODE_CACHE * sizeof(*free_list.i_next_free));
+	cache_start = kvmalloc(NR_INODE_CACHE * sizeof(*free_list.i_next_free));
+	free_list.i_next_free = cache_start;
 	if (free_list.i_next_free == NULL)
 		panic("Unable to allocate inode cache: kvmalloc returned NULL");
 	for (ip = free_list.i_next_free; ip < free_list.i_next_free + NR_INODE_CACHE; ip++) {
@@ -92,9 +94,9 @@ ext2_iget(dev_t dev, ino_t num)
 		ip = free_list.i_next_free;
 		mutex_lock(&ip->i_mutex);
 		remove_from_free_list(ip);
+		remove_from_hash_queue(ip);
 		ip->i_dev = dev;
 		ip->i_num = num;
-		remove_from_hash_queue(ip);
 		put_into_hash_queue(ip);
 		read_inode(ip);
 		ip->i_count = 1;
@@ -141,9 +143,9 @@ ext2_inode_sync(void)
 {
 	struct ext2_inode_m *ip;
 
-	ip = free_list.i_next_free;
-	while (ip < free_list.i_next_free + NR_INODE_CACHE) {
-		if (ip->i_count && ip->i_dev != NODEV) {
+	ip = cache_start;
+	while (ip < cache_start + NR_INODE_CACHE) {
+		if (ip->i_count && ip->i_dev != NODEV && (ip->i_flags & I_MODIFIED)) {
 			mutex_lock(&ip->i_mutex);
 			ip->i_count++;
 			write_inode(ip);
