@@ -243,6 +243,7 @@ struct ext2_inode_m *ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_in
 #define EXT2_INODE_SIZE(s)	((s)->sb.s_rev_level >= 1 ? (s)->sb.s_inode_size : 128)
 #define EXT2_INODES_PER_BLOCK(s)	(EXT2_BLOCKSIZE((s)) / EXT2_INODE_SIZE((s)))
 #define EXT2_INODES_PER_GROUP(s)	((s)->sb.s_inodes_per_group)
+#define EXT2_BLOCKS_PER_GROUP(s)	((s)->sb.s_blocks_per_group)
 #define EXT2_BLOCK_GROUP(ino, s)	(((ino)->i_num - 1) / EXT2_INODES_PER_GROUP((s)))
 #define EXT2_INODE_INDEX(ino, s)	(((ino)->i_num - 1) % EXT2_INODES_PER_GROUP((s)))
 #define EXT2_INODE_BLOCK(ind, s)	((ind) * EXT2_INODE_SIZE((s)) / EXT2_BLOCKSIZE((s)))
