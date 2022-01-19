@@ -134,6 +134,7 @@ ext2_itrunc(struct ext2_inode_m *ip)
 	ext2_bfree_dindirect(ip->i_dev, ip->i_ino.i_block[EXT2_DINDIRECT_BLOCK]);
 	ext2_bfree_tindirect(ip->i_dev, ip->i_ino.i_block[EXT2_TINDIRECT_BLOCK]);
 	ip->i_ino.i_blocks = 0;
+	ip->i_ino.i_size = 0;
 	ip->i_ino.i_mtime = CURRENT_TIME;
 	ip->i_flags |= I_MODIFIED;
 }
