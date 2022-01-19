@@ -2,7 +2,7 @@
 
 LOOP_UNUSED1=$(sudo losetup -f)
 sudo losetup $LOOP_UNUSED1 $1 -o $[512*2048]
-sudo fsck.ext2  $LOOP_UNUSED1
+sudo fsck.ext2 -f -v $LOOP_UNUSED1
 sudo mount $LOOP_UNUSED1 /mnt
 sudo cp -rf $2/* /mnt
 sudo sync
