@@ -35,26 +35,25 @@ ext2_balloc(struct ext2_inode_m *ip)
 		block = 0;
 		goto out;
 	}
-	bgd = sb->bgd_table + ((ip->i_num - 1) % EXT2_INODES_PER_GROUP(sb));
+	bgd = sb->bgd_table + ((ip->i_num - 1) / EXT2_INODES_PER_GROUP(sb));
 	if ((block = balloc_bgd(ip->i_dev, sb, bgd)) != 0)
 		goto out;
 	tmp = bgd;
 	for (bgd = sb->bgd_table; bgd < sb->bgd_table + sb->nr_blk_group; bgd++) {
 		if (bgd == tmp)
 			continue;
-		if ((block = balloc_bgd(ip->i_dev, sb, bgd)) != 0) {
-			bp = getblk(ip->i_dev, block);
-			memset(bp->b_data, 0, EXT2_BLOCKSIZE(sb));
-			ip->i_ino.i_blocks += EXT2_BLOCKSIZE(sb) / SECTOR_SIZE;
-			ip->i_ino.i_mtime = CURRENT_TIME;
-			ip->i_flags |= I_MODIFIED;
-			bp->b_flags |= B_DWRITE;
-			brelse(bp);
+		if ((block = balloc_bgd(ip->i_dev, sb, bgd)) != 0)
 			goto out;
-		}
 	}
 	block = 0;
  out:
+	bp = getblk(ip->i_dev, block);
+	memset(bp->b_data, 0, EXT2_BLOCKSIZE(sb));
+	ip->i_ino.i_blocks += EXT2_BLOCKSIZE(sb) / SECTOR_SIZE;
+	ip->i_ino.i_mtime = CURRENT_TIME;
+	ip->i_flags |= I_MODIFIED;
+	bp->b_flags |= B_DWRITE;
+	brelse(bp);
 	mutex_unlock(&sb->mutex);
 	return block;
 }
@@ -67,35 +66,31 @@ static ext2_block
 balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *bgd)
 {
 	struct buffer *bp = NULL;
-	char *p;
 	ext2_block block;
-	int i;
+	int off;
+	uint8_t *p;
 
 	if (bgd->bg_free_blocks_count == 0) {
 		block = 0;
 		goto out;
 	}
+
 	bp = bread(dev, bgd->bg_block_bitmap);
-	for (p = bp->b_data, i = 0; *p & (1 << i); ) {
-		if (p == bp->b_data + EXT2_BLOCKSIZE(sb)) {
-			block = 0;
-			goto out;
-		}
-		if (i == 7) {
-			i = 0;
+	for (p = (uint8_t *)bp->b_data, off = 0; p < (uint8_t *)bp->b_data + EXT2_BLOCKSIZE(sb); ) {
+		if (!(*p & (1 << (off % 8))))
+			break;
+		off++;
+		if (!(off % 8))
 			p++;
-		} else {
-			i++;
-		}
 	}
-	*p |= 1 << i;
+	*p |= 1 << (off % 8);
 	bp->b_flags |= B_DWRITE;
-	block = ((p - bp->b_data) << 3) + i;
+	block = off;
 	/*
 	 * Get actual logical block address. For each block group, blocks begin after the inode table;
 	 * Actual block address is offset from the first block after the inode table.
 	 */
-	block += bgd->bg_inode_table + (EXT2_INODES_PER_GROUP(sb) / EXT2_INODES_PER_BLOCK(sb));
+	block += (bgd - sb->bgd_table) * EXT2_INODES_PER_GROUP(sb) + sb->sb.s_first_data_block;
 	bgd->bg_free_blocks_count--;
 	sb->sb.s_free_blocks_count--;
 	sb->modified = 1;
