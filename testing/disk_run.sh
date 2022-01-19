@@ -9,6 +9,6 @@ sudo sync
 sudo umount /mnt
 qemu-system-i386 -hda $1 -d int,cpu_reset -D qemu.log -no-reboot -no-shutdown
 sudo mount $LOOP_UNUSED1 /mnt
-sudo cp -rf /mnt/* $2/
+#sudo cp -rf /mnt/* $2/
 sudo umount /mnt
 sudo losetup -d $LOOP_UNUSED1
