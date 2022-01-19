@@ -22,7 +22,7 @@ first_user_code:
 	movl	$__NR_open, %eax
 	movl	$file2, %ebx
 	movl	$O_RDWR | O_CREAT, %ecx
-	movl	$100664, %edx
+	movl	$0100664, %edx
 	int	$0x80
 	movl	%eax, fd
 	movl	$__NR_read, %eax
@@ -49,4 +49,4 @@ file2:	.asciz 	"/test"
 msg:	.asciz	"Hello, world!"
 fd:	.long	0
 buf:	.space	5
-buf2:	.asciz	"hahaa"
+buf2:	.asciz	"and ?"
