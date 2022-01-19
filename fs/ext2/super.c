@@ -7,6 +7,8 @@
 #include <fs/ext2.h>
 #include <fs/fs.h>
 
+#include <drivers/timer.h>
+
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
@@ -118,6 +120,7 @@ ext2_sync_super(dev_t dev, struct ext2_superblock_m *sb)
 		if (bp == NULL)
 			return -1;
 		*(struct ext2_superblock *)(bp->b_data + off) = sb->sb;
+		sb->sb.s_wtime = CURRENT_TIME;
 		/*
 		 * Just mark it for delayed write like normal.
 		 * Assume that the higher-level 'sync' routine will
