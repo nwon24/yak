@@ -212,7 +212,7 @@ void ext2_inodes_init(void);
 
 struct ext2_inode_m *ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir);
 
-ext2_block ext2_balloc(dev_t dev, ino_t num);
+ext2_block ext2_balloc(struct ext2_inode_m *ip);
 void ext2_bfree(dev_t dev, ext2_block block);
 void ext2_bfree_indirect(dev_t dev, ext2_block block);
 void ext2_bfree_dindirect(dev_t dev, ext2_block block);
