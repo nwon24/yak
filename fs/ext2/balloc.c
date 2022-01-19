@@ -7,6 +7,9 @@
 #include <fs/ext2.h>
 #include <fs/buffer.h>
 
+#include <drivers/drive.h>
+#include <drivers/timer.h>
+
 #include <generic/string.h>
 
 #include <kernel/debug.h>
@@ -15,7 +18,7 @@
 static ext2_block balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *bgd);
 
 ext2_block
-ext2_balloc(dev_t dev, ino_t num)
+ext2_balloc(struct ext2_inode_m *ip)
 {
 	struct ext2_superblock_m *sb;
 	struct ext2_blk_group_desc *bgd, *tmp;
@@ -26,22 +29,25 @@ ext2_balloc(dev_t dev, ino_t num)
 	 * First try to allocate a block from the inode's block group.
 	 * If this fails, then try the other block groups.
 	 */
-	sb = get_ext2_superblock(dev);
+	sb = get_ext2_superblock(ip->i_dev);
 	mutex_lock(&sb->mutex);
 	if (sb->sb.s_free_blocks_count == 0) {
 		block = 0;
 		goto out;
 	}
-	bgd = sb->bgd_table + ((num - 1) % EXT2_INODES_PER_GROUP(sb));
-	if ((block = balloc_bgd(dev, sb, bgd)) != 0)
+	bgd = sb->bgd_table + ((ip->i_num - 1) % EXT2_INODES_PER_GROUP(sb));
+	if ((block = balloc_bgd(ip->i_dev, sb, bgd)) != 0)
 		goto out;
 	tmp = bgd;
 	for (bgd = sb->bgd_table; bgd < sb->bgd_table + sb->nr_blk_group; bgd++) {
 		if (bgd == tmp)
 			continue;
-		if ((block = balloc_bgd(dev, sb, bgd)) != 0) {
-			bp = getblk(dev, block);
+		if ((block = balloc_bgd(ip->i_dev, sb, bgd)) != 0) {
+			bp = getblk(ip->i_dev, block);
 			memset(bp->b_data, 0, EXT2_BLOCKSIZE(sb));
+			ip->i_ino.i_blocks += EXT2_BLOCKSIZE(sb) / SECTOR_SIZE;
+			ip->i_ino.i_mtime = CURRENT_TIME;
+			ip->i_flags |= I_MODIFIED;
 			bp->b_flags |= B_DWRITE;
 			brelse(bp);
 			goto out;
@@ -89,7 +95,7 @@ balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *
 	 * Get actual logical block address. For each block group, blocks begin after the inode table;
 	 * Actual block address is offset from the first block after the inode table.
 	 */
-	block += EXT2_INODES_PER_GROUP(sb) / EXT2_INODES_PER_BLOCK(sb) + bgd->bg_inode_table;
+	block += bgd->bg_inode_table + (EXT2_INODES_PER_GROUP(sb) / EXT2_INODES_PER_BLOCK(sb));
 	bgd->bg_free_blocks_count--;
 	sb->sb.s_free_blocks_count--;
 	sb->modified = 1;
