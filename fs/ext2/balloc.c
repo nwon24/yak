@@ -87,10 +87,11 @@ balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *
 	bp->b_flags |= B_DWRITE;
 	block = off;
 	/*
-	 * Get actual logical block address. For each block group, blocks begin after the inode table;
-	 * Actual block address is offset from the first block after the inode table.
+	 * Get actual block address by adding the offset to the number of blocks in all
+	 * the previous block groups and the first data block.
+	 * This is where some issues have been caused in the past.
 	 */
-	block += (bgd - sb->bgd_table) * EXT2_INODES_PER_GROUP(sb) + sb->sb.s_first_data_block;
+	block += (bgd - sb->bgd_table) * EXT2_BLOCKS_PER_GROUP(sb) + sb->sb.s_first_data_block;
 	bgd->bg_free_blocks_count--;
 	sb->sb.s_free_blocks_count--;
 	sb->modified = 1;
@@ -118,10 +119,10 @@ ext2_bfree(dev_t dev, ext2_block block)
 		return;
 	sb = get_ext2_superblock(dev);
 	mutex_lock(&sb->mutex);
-	bgd = sb->bgd_table + (block / sb->sb.s_blocks_per_group);
+	bgd = sb->bgd_table + (block / EXT2_BLOCKS_PER_GROUP(sb));
 	bp = bread(dev, bgd->bg_block_bitmap);
 	b = block;
-	b -= EXT2_INODES_PER_GROUP(sb) / EXT2_INODES_PER_BLOCK(sb) + bgd->bg_inode_table;
+	b -= sb->sb.s_first_data_block + (bgd - sb->bgd_table) * EXT2_BLOCKS_PER_GROUP(sb);
 	p = bp->b_data;
 	p += b >> 3;
 	i = b % 8;
