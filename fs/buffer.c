@@ -143,7 +143,6 @@ brelse(struct buffer *bp)
 void
 bwrite(struct buffer *bp)
 {
-	printk("sync buffer %d\r\n", bp->b_blknr);
 	blk_devio(bp, WRITE);
 	brelse(bp);
 }
