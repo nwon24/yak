@@ -83,7 +83,7 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 		 * If we have gone off the end of the block, there is no more space for the
 		 * directory entry, so create a new block.
 		 */
-		printk("dentry inode %d type %d\r\n", dentry->d_inode, dentry->d_file_type);
+		printk("dentry name %s rec len %d\r\n", (char *)dentry + 8, dentry->d_rec_len);
 		if ((char *)dentry >= bp->b_data + EXT2_BLOCKSIZE(sb)) {
 			printk("Here create\r\n");
 			block = ext2_create_block(dir, off);
