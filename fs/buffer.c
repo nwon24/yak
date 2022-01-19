@@ -24,6 +24,7 @@
  */
 static struct buffer free_list;
 static struct buffer **hash_queues;
+static struct buffer *cache_start;
 
 static struct buffer *in_hash_queue(dev_t dev, size_t blknr);
 static void remove_from_free_list(struct buffer *bp);
@@ -92,7 +93,8 @@ buffer_init(void)
 		panic("Unable to allocate hash table: kvmalloc returned NULL");
 	for (i = 0; i < NR_BUF_HASH; i++)
 		hash_queues[i] = NULL;
-	free_list.b_next_free = kvmalloc(NR_BUF_BUFFERS * sizeof(*free_list.b_next_free));
+	cache_start = kvmalloc(NR_BUF_BUFFERS * sizeof(*free_list.b_next_free));
+	free_list.b_next_free = cache_start;
 	if (free_list.b_next_free == NULL)
 		panic("Unable to allocate buffer cache: kvmalloc returned NULL");
 	for (bp = free_list.b_next_free; bp < free_list.b_next_free + NR_BUF_BUFFERS; bp++) {
@@ -117,17 +119,13 @@ buffer_sync(void)
 {
 	struct buffer *bp;
 
-	bp = free_list.b_next_free;
-	while (bp != &free_list) {
-		if (bp == NULL)
-			panic("buffer_sync: free list corrupted");
-		mutex_lock(&bp->b_mutex);
-		if (bp->b_flags & B_DWRITE) {
+	bp = cache_start;
+	while (bp < cache_start + NR_BUF_BUFFERS) {
+		if ((bp->b_flags & B_DWRITE) && bp->b_mutex != MUTEX_LOCKED) {
 			bp->b_flags &= ~B_DWRITE;
 			bwrite(bp);
 		}
-		mutex_unlock(&bp->b_mutex);
-		bp = bp->b_next_free;
+		bp++;
 	}
 }
 
@@ -145,6 +143,7 @@ brelse(struct buffer *bp)
 void
 bwrite(struct buffer *bp)
 {
+	printk("sync buffer %d\r\n", bp->b_blknr);
 	blk_devio(bp, WRITE);
 	brelse(bp);
 }
