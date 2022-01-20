@@ -47,6 +47,7 @@ struct fs_driver_ops {
 	int (*fs_read)(struct file *file, void *buf, size_t count);
 	int (*fs_write)(struct file *file, void *buf, size_t count);
 	int (*fs_sync)(struct generic_filesystem *fs);
+	int (*fs_unlink)(const char *path);
 };
 
 struct generic_filesystem {
@@ -79,6 +80,7 @@ int kernel_open(const char *path, int flags, int mode);
 ssize_t kernel_read(int fd, void *buf, size_t count);
 ssize_t kernel_write(int fd, void *buf, size_t count);
 void kernel_sync(void);
+int kernel_unlink(const char *path);
 
 static inline void
 fs_init(void)
@@ -88,6 +90,7 @@ fs_init(void)
 	register_syscall(__NR_read, (uint32_t)kernel_read, 3);
 	register_syscall(__NR_write, (uint32_t)kernel_write, 3);
 	register_syscall(__NR_sync, (uint32_t)kernel_sync, 0);
+	register_syscall(__NR_unlink, (uint32_t)kernel_unlink, 1);
 }
 
 #endif /* FS_H */
