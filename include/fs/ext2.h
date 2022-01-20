@@ -234,7 +234,7 @@ int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask);
 int ext2_sync(struct generic_filesystem *fs);
 void ext2_inode_sync(void);
 
-struct ext2_inode_m *ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char *name, int len);
+int ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char *name, int len);
 
 int ext2_unlink(const char *path);
 
