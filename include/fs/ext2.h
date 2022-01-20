@@ -210,7 +210,7 @@ struct ext2_inode_m *ext2_iget(dev_t dev, ino_t num);
 void ext2_iput(struct ext2_inode_m *ip);
 void ext2_inodes_init(void);
 
-struct ext2_inode_m *ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir);
+struct ext2_inode_m *ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp);
 
 ext2_block ext2_balloc(struct ext2_inode_m *ip);
 void ext2_bfree(dev_t dev, ext2_block block);
@@ -235,6 +235,8 @@ int ext2_sync(struct generic_filesystem *fs);
 void ext2_inode_sync(void);
 
 struct ext2_inode_m *ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char *name, int len);
+
+int ext2_unlink(const char *path);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
