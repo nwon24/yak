@@ -24,6 +24,7 @@ static struct fs_driver_ops ext2_driver_ops = {
 	.fs_sync = ext2_sync,
 	.fs_unlink = ext2_unlink,
 	.fs_lseek = ext2_lseek,
+	.fs_link = ext2_link,
 };
 
 /*
