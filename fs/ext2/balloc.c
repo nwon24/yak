@@ -122,7 +122,7 @@ ext2_bfree(dev_t dev, ext2_block block)
 	bgd = sb->bgd_table + (block / EXT2_BLOCKS_PER_GROUP(sb));
 	bp = bread(dev, bgd->bg_block_bitmap);
 	b = block;
-	b -= sb->sb.s_first_data_block + (bgd - sb->bgd_table) * EXT2_BLOCKS_PER_GROUP(sb);
+	b -= sb->sb.s_first_data_block + ((bgd - sb->bgd_table) * EXT2_BLOCKS_PER_GROUP(sb));
 	p = bp->b_data;
 	p += b >> 3;
 	i = b % 8;
