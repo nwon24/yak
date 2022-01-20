@@ -98,7 +98,7 @@ ext2_ifree(dev_t dev, ino_t ino)
 	 */
 	if (ino < EXT2_FIRST_FREE_INO(sb))
 		goto out;
-	bgd = sb->bgd_table + ((ino - 1) % EXT2_INODES_PER_GROUP(sb));
+	bgd = sb->bgd_table + ((ino - 1) / EXT2_INODES_PER_GROUP(sb));
 	bp = bread(dev, bgd->bg_inode_bitmap);
 	p = bp->b_data;
 	ino--;
