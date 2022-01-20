@@ -132,3 +132,16 @@ kernel_sync(void)
 	}
 	buffer_sync();
 }
+
+int
+kernel_unlink(const char *path)
+{
+	struct generic_filesystem *fs;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+		return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	return fs->f_driver->fs_unlink(path);
+}
