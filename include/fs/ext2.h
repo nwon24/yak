@@ -238,6 +238,8 @@ struct ext2_inode_m *ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_in
 
 int ext2_unlink(const char *path);
 
+off_t ext2_lseek(off_t *ptr, void *inode, off_t offset, int whence);
+
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
 #define EXT2_WTIME(s)		((s)->sb.s_wtime)
