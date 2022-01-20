@@ -83,6 +83,7 @@ ssize_t kernel_write(int fd, void *buf, size_t count);
 void kernel_sync(void);
 int kernel_unlink(const char *path);
 off_t kernel_lseek(int fd, off_t offset, int whence);
+int kernel_creat(const char *path, mode_t mode);
 
 static inline void
 fs_init(void)
@@ -94,6 +95,7 @@ fs_init(void)
 	register_syscall(__NR_sync, (uint32_t)kernel_sync, 0);
 	register_syscall(__NR_unlink, (uint32_t)kernel_unlink, 1);
 	register_syscall(__NR_lseek, (uint32_t)kernel_lseek, 3);
+	register_syscall(__NR_creat, (uint32_t)kernel_creat, 2);
 }
 
 #endif /* FS_H */
