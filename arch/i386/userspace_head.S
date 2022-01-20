@@ -25,6 +25,16 @@ first_user_code:
 	movl	$0100664, %edx
 	int	$0x80
 	movl	%eax, fd
+	movl	$__NR_write, %eax
+	movl	fd, %ebx
+	movl	$buf2, %ecx
+	movl	$5, %edx
+	int	$0x80
+	movl	$__NR_lseek, %eax
+	movl	fd, %ebx
+	movl	$0, %ecx
+	movl	$SEEK_SET, %edx
+	int	$0x80
 	movl	$__NR_read, %eax
 	movl	fd, %ebx
 	movl	$buf, %ecx
@@ -33,11 +43,6 @@ first_user_code:
 	movl	$__NR_write, %eax
 	movl	$0, %ebx
 	movl	$buf, %ecx
-	movl	$5, %edx
-	int	$0x80
-	movl	$__NR_write, %eax
-	movl	fd, %ebx
-	movl	$buf2, %ecx
 	movl	$5, %edx
 	int	$0x80
 	movl	$__NR_unlink, %eax
