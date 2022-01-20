@@ -85,20 +85,27 @@ file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 				break;
 			}
 		} else {
-			break;
+			bp = NULL;
 		}
 		off = file->f_pos % EXT2_BLOCKSIZE(sb);
 		s = bp->b_data + off;
 		nr = (EXT2_BLOCKSIZE(sb) - off < c) ? EXT2_BLOCKSIZE(sb) - off: c;
 		c -= nr;
 		file->f_pos += nr;
-		while (nr--) {
-			put_ubyte(p, *s);
-			p++;
-			s++;
+		if (bp != NULL) {
+			while (nr--) {
+				put_ubyte(p, *s);
+				p++;
+				s++;
+			}
+			brelse(bp);
+			bp = NULL;
+		} else {
+			while (nr--) {
+				put_ubyte(p, 0);
+				p++;
+			}
 		}
-		brelse(bp);
-		bp = NULL;
 	}
 	if (bp != NULL)
 		brelse(bp);
