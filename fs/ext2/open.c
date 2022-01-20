@@ -28,7 +28,7 @@ ext2_open(const char *path, int flags, int mode, int *err)
 	struct ext2_inode_m *ip, *base_dir;
 	const char *base;
 
-	if ((ip = ext2_namei(path, err, &base, &base_dir)) == NULL) {
+	if ((ip = ext2_namei(path, err, &base, &base_dir, NULL)) == NULL) {
 		if (!(flags & O_CREAT)) {
 			*err = -ENOENT;
 			return NULL;
@@ -103,5 +103,6 @@ ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev
 		*err = -ENOSPC;
 		return NULL;
 	}
+	ext2_iput(ip);
 	return ip;
 }
