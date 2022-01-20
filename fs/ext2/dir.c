@@ -9,10 +9,12 @@
 #include <drivers/timer.h>
 
 #include <generic/string.h>
+#include <generic/errno.h>
 
 #include <kernel/debug.h>
 
 static int dentry_file_type(struct ext2_inode_m *ip);
+static int ext2_remove_dir_entry(struct ext2_inode_m *ip, struct buffer *bp);
 
 static int
 dentry_file_type(struct ext2_inode_m *ip)
@@ -94,7 +96,8 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 		/*
 		 * An inode value of 0 indicates that the entry is not present.
 		 */
-		if ((char *)dentry + dentry->d_rec_len >= bp->b_data + EXT2_BLOCKSIZE(sb) && (char *)dentry + rec_len - bp->b_data < EXT2_BLOCKSIZE(sb)) {
+		if ((char *)dentry + dentry->d_rec_len >= bp->b_data + EXT2_BLOCKSIZE(sb)
+		    && (dentry->d_rec_len >= rec_len)) {
 			dentry->d_rec_len = dentry->d_name_len + 8;
 			if (dentry->d_rec_len % 4 != 0)
 				dentry->d_rec_len += 4 - (dentry->d_rec_len % 4);
@@ -109,7 +112,7 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 			dir->i_ino.i_mtime = CURRENT_TIME;
 			ip->i_flags |= I_MODIFIED;
 			return ip;
-		} else if (dentry->d_inode == 0 || dentry->d_file_type == EXT2_FT_UNKNOWN) {
+		} else if ((char *)dentry + dentry->d_rec_len >= bp->b_data + EXT2_BLOCKSIZE(sb)) {
 			block = ext2_create_block(dir, off);
 			brelse(bp);
 			bp = bread(dir->i_dev, block);
@@ -127,5 +130,61 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 }
 
 /*
- * TODO: Implement function to remove entry from directory.
+ * Removes the directory entry from the block pointed to by 'bp'.
  */
+static int
+ext2_remove_dir_entry(struct ext2_inode_m *ip, struct buffer *bp)
+{
+	struct ext2_dir_entry *dentry, *prev;
+	struct ext2_superblock_m *sb;
+
+	sb = get_ext2_superblock(ip->i_dev);
+	dentry = prev = (struct ext2_dir_entry *)bp->b_data;
+	if (dentry->d_inode == ip->i_num) {
+		/*
+		 * This means it is at the start of the block.
+		 * According nongnu.org/ext2-doc/ext2.html, if the entry at the start of the
+		 * block is removed, it is simply blanked and the record length set to the end of
+		 * the block. The block is not deallocated.
+		 */
+		memset(dentry, 0, sizeof(*dentry));
+		dentry->d_rec_len = EXT2_BLOCKSIZE(sb);
+		return 0;
+	}
+	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
+	while (dentry < (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb))) {
+		if (dentry->d_inode == ip->i_num) {
+			/* Bingo. */
+			prev->d_rec_len += dentry->d_rec_len;
+			bp->b_flags |= B_DWRITE;
+			return 0;
+		}
+		prev = dentry;
+		dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
+	}
+	return -ENOENT;
+}
+
+int
+ext2_unlink(const char *pathname)
+{
+	struct ext2_inode_m *ip, *dp;
+	struct buffer *bp;
+	int err;
+
+	ip = ext2_namei(pathname, &err, NULL, &dp, &bp);
+	if (ip == NULL) {
+		if (bp != NULL)
+			brelse(bp);
+		return err;
+	}
+	if (ext2_permission(dp, PERM_WRITE) < 0)
+		return -EACCES;
+	err = ext2_remove_dir_entry(ip, bp);
+	brelse(bp);
+	ip->i_ino.i_links_count--;
+	ip->i_ino.i_mtime = CURRENT_TIME;
+	ip->i_flags |= I_MODIFIED;
+	ext2_iput(ip);
+	return err;
+}
