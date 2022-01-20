@@ -237,6 +237,7 @@ void ext2_inode_sync(void);
 int ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char *name, int len);
 
 int ext2_unlink(const char *path);
+int ext2_link(const char *path1, const char *path2);
 
 off_t ext2_lseek(off_t *ptr, void *inode, off_t offset, int whence);
 
