@@ -89,6 +89,12 @@ kernel_open(const char *path, int flags, mode_t mode)
 	return fd;
 }
 
+int
+kernel_creat(const char *path, mode_t mode)
+{
+	return kernel_open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+}
+
 ssize_t
 kernel_read(int fd, void *buf, size_t count)
 {
