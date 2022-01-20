@@ -1,6 +1,9 @@
 /*
  * ext2/namei.c
  * Converts a path name into an inode.
+ * This is very badly written, as this was
+ * written before 'ext2_bmap' was written.
+ * Hopefully it works.
  */
 #include <asm/types.h>
 #include <asm/uaccess.h>
@@ -23,12 +26,12 @@ enum {
 	FIND_NONE
 };
 
-static struct ext2_inode_m *find_entry(struct ext2_inode_m *dir, const char *entry);
-static struct ext2_inode_m *find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res);
-static struct ext2_inode_m *find_entry_direct(struct ext2_inode_m *dir, const char *entry, int *res);
-static struct ext2_inode_m *find_entry_indirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res);
-static struct ext2_inode_m *find_entry_dindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res);
-static struct ext2_inode_m *find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res);
+static struct ext2_inode_m *find_entry(struct ext2_inode_m *dir, const char *entry, struct buffer **last_dir_bp);
+static struct ext2_inode_m *find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp);
+static struct ext2_inode_m *find_entry_direct(struct ext2_inode_m *dir, const char *entry, int *res, struct buffer **last_dir_bp);
+static struct ext2_inode_m *find_entry_indirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp);
+static struct ext2_inode_m *find_entry_dindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp);
+static struct ext2_inode_m *find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp);
 static int namei_match(const void *p1, const void *p2, size_t n);
 
 int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
@@ -49,7 +52,7 @@ int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
 }
 
 struct ext2_inode_m *
-ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir)
+ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp)
 {
 	struct ext2_inode_m *ip, *dp;
 	const char *p1, *p2;
@@ -69,7 +72,8 @@ ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m 
 
 	if (ip == NULL)
 		panic("ext2_namei: current_process has no root inode or working directory inode");
-	*last_dir = ip;
+	if (last_dir != NULL)
+		*last_dir = ip;
 	p1++;
 	ip->i_count++;
 loop:
@@ -87,14 +91,17 @@ loop:
 	while (get_ubyte(p1) == '/')
 		p1++;
 	p2 = p1;
-	*base = p2;
+	if (base != NULL)
+		*base = p2;
 	while (get_ubyte(p1) != '/' && get_ubyte(p1) != '\0')
 		p1++;
-	if (*last_dir != NULL) {
-		ext2_iput(*last_dir);
-		*last_dir = ip;
+	if (last_dir != NULL) {
+		if (*last_dir != NULL) {
+			ext2_iput(*last_dir);
+			*last_dir = ip;
+		}
 	}
-	if ((dp = find_entry(ip, p2)) == NULL) {
+	if ((dp = find_entry(ip, p2, last_dir_bp)) == NULL) {
 		*error = -ENOENT;
 		return NULL;
 	}
@@ -103,30 +110,30 @@ loop:
 }
 
 static struct ext2_inode_m *
-find_entry(struct ext2_inode_m *dir, const char *entry)
+find_entry(struct ext2_inode_m *dir, const char *entry, struct buffer **last_dir_bp)
 {
 	struct ext2_inode_m *ip;
 	int res;
 
-	if ((ip = find_entry_direct(dir, entry, &res)) != NULL)
+	if ((ip = find_entry_direct(dir, entry, &res, last_dir_bp)) != NULL)
 		return ip;
 	if (res == FIND_NONE)
 		return NULL;
-	if ((ip = find_entry_indirect(dir, dir->i_ino.i_block[EXT2_INDIRECT_BLOCK], entry, &res)) != NULL)
+	if ((ip = find_entry_indirect(dir, dir->i_ino.i_block[EXT2_INDIRECT_BLOCK], entry, &res, last_dir_bp)) != NULL)
 		return ip;
 	if (res == FIND_NONE)
 		return NULL;
-	if ((ip = find_entry_dindirect(dir, dir->i_ino.i_block[EXT2_DINDIRECT_BLOCK], entry, &res)) != NULL)
+	if ((ip = find_entry_dindirect(dir, dir->i_ino.i_block[EXT2_DINDIRECT_BLOCK], entry, &res, last_dir_bp)) != NULL)
 		return ip;
 	if (res == FIND_NONE)
 		return NULL;
-	if ((ip = find_entry_tindirect(dir, dir->i_ino.i_block[EXT2_TINDIRECT_BLOCK], entry, &res)) != NULL)
+	if ((ip = find_entry_tindirect(dir, dir->i_ino.i_block[EXT2_TINDIRECT_BLOCK], entry, &res, last_dir_bp)) != NULL)
 		return ip;
 	return NULL;
 }
 
 static struct ext2_inode_m *
-find_entry_direct(struct ext2_inode_m *dir, const char *entry, int *res)
+find_entry_direct(struct ext2_inode_m *dir, const char *entry, int *res, struct buffer **last_dir_bp)
 {
 	int i;
 	struct ext2_inode_m *ip;
@@ -136,7 +143,7 @@ find_entry_direct(struct ext2_inode_m *dir, const char *entry, int *res)
 			*res = FIND_NONE;
 			return NULL;
 		}
-		if ((ip = find_entry_in_block(dir, dir->i_ino.i_block[i], entry, res)) != NULL)
+		if ((ip = find_entry_in_block(dir, dir->i_ino.i_block[i], entry, res, last_dir_bp)) != NULL)
 			return ip;
 	}
 	*res = FIND_NEXT_BLOCK;
@@ -144,7 +151,7 @@ find_entry_direct(struct ext2_inode_m *dir, const char *entry, int *res)
 }
 
 static struct ext2_inode_m *
-find_entry_indirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res)
+find_entry_indirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp)
 {
 	struct buffer *bp;
 	struct ext2_inode_m *ip = NULL;
@@ -158,7 +165,7 @@ find_entry_indirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, 
 	for (p = (uint32_t *)bp->b_data; (char *)p < bp->b_data + EXT2_BLOCKSIZE(sb); p++) {
 		if (*p == 0)
 			goto out;
-		if ((ip = find_entry_in_block(dir, *p, entry, res)) != NULL)
+		if ((ip = find_entry_in_block(dir, *p, entry, res, last_dir_bp)) != NULL)
 			goto out;
 	}
 out:
@@ -167,7 +174,7 @@ out:
 }
 
 static struct ext2_inode_m *
-find_entry_dindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res)
+find_entry_dindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp)
 {
 	struct buffer *bp;
 	struct ext2_inode_m *ip = NULL;
@@ -181,7 +188,7 @@ find_entry_dindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry,
 	for (p = (uint32_t *)bp->b_data; (char *)p < bp->b_data + EXT2_BLOCKSIZE(sb); p++) {
 		if (*p == 0)
 			goto out;
-		if ((ip = find_entry_indirect(dir, *p, entry, res)) != NULL)
+		if ((ip = find_entry_indirect(dir, *p, entry, res, last_dir_bp)) != NULL)
 			goto out;
 	}
 out:
@@ -191,7 +198,7 @@ out:
 }
 
 static struct ext2_inode_m *
-find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res)
+find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp)
 {
 	struct buffer *bp;
 	struct ext2_inode_m *ip = NULL;
@@ -205,7 +212,7 @@ find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry,
 	for (p = (uint32_t *)bp->b_data; (char *)p < bp->b_data + EXT2_BLOCKSIZE(sb); p++) {
 		if (*p == 0)
 			goto out;
-		if ((ip = find_entry_dindirect(dir, *p, entry, res)) != NULL)
+		if ((ip = find_entry_dindirect(dir, *p, entry, res, last_dir_bp)) != NULL)
 			goto out;
 	}
 out:
@@ -215,7 +222,7 @@ out:
 }
 
 static struct ext2_inode_m *
-find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res)
+find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp)
 {
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
@@ -243,7 +250,14 @@ find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, 
 	}
 	if (flag == 0)
 		ret = ext2_iget(dir->i_dev, d->d_inode);
-	brelse(bp);
+	if (last_dir_bp != NULL && ret != NULL) {
+		*last_dir_bp = bp;
+	} else if (last_dir_bp != NULL && ret == NULL) {
+		*last_dir_bp = NULL;
+		brelse(bp);
+	} else {
+		brelse(bp);
+	}
 	return ret;
 }
 
