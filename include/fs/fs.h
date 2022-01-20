@@ -48,6 +48,7 @@ struct fs_driver_ops {
 	int (*fs_write)(struct file *file, void *buf, size_t count);
 	int (*fs_sync)(struct generic_filesystem *fs);
 	int (*fs_unlink)(const char *path);
+	off_t (*fs_lseek)(off_t *ptr, void *inode, off_t offset, int whence);
 };
 
 struct generic_filesystem {
@@ -63,7 +64,7 @@ extern struct generic_filesystem *mount_table[];
 struct file {
 	struct generic_filesystem *f_fs;
 	void *f_inode;	/* Filesystem inode */
-	size_t f_pos;	/* Position in file */
+	off_t f_pos;	/* Position in file */
 	int f_mode;
 	int f_flags;
 	unsigned int f_count;
@@ -81,6 +82,7 @@ ssize_t kernel_read(int fd, void *buf, size_t count);
 ssize_t kernel_write(int fd, void *buf, size_t count);
 void kernel_sync(void);
 int kernel_unlink(const char *path);
+off_t kernel_lseek(int fd, off_t offset, int whence);
 
 static inline void
 fs_init(void)
@@ -91,6 +93,7 @@ fs_init(void)
 	register_syscall(__NR_write, (uint32_t)kernel_write, 3);
 	register_syscall(__NR_sync, (uint32_t)kernel_sync, 0);
 	register_syscall(__NR_unlink, (uint32_t)kernel_unlink, 1);
+	register_syscall(__NR_lseek, (uint32_t)kernel_lseek, 3);
 }
 
 #endif /* FS_H */
