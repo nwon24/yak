@@ -145,3 +145,14 @@ kernel_unlink(const char *path)
 		return -EINVAL;
 	return fs->f_driver->fs_unlink(path);
 }
+
+off_t
+kernel_lseek(int fd, off_t offset, int whence)
+{
+	struct file *fp;
+
+	fp = current_process->file_table[fd];
+	if (fp == NULL)
+		return -EBADF;
+	return fp->f_fs->f_driver->fs_lseek(&fp->f_pos, fp->f_inode, offset, whence);
+}
