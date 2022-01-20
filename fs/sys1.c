@@ -162,3 +162,22 @@ kernel_lseek(int fd, off_t offset, int whence)
 		return -EBADF;
 	return fp->f_fs->f_driver->fs_lseek(&fp->f_pos, fp->f_inode, offset, whence);
 }
+
+int
+kernel_link(const char *path1, const char *path2)
+{
+	struct generic_filesystem *fs1, *fs2;
+
+	if (path1 == NULL || path2 == NULL)
+		return -EFAULT;
+	if (!check_user_ptr((void *)path1) || !check_user_ptr((void *)path2))
+		return -EFAULT;
+	fs1 = get_fs_from_path(path1);
+	fs2 = get_fs_from_path(path2);
+	/*
+	 * Don't support linking across different filesystems.
+	 */
+	if (fs1 != fs2)
+		return -EXDEV;
+	return fs1->f_driver->fs_link(path1, path2);
+}
