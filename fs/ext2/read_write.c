@@ -1,6 +1,7 @@
 /*
  * ext2/read_write.c
  * Implements the 'read' and 'write' system calls for ext2.
+ * Also has 'lseek', as that is somewhat related.
  */
 #include <asm/types.h>
 #include <asm/uaccess.h>
@@ -66,7 +67,7 @@ ext2_write(struct file *file, void *buf, size_t count)
 static ssize_t
 file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 {
-	size_t c = count, off, nr;
+	off_t c = count, off, nr;
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
 	ext2_block block;
@@ -116,14 +117,14 @@ file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 static ssize_t
 file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 {
-	size_t c = count, off, nr, pos;
+	off_t c = count, off, nr, pos;
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
 	ext2_block block;
 	char *p, *s;
 	ssize_t err = 0;
 
-	pos = (file->f_flags & O_APPEND) ? ip->i_ino.i_size : file->f_pos;
+	pos = (file->f_flags & O_APPEND) ? (off_t)ip->i_ino.i_size : file->f_pos;
 	sb = file->f_fs->f_super;
 	p = buf;
 	while (c) {
@@ -161,4 +162,36 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 	if (err != 0)
 		return err;
 	return count - c;
+}
+
+off_t
+ext2_lseek(off_t *ptr, void *inode, off_t pos, int whence)
+{
+	struct ext2_inode_m *ip = inode;
+	off_t tmp;
+
+	if (EXT2_S_ISCHR(ip->i_ino.i_mode))
+		/* Implementation defined, according to POSIX */
+		return 0;
+	if (EXT2_S_ISFIFO(ip->i_ino.i_mode) || EXT2_S_ISSOCK(ip->i_ino.i_mode))
+		return -ESPIPE;
+	tmp = *ptr;
+	switch (whence) {
+	case SEEK_SET:
+		*ptr = pos;
+		break;
+	case SEEK_CUR:
+		*ptr += pos;
+		break;
+	case SEEK_END:
+		*ptr = ip->i_ino.i_size + pos;
+		break;
+	default:
+		return -EINVAL;
+	}
+	if (*ptr < 0) {
+		*ptr = tmp;
+		return -EOVERFLOW;
+	}
+	return *ptr;
 }
