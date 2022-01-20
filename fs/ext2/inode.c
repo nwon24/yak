@@ -113,6 +113,8 @@ ext2_iput(struct ext2_inode_m *ip)
 		panic("ext2_iput: ip->i_count == 0");
 	if (ip->i_count == 0) {
 		if (ip->i_ino.i_links_count == 0) {
+			ip->i_ino.i_dtime = CURRENT_TIME;
+			ip->i_flags |= I_MODIFIED;
 			ext2_itrunc(ip);
 			ext2_ifree(ip->i_dev, ip->i_num);
 		}
@@ -128,11 +130,16 @@ ext2_itrunc(struct ext2_inode_m *ip)
 {
 	uint32_t *b;
 
-	for (b = ip->i_ino.i_block; b <= ip->i_ino.i_block + EXT2_DIRECT_BLOCKS; b++)
+	for (b = ip->i_ino.i_block; b <= ip->i_ino.i_block + EXT2_DIRECT_BLOCKS; b++) {
 		     ext2_bfree(ip->i_dev, *b);
+		     *b = 0;
+	}
 	ext2_bfree_indirect(ip->i_dev, ip->i_ino.i_block[EXT2_INDIRECT_BLOCK]);
+	ip->i_ino.i_block[EXT2_INDIRECT_BLOCK] = 0;
 	ext2_bfree_dindirect(ip->i_dev, ip->i_ino.i_block[EXT2_DINDIRECT_BLOCK]);
+	ip->i_ino.i_block[EXT2_DINDIRECT_BLOCK] = 0;
 	ext2_bfree_tindirect(ip->i_dev, ip->i_ino.i_block[EXT2_TINDIRECT_BLOCK]);
+	ip->i_ino.i_block[EXT2_TINDIRECT_BLOCK] = 0;
 	ip->i_ino.i_blocks = 0;
 	ip->i_ino.i_size = 0;
 	ip->i_ino.i_mtime = CURRENT_TIME;
