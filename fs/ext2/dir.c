@@ -42,17 +42,20 @@ dentry_file_type(struct ext2_inode_m *ip)
 	}
 }
 
-struct ext2_inode_m *
+int
 ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char *name, int len)
 {
-	struct buffer *bp;
+	struct buffer *bp = NULL;
 	struct ext2_dir_entry *dentry;
 	struct ext2_superblock_m *sb;
 	uint16_t rec_len;
 	ext2_block block, off;
+	int ret = 0;
 
-	if (name == NULL || len == 0)
-		return NULL;
+	if (name == NULL || len == 0) {
+		ret = -EINVAL;
+		goto error;
+	}
 	/*
 	 * Just truncate name if name is too long.
 	 * (Who has files with names more than 255 chars anyway?)
@@ -60,11 +63,15 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 	if (len > EXT2_MAX_NAME_LEN)
 		len = EXT2_MAX_NAME_LEN;
 	block = ext2_create_block(dir, 0);
-	if (block == 0)
-		return NULL;
+	if (block == 0) {
+		ret = -ENOSPC;
+		goto error;
+	}
 	bp = bread(dir->i_dev, block);
-	if (bp == NULL)
-		return NULL;
+	if (bp == NULL) {
+		ret = -ENOSPC;
+		goto error;
+	}
 	rec_len = 8 + len;
 	if (rec_len % 4 != 0)
 		rec_len += 4 - (len % 4);
@@ -76,7 +83,8 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 		dentry->d_rec_len = EXT2_BLOCKSIZE(sb);
 		dentry->d_file_type = dentry_file_type(ip);
 		brelse(bp);
-		return ip;
+		ret = 0;
+		goto error;
 	}
 
 	off = 0;
@@ -89,8 +97,10 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 			block = ext2_create_block(dir, off);
 			brelse(bp);
 			bp = bread(dir->i_dev, block);
-			if (bp == NULL)
+			if (bp == NULL) {
+				ret = -EIO;
 				break;
+			}
 			dentry = (struct ext2_dir_entry *)bp->b_data;
 		}
 		/*
@@ -111,22 +121,26 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 			brelse(bp);
 			dir->i_ino.i_mtime = CURRENT_TIME;
 			ip->i_flags |= I_MODIFIED;
-			return ip;
+			ret = 0;
+			goto error;
 		} else if ((char *)dentry + dentry->d_rec_len >= bp->b_data + EXT2_BLOCKSIZE(sb)) {
 			block = ext2_create_block(dir, off);
 			brelse(bp);
 			bp = bread(dir->i_dev, block);
-			if (bp == NULL)
-				return NULL;
+			if (bp == NULL) {
+				ret = -EIO;
+				goto error;
+			}
 			dentry = (struct ext2_dir_entry *)bp->b_data;
 			continue;
 		}
 		off += dentry->d_rec_len;
 		dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
 	}
+error:
 	if (bp != NULL)
 		brelse(bp);
-	return NULL;
+	return ret;
 }
 
 /*
@@ -186,5 +200,24 @@ ext2_unlink(const char *pathname)
 	ip->i_ino.i_mtime = CURRENT_TIME;
 	ip->i_flags |= I_MODIFIED;
 	ext2_iput(ip);
+	return err;
+}
+
+int
+ext2_link(const char *path1, const char *path2)
+{
+	struct ext2_inode_m *ip1, *ip2;
+	struct ext2_inode_m *dp;
+	const char *p;
+	int err;
+
+	ip1 = ext2_namei(path1, &err, NULL, NULL, NULL);
+	if (ip1 == NULL)
+		return err;
+	ip2 = ext2_namei(path2, &err, &p, &dp, NULL);
+	if (ip2 != NULL)
+		return -EEXIST;
+	err = ext2_add_dir_entry(dp, ip1, p, strlen(p));
+	ext2_iput(ip1);
 	return err;
 }
