@@ -2,6 +2,7 @@
  * ext2/dir.c
  * Routines for adding and removing entries from directories.
  * Just the basic directory structure (linked list) is here.
+ * Contains system calls 'link' and 'unlink' for ext2.
  */
 #include <fs/ext2.h>
 #include <fs/fs.h>
@@ -14,7 +15,7 @@
 #include <kernel/debug.h>
 
 static int dentry_file_type(struct ext2_inode_m *ip);
-static int ext2_remove_dir_entry(struct ext2_inode_m *ip, struct buffer *bp);
+static int ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *bp);
 
 static int
 dentry_file_type(struct ext2_inode_m *ip)
@@ -145,9 +146,11 @@ error:
 
 /*
  * Removes the directory entry from the block pointed to by 'bp'.
+ * Need to check the entry name as well as a directory could have
+ * two links to the same inode under different names.
  */
 static int
-ext2_remove_dir_entry(struct ext2_inode_m *ip, struct buffer *bp)
+ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *bp)
 {
 	struct ext2_dir_entry *dentry, *prev;
 	struct ext2_superblock_m *sb;
@@ -167,7 +170,7 @@ ext2_remove_dir_entry(struct ext2_inode_m *ip, struct buffer *bp)
 	}
 	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
 	while (dentry < (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb))) {
-		if (dentry->d_inode == ip->i_num) {
+		if (dentry->d_inode == ip->i_num && ext2_match((char *)dentry + 8, name, dentry->d_name_len) == 0) {
 			/* Bingo. */
 			prev->d_rec_len += dentry->d_rec_len;
 			bp->b_flags |= B_DWRITE;
@@ -184,9 +187,10 @@ ext2_unlink(const char *pathname)
 {
 	struct ext2_inode_m *ip, *dp;
 	struct buffer *bp;
+	const char *p;
 	int err;
 
-	ip = ext2_namei(pathname, &err, NULL, &dp, &bp);
+	ip = ext2_namei(pathname, &err, &p, &dp, &bp);
 	if (ip == NULL) {
 		if (bp != NULL)
 			brelse(bp);
@@ -194,7 +198,7 @@ ext2_unlink(const char *pathname)
 	}
 	if (ext2_permission(dp, PERM_WRITE) < 0)
 		return -EACCES;
-	err = ext2_remove_dir_entry(ip, bp);
+	err = ext2_remove_dir_entry(p, ip, bp);
 	brelse(bp);
 	ip->i_ino.i_links_count--;
 	ip->i_ino.i_mtime = CURRENT_TIME;
@@ -218,6 +222,9 @@ ext2_link(const char *path1, const char *path2)
 	if (ip2 != NULL)
 		return -EEXIST;
 	err = ext2_add_dir_entry(dp, ip1, p, strlen(p));
+	ip1->i_ino.i_links_count++;
+	ip1->i_ino.i_mtime = CURRENT_TIME;
+	ip1->i_flags |= I_MODIFIED;
 	ext2_iput(ip1);
 	return err;
 }
