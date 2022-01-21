@@ -218,6 +218,12 @@ ext2_link(const char *path1, const char *path2)
 	ip1 = ext2_namei(path1, &err, NULL, NULL, NULL);
 	if (ip1 == NULL)
 		return err;
+	if (EXT2_S_ISDIR(ip1->i_ino.i_mode) || EXT2_S_ISLNK(ip1->i_ino.i_mode))
+		/*
+		 * Do not support linking of directories of symbolic links.
+		 */
+		return -EEXIST;
+
 	ip2 = ext2_namei(path2, &err, &p, &dp, NULL);
 	if (ip2 != NULL)
 		return -EEXIST;
