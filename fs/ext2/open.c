@@ -99,9 +99,10 @@ ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev
 	if (EXT2_S_ISCHR(mode) || EXT2_S_ISBLK(mode))
 		ip->i_ino.i_block[0] = dev;
 	ip->i_flags |= I_MODIFIED;
-	if ((*err = ext2_add_dir_entry(dir, ip, name, strlen(name))) < 0)
+	if ((*err = ext2_add_dir_entry(dir, ip, name, strlen(name))) < 0) {
+		ext2_iput(ip);
 		return NULL;
-
+	}
 	ext2_iput(ip);
 	return ip;
 }
