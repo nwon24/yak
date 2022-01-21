@@ -157,7 +157,8 @@ bread(dev_t dev, size_t blknr)
 		panic("bread: getblk returned NULL");
 	if (bp->b_flags & B_DONE)
 		return bp;
-	blk_devio(bp, READ);
+	if (blk_devio(bp, READ) < 0)
+		return NULL;
 	return bp;
 }
 
