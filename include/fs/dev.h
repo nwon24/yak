@@ -21,9 +21,20 @@
 static inline int
 is_chardev(dev_t dev)
 {
-	switch DEV_MAJOR(dev) {
+	switch (DEV_MAJOR(dev)) {
 	case TTY_DEV:
 	case TTYX_DEV:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static inline int
+is_blockdev(dev_t dev)
+{
+	switch (DEV_MAJOR(dev)) {
+	case HD_DEV:
 		return 1;
 	default:
 		return 0;
