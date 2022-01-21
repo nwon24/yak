@@ -170,7 +170,7 @@ ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *
 	}
 	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
 	while (dentry < (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb))) {
-		if (dentry->d_inode == ip->i_num && ext2_match((char *)dentry + 8, name, dentry->d_name_len) == 0) {
+		if (dentry->d_inode == ip->i_num && ext2_match((char *)dentry + 8, name, strlen(name)) == 0) {
 			/* Bingo. */
 			prev->d_rec_len += dentry->d_rec_len;
 			bp->b_flags |= B_DWRITE;
@@ -196,14 +196,20 @@ ext2_unlink(const char *pathname)
 			brelse(bp);
 		return err;
 	}
-	if (ext2_permission(dp, PERM_WRITE) < 0)
+	if (ext2_permission(dp, PERM_WRITE) < 0) {
+		ext2_iput(ip);
+		if (ip != dp)
+			ext2_iput(dp);
 		return -EACCES;
+	}
 	err = ext2_remove_dir_entry(p, ip, bp);
 	brelse(bp);
 	ip->i_ino.i_links_count--;
 	ip->i_ino.i_mtime = CURRENT_TIME;
 	ip->i_flags |= I_MODIFIED;
 	ext2_iput(ip);
+	if (ip != dp)
+		ext2_iput(dp);
 	return err;
 }
 
@@ -218,19 +224,27 @@ ext2_link(const char *path1, const char *path2)
 	ip1 = ext2_namei(path1, &err, NULL, NULL, NULL);
 	if (ip1 == NULL)
 		return err;
-	if (EXT2_S_ISDIR(ip1->i_ino.i_mode) || EXT2_S_ISLNK(ip1->i_ino.i_mode))
+	if (EXT2_S_ISDIR(ip1->i_ino.i_mode) || EXT2_S_ISLNK(ip1->i_ino.i_mode)) {
 		/*
 		 * Do not support linking of directories of symbolic links.
 		 */
+		ext2_iput(ip1);
 		return -EEXIST;
+	}
 
 	ip2 = ext2_namei(path2, &err, &p, &dp, NULL);
-	if (ip2 != NULL)
+	if (ip2 != NULL) {
+		if (ip1 != dp)
+			ext2_iput(dp);
+		ext2_iput(ip1);
 		return -EEXIST;
+	}
 	err = ext2_add_dir_entry(dp, ip1, p, strlen(p));
 	ip1->i_ino.i_links_count++;
 	ip1->i_ino.i_mtime = CURRENT_TIME;
 	ip1->i_flags |= I_MODIFIED;
 	ext2_iput(ip1);
+	if (ip1 != dp)
+		ext2_iput(dp);
 	return err;
 }
