@@ -113,6 +113,7 @@ int
 kernel_fork(void)
 {
 	struct process *proc;
+	int i;
 
 	if ((proc = get_free_proc()) == NULL)
 		return -EAGAIN;
@@ -142,6 +143,10 @@ kernel_fork(void)
 	proc->queue_prev = proc->queue_next = NULL;
 	memmove(&proc->image, &current_process->image, sizeof(proc->image));
 	adjust_proc_queues(proc);
+	for (i = 0; i < NR_OPEN; i++) {
+		if (current_process->file_table[i] != NULL)
+			current_process->file_table[i]->f_count++;
+	}
 	return last_pid;
 }
 
