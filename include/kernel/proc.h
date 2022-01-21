@@ -19,6 +19,15 @@ struct proc_image {
 	uint32_t vir_data_len;
 };
 
+/*
+ * Process group information.
+ */
+struct pgrp_info {
+	int leader;
+	int sid;
+	int pgid;
+};
+
 struct process {
 	int pid;
 	int ppid;
@@ -35,6 +44,8 @@ struct process {
 	int quanta;
 	int counter;
 	void *sleeping_on;
+
+	struct pgrp_info pgrp_info;
 
 	struct context *context;
 
