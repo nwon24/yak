@@ -50,6 +50,8 @@ int chr_dev_open(dev_t dev)
 {
 	if (!is_chardev(dev))
 		return -1;
+	if (chr_dev_table[DEV_MAJOR(dev)].d_open == NULL)
+		return -ENODEV;
 	return (*chr_dev_table[DEV_MAJOR(dev)].d_open)(DEV_MINOR(dev));
 }
 
