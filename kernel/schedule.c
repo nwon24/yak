@@ -51,9 +51,9 @@ switch_proc:
 void
 sleep(void *addr)
 {
+	disable_intr();
 	if (current_process == FIRST_PROC)
 		panic("Trying to sleep on first process");
-	disable_intr();
 	current_process->state = PROC_BLOCKED;
 	current_process->sleeping_on = addr;
 	adjust_proc_queues(current_process);
