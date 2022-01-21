@@ -50,7 +50,7 @@
 #define EXT2_S_IRWXO	(EXT2_S_IROTH | EXT2_S_IWOTH | EXT2_S_IXOTH)
 
 #define EXT2_S_ISSOCK(m)	(((m) & EXT2_S_IFMT) == EXT2_S_IFSOCK)
-#define EXT2_S_ISLNK(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFLNK
+#define EXT2_S_ISLNK(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFLNK)
 #define EXT2_S_ISREG(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFREG)
 #define EXT2_S_ISBLK(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFBLK)
 #define EXT2_S_ISCHR(m)		(((m) & EXT2_S_IFMT) == EXT2_S_IFCHR)
