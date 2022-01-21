@@ -7,6 +7,7 @@
 #include <asm/uaccess.h>
 
 #include <drivers/timer.h>
+#include <drivers/drive.h>
 
 #include <fs/dev.h>
 #include <fs/fs.h>
@@ -21,6 +22,8 @@
 
 static ssize_t file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
 static ssize_t file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
+static ssize_t blkdev_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
+static ssize_t blkdev_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
 
 int
 ext2_read(struct file *file, void *buf, size_t count)
@@ -37,7 +40,7 @@ ext2_read(struct file *file, void *buf, size_t count)
 	if (EXT2_S_ISDIR(ip->i_ino.i_mode) || EXT2_S_ISREG(ip->i_ino.i_mode))
 		return file_read(file, ip, buf, count);
 	if (EXT2_S_ISBLK(ip->i_ino.i_mode))
-		panic("TODO: Implement block read for ext2");
+		return blkdev_read(file, ip, buf, count);
 	if (EXT2_S_ISCHR(ip->i_ino.i_mode))
 		return chr_devio(ip->i_ino.i_block[0], buf, count, READ);
 	return -EINVAL;
@@ -58,7 +61,7 @@ ext2_write(struct file *file, void *buf, size_t count)
 	if (EXT2_S_ISDIR(ip->i_ino.i_mode) || EXT2_S_ISREG(ip->i_ino.i_mode))
 		file_write(file, ip, buf, count);
 	if (EXT2_S_ISBLK(ip->i_ino.i_mode))
-		panic("TODO: Implement block write for ext2");
+		return blkdev_write(file, ip, buf, count);
 	if (EXT2_S_ISCHR(ip->i_ino.i_mode))
 		return chr_devio(ip->i_ino.i_block[0], buf, count, WRITE);
 	return -EINVAL;
@@ -169,6 +172,89 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 	if (err != 0)
 		return err;
 	return count - c;
+}
+
+static ssize_t
+blkdev_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
+{
+	struct buffer *bp;
+	dev_t dev;
+	off_t c = count, block, nr;
+	char *p, *ubuf;
+	off_t off;
+
+	if (c < 0)
+		return -EOVERFLOW;
+	dev = ip->i_ino.i_block[0];
+	if (!is_blockdev(dev))
+		return -ENXIO;
+	ubuf = buf;
+	while (c) {
+		block = file->f_pos / SECTOR_SIZE;
+		bp = getblk(dev, block);
+		if (bp == NULL)
+			return -ENOBUFS;
+		blk_devio(bp, READ);
+		if (bp->b_flags & B_ERROR) {
+			brelse(bp);
+			return -EIO;
+		}
+		off = file->f_pos % SECTOR_SIZE;
+		p = bp->b_data + off;
+		nr = (SECTOR_SIZE - off < c) ? SECTOR_SIZE - off : c;
+		c -= nr;
+		file->f_pos += nr;
+		while (nr--) {
+			put_ubyte(ubuf, *p);
+			p++;
+			ubuf++;
+		}
+		brelse(bp);
+	}
+	return c - count;
+}
+
+static ssize_t
+blkdev_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
+{
+	off_t c = count, block, nr;
+	off_t off;
+	char *p, *ubuf;
+	dev_t dev;
+	struct buffer *bp;
+
+	if (c < 0)
+		return -EOVERFLOW;
+	ubuf = buf;
+	dev = ip->i_ino.i_block[0];
+	if (!is_blockdev(dev))
+		return -ENXIO;
+	while (c) {
+		block = file->f_pos / SECTOR_SIZE;
+		bp = getblk(dev, block);
+		if (bp == NULL)
+			return -ENOBUFS;
+		blk_devio(bp, READ);
+		if (bp->b_flags & B_ERROR) {
+			brelse(bp);
+			return -EIO;
+		}
+		off = file->f_pos % SECTOR_SIZE;
+		p = bp->b_data + off;
+		nr = (SECTOR_SIZE - off < c) ? SECTOR_SIZE - off : c;
+		c -= nr;
+		file->f_pos += nr;
+		while (nr--) {
+			*p = get_ubyte(ubuf);
+			p++;
+			ubuf++;
+		}
+		bp->b_flags |= B_DWRITE;
+		brelse(bp);
+	}
+	ip->i_flags |= I_MODIFIED;
+	ip->i_ino.i_mtime = CURRENT_TIME;
+	return c - count;
 }
 
 off_t
