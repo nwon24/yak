@@ -32,7 +32,6 @@ static struct ext2_inode_m *find_entry_direct(struct ext2_inode_m *dir, const ch
 static struct ext2_inode_m *find_entry_indirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp);
 static struct ext2_inode_m *find_entry_dindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp);
 static struct ext2_inode_m *find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, int *res, struct buffer **last_dir_bp);
-static int namei_match(const void *p1, const void *p2, size_t n);
 
 int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
 {
@@ -236,7 +235,7 @@ find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, 
 	bp = bread(dir->i_dev, block);
 	d = (struct ext2_dir_entry *)bp->b_data;
 
-	while ((flag = namei_match((const char *)d + 8, entry, d->d_name_len)) != 0) {
+	while ((flag = ext2_match((const char *)d + 8, entry, d->d_name_len)) != 0) {
 		if ((char *)d - bp->b_data >= EXT2_BLOCKSIZE(sb)) {
 			*res = FIND_NEXT_BLOCK;
 			d = NULL;
@@ -261,8 +260,8 @@ find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, 
 	return ret;
 }
 
-static int
-namei_match(const void *kptr, const void *uptr, size_t n)
+int
+ext2_match(const void *kptr, const void *uptr, size_t n)
 {
 	const unsigned char *a, *b;
 
