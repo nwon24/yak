@@ -12,6 +12,7 @@
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
+#include <kernel/sys.h>
 
 #include <drivers/acpi.h>
 #include <drivers/init.h>
@@ -45,6 +46,7 @@ kernel_main(multiboot_info_t *mb_info, uint32_t mb_magic)
 	acpi_init();
 	pci_init();
 	fs_init();
+	sys_other_init();
 	run_driver_init_functions();
 	printk("Hello, world!\r\n");
 	if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
