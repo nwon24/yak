@@ -45,8 +45,15 @@ first_user_code:
 	movl	$buf, %ecx
 	movl	$5, %edx
 	int	$0x80
+	movl	$__NR_link, %eax
+	movl	$file2, %ebx
+	movl	$file3, %ecx
+	int	$0x80
 	movl	$__NR_unlink, %eax
 	movl	$file2, %ebx
+	int	$0x80
+	movl	$__NR_unlink, %eax
+	movl	$file3, %ebx
 	int	$0x80
 	movl	$__NR_sync, %eax
 	int	$0x80
@@ -54,6 +61,7 @@ first_user_code:
 
 file:	.asciz	"/dev/tty"
 file2:	.asciz 	"/test"
+file3:	.asciz	"/test2"
 msg:	.asciz	"Hello, world!"
 fd:	.long	0
 buf:	.space	5
