@@ -241,6 +241,8 @@ int ext2_link(const char *path1, const char *path2);
 
 off_t ext2_lseek(off_t *ptr, void *inode, off_t offset, int whence);
 
+int ext2_match(const void *a, const void *b, size_t c);
+
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
 #define EXT2_WTIME(s)		((s)->sb.s_wtime)
