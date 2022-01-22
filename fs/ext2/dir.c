@@ -13,6 +13,7 @@
 #include <generic/errno.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
 
 static int dentry_file_type(struct ext2_inode_m *ip);
 static int ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *bp);
@@ -247,4 +248,26 @@ ext2_link(const char *path1, const char *path2)
 	if (ip1 != dp)
 		ext2_iput(dp);
 	return err;
+}
+
+int
+ext2_chdir(const char *path)
+{
+	struct ext2_inode_m *ip, *dp;
+	int err;
+
+	ip = ext2_namei(path, &err, NULL, &dp, NULL);
+	if (path[strlen(path)] == '/') {
+		if (!EXT2_S_ISDIR(dp->i_ino.i_mode)) {
+			ext2_iput(dp);
+			return -ENOTDIR;
+		}
+	}
+	if (ip == NULL) {
+		ext2_iput(dp);
+		return err;
+	}
+	ext2_iput(current_process->cwd_inode);
+	current_process->cwd_inode = ip;
+	return 0;
 }
