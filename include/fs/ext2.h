@@ -228,6 +228,7 @@ ext2_block ext2_create_block(struct ext2_inode_m *ip, off_t off);
 void *ext2_open(const char *path, int flags, int mode, int *err);
 int ext2_read(struct file *file, void *buf, size_t count);
 int ext2_write(struct file *file, void *buf, size_t count);
+int ext2_close(struct file *file);
 
 int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask);
 
