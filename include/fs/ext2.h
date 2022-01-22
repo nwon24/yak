@@ -219,6 +219,7 @@ size_t ext2_get_attribute(struct generic_filesystem *fs, enum fs_attribute_cmd c
 
 struct ext2_inode_m *ext2_iget(dev_t dev, ino_t num);
 void ext2_iput(struct ext2_inode_m *ip);
+void ext2_public_iput(void *ip);
 void ext2_inodes_init(void);
 
 struct ext2_inode_m *ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp);
