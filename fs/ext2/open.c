@@ -1,7 +1,7 @@
 /*
  * ext2/open.c
  * Handles the 'open' syscall for an ext2 file.
- * Also has a some other related syscalls.
+ * Also has a some other syscalls that don't seem to be belong in their own file.
  */
 #include <asm/uaccess.h>
 
@@ -191,5 +191,30 @@ ext2_close(struct file *file)
 		panic("ext2_close: file == NULL or file->f_inode == NULL");
 	if (file->f_count == 0)
 		ext2_iput(file->f_inode);
+	return 0;
+}
+
+int
+ext2_chown(const char *path, uid_t uid, gid_t gid)
+{
+	struct ext2_inode_m *ip;
+	int err;
+
+	ip = ext2_namei(path, &err, NULL, NULL, NULL);
+	if (ip == NULL)
+		return err;
+	if (current_process->euid != ip->i_ino.i_uid) {
+		ext2_iput(ip);
+		return -EPERM;
+	}
+	if (uid != -1) {
+		ip->i_ino.i_uid = uid;
+		ip->i_flags |= I_MODIFIED;
+	}
+	if (gid != -1) {
+		ip->i_ino.i_gid = gid;
+		ip->i_flags |= I_MODIFIED;
+	}
+	ext2_iput(ip);
 	return 0;
 }
