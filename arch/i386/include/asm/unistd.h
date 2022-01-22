@@ -24,5 +24,6 @@
 #define __NR_geteuid	0x31
 #define __NR_getegid	0x32
 #define __NR_setsid	0x42
+#define __NR_chown	0xB6
 
 #endif /* ARCH_UNISTD_H */
