@@ -239,6 +239,8 @@ int ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const 
 int ext2_unlink(const char *path);
 int ext2_link(const char *path1, const char *path2);
 
+int ext2_mknod(const char *path, mode_t mode, dev_t dev);
+
 off_t ext2_lseek(off_t *ptr, void *inode, off_t offset, int whence);
 
 int ext2_match(const void *a, const void *b, size_t c);
