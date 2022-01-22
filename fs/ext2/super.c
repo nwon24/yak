@@ -72,6 +72,20 @@ ext2_init(void)
 	sb = ext2_fs_struct.f_super;
 	if (sb->sb.s_magic != EXT2_MAGIC)
 		panic("ext2_init: Root device not an ext2 filesystem");
+	if (sb->sb.s_state == EXT2_ERROR_FS) {
+		switch (sb->sb.s_errors) {
+		case EXT2_ERRORS_RO:
+			ext2_fs_struct.f_read_only = 1;
+			break;
+		case EXT2_ERRORS_PANIC:
+			panic("ext2_init: ext2 superblock tells kernel to panic as filesystem has errors!");
+			break;
+		default:
+			break;
+		}
+	} else {
+		ext2_fs_struct.f_read_only = 0;
+	}
 	if ((sb->sb.s_inodes_count % sb->sb.s_inodes_per_group) == 0)
 		tmp1 = sb->sb.s_inodes_count / sb->sb.s_inodes_per_group;
 	else
@@ -177,6 +191,7 @@ static void
 ext2_mount_root(void)
 {
 	struct ext2_inode_m *ip;
+	struct ext2_superblock_m *sb;
 
 	ip = ext2_iget(CONFIG_FS_ROOT_DEV, EXT2_ROOT_INO);
 	current_process->root_inode = ip;
@@ -185,4 +200,10 @@ ext2_mount_root(void)
 	current_process->cwd_inode = current_process->root_inode;
 	current_process->root_fs = &ext2_fs_struct;
 	current_process->cwd_fs = &ext2_fs_struct;
+	sb = ext2_fs_struct.f_super;
+	mutex_lock(&sb->mutex);
+	sb->sb.s_mtime = CURRENT_TIME;
+	sb->sb.s_mnt_count++;
+	sb->modified = 1;
+	mutex_unlock(&sb->mutex);
 }
