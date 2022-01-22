@@ -15,6 +15,7 @@
 struct proc_image {
 	uint32_t vir_code_base;	/* Only readable */
 	uint32_t vir_code_len;
+	uint32_t vir_code_count; /* Number of processes sharing text section */
 	uint32_t vir_data_base; /* Readable and writeable */
 	uint32_t vir_data_len;
 };
@@ -69,6 +70,7 @@ void add_multitasking_hook(multitasking_hook hook);
 
 void processes_init(void);
 int kernel_fork(void);
+void kernel_exit(int status);
 
 void schedule(void);
 void sleep(void *addr);
@@ -94,6 +96,7 @@ enum {
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
 
+#define PROC_EXITED	0
 #define PROC_RUNNING	1
 #define PROC_BLOCKED	2
 #define PROC_RUNNABLE	3
