@@ -52,7 +52,8 @@ arch_processes_init(uint32_t start, uint32_t size)
 	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_INT_GATE);
 	register_syscall(__NR_fork, (uint32_t)kernel_fork, 0);
 	register_syscall(0, (uint32_t)kernel_test, 1);
-	current_page_directory = virt_map_first_proc(start, size);
+	register_syscall(__NR_exit, (uint32_t)kernel_exit, 1);
+	current_page_directory = virt_map_chunk(start, size, NULL, PAGE_WRITABLE | PAGE_USER);
 	if (!current_page_directory)
 		return -1;
 	current_cpu_state->cr3 = current_page_directory;
@@ -106,6 +107,21 @@ arch_switch_to(struct process *prev, struct process *new)
 	load_cr3(current_cpu_state->cr3);
 	tss.esp0 = current_cpu_state->kernel_stack;
 	asm_switch_to(&prev->context, new->context);
+}
+
+void
+arch_exit(void)
+{
+	/* uint32_t *pg_dir = (uint32_t *)current_cpu_state->cr3, *p; */
+
+	/* for (p = pg_dir; p < pg_dir + (PAGE_SIZE / sizeof(uint32_t))) { */
+	/* 	if (*p & PAGE_PRESENT) { */
+	/* 		free_page_table(*p); */
+	/* 		*p &= ~PAGE_PRESENT; */
+	/* 		page_frame_free(*p & 0xFFFFF000); */
+	/* 	} */
+	/* } */
+	/* page_frame_free(current_cpu_state->cr3); */
 }
 
 void
