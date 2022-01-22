@@ -251,5 +251,7 @@ kernel_chown(const char *name, uid_t uid, gid_t gid)
 	fs = get_fs_from_path(name);
 	if (fs == NULL)
 		return -EINVAL;
+	if (fs->f_read_only)
+		return -EROFS;
 	return fs->f_driver->fs_chown(name, uid, gid);
 }
