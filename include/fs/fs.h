@@ -52,6 +52,7 @@ struct fs_driver_ops {
 	int (*fs_link)(const char *path1, const char *path2);
 	int (*fs_mknod)(const char *path, mode_t mode, dev_t dev);
 	int (*fs_close)(struct file *file);
+	int (*fs_chdir)(const char *path);
 };
 
 struct generic_filesystem {
@@ -90,6 +91,7 @@ int kernel_creat(const char *path, mode_t mode);
 int kernel_link(const char *path1, const char *path2);
 int kernel_mknod(const char *path, mode_t mode, dev_t dev);
 int kernel_close(int fd);
+int kernel_chdir(const char *path);
 
 static inline void
 fs_init(void)
@@ -105,6 +107,7 @@ fs_init(void)
 	register_syscall(__NR_link, (uint32_t)kernel_link, 2);
 	register_syscall(__NR_mknod, (uint32_t)kernel_mknod, 3);
 	register_syscall(__NR_close, (uint32_t)kernel_close, 1);
+	register_syscall(__NR_chdir, (uint32_t)kernel_chdir, 1);
 }
 
 #endif /* FS_H */
