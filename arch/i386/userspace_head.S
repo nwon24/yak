@@ -5,6 +5,7 @@
  */
 #include <generic/unistd.h>
 #include <generic/fcntl.h>
+#include <generic/stat.h>
 
 	.section .user_head, "a"
 	.global	first_user_code
@@ -45,12 +46,20 @@ first_user_code:
 	movl	$buf, %ecx
 	movl	$5, %edx
 	int	$0x80
+	movl	$__NR_close, %eax
+	movl	fd, %ebx
+	int	$0x80
 	movl	$__NR_link, %eax
 	movl	$file2, %ebx
 	movl	$file3, %ecx
 	int	$0x80
 	movl	$__NR_unlink, %eax
 	movl	$file2, %ebx
+	int	$0x80
+	movl	$__NR_mknod, %eax
+	movl	$hd, %ebx
+	movl	$(S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IFBLK), %ecx
+	movl	$(0x3 << 8), %edx
 	int	$0x80
 	movl	$__NR_unlink, %eax
 	movl	$file3, %ebx
@@ -60,6 +69,7 @@ first_user_code:
 3:	jmp	.
 
 file:	.asciz	"/dev/tty"
+hd:	.asciz	"/dev/hd1"
 file2:	.asciz 	"/test"
 file3:	.asciz	"/test2"
 msg:	.asciz	"Hello, world!"
