@@ -17,6 +17,9 @@
 #include <mm/vm.h>
 
 static struct fs_driver_ops ext2_driver_ops = {
+	.fs_raw = {
+		.fs_raw_iput = ext2_public_iput,
+	},
 	.fs_get_attribute = ext2_get_attribute,
 	.fs_open = ext2_open,
 	.fs_read = ext2_read,
