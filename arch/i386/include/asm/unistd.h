@@ -13,6 +13,7 @@
 #define __NR_creat	0x8
 #define __NR_link	0x9
 #define __NR_unlink	0xA
+#define __NR_chdir	0xC
 #define __NR_mknod	0xE
 #define __NR_lseek	0x13
 #define __NR_setuid	0x17
