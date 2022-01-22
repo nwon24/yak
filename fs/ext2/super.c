@@ -27,6 +27,7 @@ static struct fs_driver_ops ext2_driver_ops = {
 	.fs_link = ext2_link,
 	.fs_mknod = ext2_mknod,
 	.fs_close = ext2_close,
+	.fs_chdir = ext2_chdir,
 };
 
 /*
