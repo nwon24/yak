@@ -11,6 +11,7 @@
 
 #include <generic/errno.h>
 #include <generic/fcntl.h>
+#include <generic/stat.h>
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
@@ -180,4 +181,48 @@ kernel_link(const char *path1, const char *path2)
 	if (fs1 != fs2)
 		return -EXDEV;
 	return fs1->f_driver->fs_link(path1, path2);
+}
+
+int
+kernel_mknod(const char *path, mode_t mode, dev_t dev)
+{
+	struct generic_filesystem *fs;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+		return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	/*
+	 * Since 'mode' is made up of the POSIX bits check it here.
+	 * It's likely the filesystem bits are the same anyway (such as ext2.
+	 */
+	switch (mode & S_IFMT) {
+	case S_IFBLK:
+	case S_IFCHR:
+	case S_IFREG:
+	case S_IFSOCK:
+	case S_IFIFO:
+		return fs->f_driver->fs_mknod(path, mode, dev);
+	default:
+		return -EINVAL;
+	}
+}
+
+int
+kernel_close(int fd)
+{
+	struct file **fp;
+
+	if (fd >= NR_OPEN)
+		return -EBADF;
+	fp = current_process->file_table + fd;
+	if (*fp == NULL)
+		return -EBADF;
+	if ((*fp)->f_count == 0)
+		panic("kernel_close: f_count == 0");
+	(*fp)->f_count--;
+	(*fp)->f_fs->f_driver->fs_close(*fp);
+	*fp = NULL;
+	return 0;
 }
