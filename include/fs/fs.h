@@ -41,7 +41,12 @@ struct generic_filesystem;
  */
 struct file;
 
+struct fs_driver_raw_ops {
+	void (*fs_raw_iput)(void *ip);
+};
+
 struct fs_driver_ops {
+	struct fs_driver_raw_ops fs_raw;
 	size_t (*fs_get_attribute)(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
 	void *(*fs_open)(const char *path, int flags, int mode, int *err);
 	int (*fs_read)(struct file *file, void *buf, size_t count);
