@@ -240,3 +240,16 @@ kernel_chdir(const char *path)
 	current_process->cwd_fs = fs;
 	return fs->f_driver->fs_chdir(path);
 }
+
+int
+kernel_chown(const char *name, uid_t uid, gid_t gid)
+{
+	struct generic_filesystem *fs;
+
+	if (name == NULL || !check_user_ptr((void *)name))
+		return -EFAULT;
+	fs = get_fs_from_path(name);
+	if (fs == NULL)
+		return -EINVAL;
+	return fs->f_driver->fs_chown(name, uid, gid);
+}
