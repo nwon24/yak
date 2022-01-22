@@ -33,6 +33,7 @@ extern uint32_t _start_user_head, _end_user_head;
 
 int arch_processes_init(uint32_t start, uint32_t size);
 int arch_fork(int child, struct process *proc);
+void arch_exit(void);
 
 static struct process *get_free_proc(void);
 static void run_multitasking_hooks(void);
@@ -142,12 +143,41 @@ kernel_fork(void)
 	/* Not in queue, let 'adjust_proc_queues' take care of that. */
 	proc->queue_prev = proc->queue_next = NULL;
 	memmove(&proc->image, &current_process->image, sizeof(proc->image));
+	proc->image.vir_code_count++;
+	current_process->image.vir_code_count++;
 	adjust_proc_queues(proc);
 	for (i = 0; i < NR_OPEN; i++) {
 		if (current_process->file_table[i] != NULL)
 			current_process->file_table[i]->f_count++;
 	}
 	return last_pid;
+}
+
+void
+kernel_exit(int status)
+{
+	struct process *proc;
+	int i;
+
+	for (i = 0; i < NR_OPEN; i++) {
+		if (current_process->file_table[i] != NULL)
+			kernel_close(i);
+	}
+	for (proc = process_table; proc < process_table + NR_PROC; proc++) {
+		if (proc->state && proc->ppid == current_process->pid) {
+			proc->ppid = 1;
+			proc->image.vir_code_count--;
+		}
+		if (proc->pid == current_process->ppid)
+			proc->image.vir_code_count--;
+	}
+	current_process->root_fs->f_driver->fs_raw.fs_raw_iput(current_process->root_inode);
+	current_process->cwd_fs->f_driver->fs_raw.fs_raw_iput(current_process->cwd_inode);
+	status--;
+	arch_exit();
+	current_process->state = PROC_EXITED;
+	adjust_proc_queues(current_process);
+	schedule();
 }
 
 static struct process *
