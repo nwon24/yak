@@ -11,6 +11,8 @@
 
 #include <drivers/timer.h>
 
+#include <generic/string.h>
+
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
@@ -153,7 +155,7 @@ ext2_inode_sync(void)
 
 	ip = cache_start;
 	while (ip < cache_start + NR_INODE_CACHE) {
-		if (ip->i_count && ip->i_dev != NODEV && (ip->i_flags & I_MODIFIED)) {
+		if (ip->i_dev != NODEV && (ip->i_flags & I_MODIFIED)) {
 			mutex_lock(&ip->i_mutex);
 			ip->i_count++;
 			write_inode(ip);
@@ -251,10 +253,10 @@ write_inode(struct ext2_inode_m *ip)
 	block = EXT2_INODE_BLOCK(index, sb);
 	bp = bread(ip->i_dev, block + bgd->bg_inode_table);
 	i = (struct ext2_inode *)(bp->b_data + EXT2_INODE_SIZE(sb) * (index % EXT2_INODES_PER_BLOCK(sb)));
-	*i = ip->i_ino;
+	memmove(i, &ip->i_ino, sizeof(*i));
 	ip->i_flags &= ~I_MODIFIED;
-	/* bwrite() releases the buffer */
-	bwrite(bp);
+	bp->b_flags |= B_DWRITE;
+	brelse(bp);
 }
 
 static struct ext2_inode_m *
