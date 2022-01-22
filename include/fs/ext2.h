@@ -17,6 +17,17 @@
 /* Root inode number */
 #define EXT2_ROOT_INO	2
 
+enum {
+	EXT2_VALID_FS = 1,
+	EXT2_ERROR_FS = 2,
+};
+
+enum {
+	EXT2_ERRORS_CONTINUE = 1,
+	EXT2_ERRORS_RO = 2,
+	EXT2_ERRORS_PANIC = 3,
+};
+
 /*
  * Values in 'i_mode' field of an inode.
  * Type occupy top 4 bits (15 to 12).
