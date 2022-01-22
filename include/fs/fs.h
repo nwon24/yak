@@ -61,6 +61,7 @@ struct generic_filesystem {
 	void *f_super;
 	dev_t f_dev;
 	mutex f_mutex;
+	int f_read_only;
 	struct fs_driver_ops *f_driver;
 };
 
