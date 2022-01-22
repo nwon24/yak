@@ -50,6 +50,7 @@ struct fs_driver_ops {
 	int (*fs_unlink)(const char *path);
 	off_t (*fs_lseek)(off_t *ptr, void *inode, off_t offset, int whence);
 	int (*fs_link)(const char *path1, const char *path2);
+	int (*fs_mknod)(const char *path, mode_t mode, dev_t dev);
 };
 
 struct generic_filesystem {
@@ -86,6 +87,7 @@ int kernel_unlink(const char *path);
 off_t kernel_lseek(int fd, off_t offset, int whence);
 int kernel_creat(const char *path, mode_t mode);
 int kernel_link(const char *path1, const char *path2);
+int kernel_mknod(const char *path, mode_t mode, dev_t dev);
 
 static inline void
 fs_init(void)
@@ -99,6 +101,7 @@ fs_init(void)
 	register_syscall(__NR_lseek, (uint32_t)kernel_lseek, 3);
 	register_syscall(__NR_creat, (uint32_t)kernel_creat, 2);
 	register_syscall(__NR_link, (uint32_t)kernel_link, 2);
+	register_syscall(__NR_mknod, (uint32_t)kernel_mknod, 3);
 }
 
 #endif /* FS_H */
