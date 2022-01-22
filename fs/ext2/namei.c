@@ -98,12 +98,12 @@ loop:
 		*error = -ENOENT;
 		return NULL;
 	}
+	ip = dp;
 	if (last_dir != NULL) {
 		if (*last_dir != NULL)
 			ext2_iput(*last_dir);
 		*last_dir = ip;
 	}
-	ip = dp;
 	goto loop;
 }
 
