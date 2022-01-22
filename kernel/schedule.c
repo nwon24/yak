@@ -32,7 +32,7 @@ schedule(void)
 		if (*proc == NULL)
 			continue;
 		(*proc)->state = PROC_RUNNING;
-		if (current_process != FIRST_PROC && current_process->quanta != current_process->counter)
+		if (current_process->state != PROC_EXITED && current_process != FIRST_PROC && current_process->quanta != current_process->counter)
 			current_process->priority = current_process->quanta / (current_process->quanta - current_process->counter);
 		current_process->quanta = current_process->priority;
 		current_process->counter = current_process->quanta;
