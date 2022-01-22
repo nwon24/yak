@@ -128,6 +128,12 @@ ext2_iput(struct ext2_inode_m *ip)
 }
 
 void
+ext2_public_iput(void *inode)
+{
+	ext2_iput(inode);
+}
+
+void
 ext2_itrunc(struct ext2_inode_m *ip)
 {
 	uint32_t *b;
