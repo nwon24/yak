@@ -66,6 +66,9 @@ first_user_code:
 	int	$0x80
 	movl	$__NR_sync, %eax
 	int	$0x80
+	movl	$__NR_exit, %eax
+	movl	$0, %ebx
+	int	$0x80
 3:	jmp	.
 
 file:	.asciz	"/dev/tty"
