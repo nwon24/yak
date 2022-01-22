@@ -5,6 +5,7 @@
 #define SEEK_CUR	1
 #define SEEK_END	2
 
+#define __NR_exit	0x0
 #define __NR_fork	0x2
 #define __NR_read	0x3
 #define __NR_write	0x4
