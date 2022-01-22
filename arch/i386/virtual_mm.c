@@ -114,6 +114,9 @@ virt_map_phys(uint32_t phys)
 	return ret;
 }
 
+/*
+ * Only to be used for kernel memory.
+ */
 void
 virt_unmap_virt(uint32_t virt)
 {
@@ -130,21 +133,31 @@ virt_unmap_virt(uint32_t virt)
 }
 
 /*
- * Used for the setting up of the first process.
- * It is mapped to a virtual address that corresponds to its physical
- * address, as provided by the argument START.
+ * Used to map a section of the virtual address into the given
+ * page directory.
+ * The address of the page directory is its physical one, such as one
+ * returned  from 'page_frame_alloc'.
  */
 uint32_t
-virt_map_first_proc(uint32_t start, uint32_t size)
+virt_map_chunk(uint32_t start, uint32_t size, uint32_t *page_dir, int flags)
 {
 	uint32_t pg_table, pg_dir, old, tmp;
 	int nr_tables, i, j, index;
 
 	old = get_tmp_page();
-	if ((pg_dir = page_frame_alloc()) == NO_FREE_PAGE) {
-		tmp_map_page(old);
-		tlb_flush(VIRT_ADDR_TMP_PAGE);
-		goto error;
+	/*
+	 * Caller has option of not providing a page table, in which case we allocate
+	 * it here.
+	 */
+	if (page_dir == NULL) {
+		pg_dir = page_frame_alloc();
+		if (pg_dir == NO_FREE_PAGE) {
+			tmp_map_page(old);
+			tlb_flush(VIRT_ADDR_TMP_PAGE);
+			goto error;
+		}
+	} else {
+		pg_dir = (uint32_t)page_dir;
 	}
 	tmp_map_page(pg_dir);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
@@ -165,11 +178,11 @@ virt_map_first_proc(uint32_t start, uint32_t size)
 		for (i = ((tmp >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK) << 2; i < PAGE_SIZE; i += 4, tmp += PAGE_SIZE) {
 			if (tmp > start + size)
 				break;
-			*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = tmp | PAGE_PRESENT | PAGE_USER | PAGE_WRITABLE;
+			*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = tmp | PAGE_PRESENT | flags;
 		}
 		tmp_map_page(pg_dir);
 		tlb_flush(VIRT_ADDR_TMP_PAGE);
-		*(uint32_t *)(VIRT_ADDR_TMP_PAGE + (index << 2) + (j << 2)) = pg_table | PAGE_PRESENT | PAGE_USER | PAGE_WRITABLE;
+		*(uint32_t *)(VIRT_ADDR_TMP_PAGE + (index << 2) + (j << 2)) = pg_table | PAGE_PRESENT | flags;
 	}
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
@@ -248,4 +261,17 @@ check_user_ptr(void *addr)
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	return ret;
+}
+
+void
+free_page_table(uint32_t *pg_table)
+{
+	uint32_t *p;
+
+	for (p = pg_table; p < pg_table + (PAGE_SIZE / sizeof(uint32_t)); p++) {
+		if (*p & PAGE_PRESENT) {
+			page_frame_free(*p & 0xFFFFF000);
+			*p &= ~PAGE_PRESENT;
+		}
+	}
 }
