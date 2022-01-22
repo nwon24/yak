@@ -226,3 +226,17 @@ kernel_close(int fd)
 	*fp = NULL;
 	return 0;
 }
+
+int
+kernel_chdir(const char *path)
+{
+	struct generic_filesystem *fs;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+		return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -ENOENT;
+	current_process->cwd_fs = fs;
+	return fs->f_driver->fs_chdir(path);
+}
