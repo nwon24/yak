@@ -20,6 +20,7 @@
 #define __NR_lseek	0x13
 #define __NR_setuid	0x17
 #define __NR_getuid	0x18
+#define __NR_rmdir	0x20
 #define __NR_sync	0x24
 #define __NR_mkdir	0x27
 #define __NR_setgid	0x2E
