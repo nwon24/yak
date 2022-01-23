@@ -16,6 +16,7 @@ uint32_t kernel_virt_map_page(uint32_t page_frame);
 uint32_t virt_map_phys(uint32_t phys);
 void virt_unmap_virt(uint32_t virt);
 uint32_t virt_map_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir, int flags);
+void virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir);
 void copy_address_space(uint32_t from_pg_dir, uint32_t to_pg_dir);
 int check_user_ptr(void *addr);
 
