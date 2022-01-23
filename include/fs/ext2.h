@@ -265,6 +265,7 @@ int ext2_fchmod(struct file *file, mode_t mode);
 
 int ext2_chdir(const char *path);
 int ext2_mkdir(const char *path, mode_t mode);
+int ext2_rmdir(const char *path);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
