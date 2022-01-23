@@ -62,6 +62,7 @@ struct fs_driver_ops {
 	int (*fs_chmod)(const char *path, mode_t mode);
 	int (*fs_fchmod)(struct file *file, mode_t mode);
 	int (*fs_mkdir)(const char *path, mode_t mode);
+	int (*fs_rmdir)(const char *path);
 };
 
 struct generic_filesystem {
@@ -106,6 +107,7 @@ int kernel_chown(const char *path, uid_t uid, gid_t gid);
 int kernel_chmod(const char *path, mode_t mode);
 int kernel_fchmod(int fd, mode_t mode);
 int kernel_mkdir(const char *path, mode_t mode);
+int kernel_rmdir(const char *path);
 
 static inline void
 fs_init(void)
@@ -126,6 +128,7 @@ fs_init(void)
 	register_syscall(__NR_chmod, (uint32_t)kernel_chmod, 2);
 	register_syscall(__NR_fchmod, (uint32_t)kernel_fchmod, 2);
 	register_syscall(__NR_mkdir, (uint32_t)kernel_mkdir, 2);
+	register_syscall(__NR_rmdir, (uint32_t)kernel_rmdir, 1);
 }
 
 #endif /* FS_H */
