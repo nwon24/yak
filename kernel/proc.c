@@ -96,6 +96,8 @@ processes_init(void)
 	proc->counter = proc->quanta;
 	proc->image.vir_code_base = (uint32_t)&_start_user_head;
 	proc->image.vir_code_len = &_end_user_head - &_start_user_head;
+	proc->image.vir_data_base = 0;
+	proc->image.vir_data_len = 0;
 	process_queues[proc->priority] = proc;
 	/* Doubly linked list that just points to itself. */
 	proc->queue_next = proc->queue_prev = proc;
