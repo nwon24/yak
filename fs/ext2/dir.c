@@ -18,6 +18,7 @@
 #include <kernel/proc.h>
 
 static int dentry_file_type(struct ext2_inode_m *ip);
+static int empty_dir(struct ext2_inode_m *dp, int *err);
 static int ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *bp);
 
 static int
@@ -173,6 +174,7 @@ ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *
 		 */
 		memset(dentry, 0, sizeof(*dentry));
 		dentry->d_rec_len = EXT2_BLOCKSIZE(sb);
+		bp->b_flags |= B_DWRITE;
 		return 0;
 	}
 	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
@@ -187,6 +189,45 @@ ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *
 		dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
 	}
 	return -ENOENT;
+}
+
+/*
+ * Checks to see if the specified directory is empty.
+ * By 'empty', meaning it only consists of '.' and '..'
+ * 'err' is for an error from errno.h.
+ */
+static int
+empty_dir(struct ext2_inode_m *dp, int *err)
+{
+	struct buffer *bp;
+	struct ext2_dir_entry *dentry;
+	struct ext2_superblock_m *sb;
+
+	bp = bread(dp->i_dev, dp->i_ino.i_block[0]);
+	if (bp == NULL) {
+		*err = -EIO;
+		return 1;
+	}
+	sb = get_ext2_superblock(dp->i_dev);
+	dentry = (struct ext2_dir_entry *)bp->b_data;
+	if (ext2_match((char *)dentry + 8, ".", 1) != 0) {
+		printk("WARNING: ext2 directory with inode number %d does not have the first entry as '.'. Filesystem corrupt.\r\n", dp->i_num);
+		return 1;
+	}
+	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
+	if (dentry >= (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb))) {
+		printk("WARNING: ext2 directory with inode number %d is missing '..'. Filesystem corrupt.\r\n", dp->i_num);
+		return 1;
+	}
+	if (ext2_match((char *)dentry + 8, "..", 2) != 0) {
+		printk("WARNING: ext2 directory with inode number %d is missing '..'. Filesystem corrupt.\r\n", dp->i_num);
+		return 1;
+	}
+	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
+	if (dentry < (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb)))
+		/* There are other entries. */
+		return 1;
+	return 0;
 }
 
 int
@@ -327,4 +368,70 @@ ext2_mkdir(const char *path, mode_t mode)
 	if (ip != dp)
 		ext2_iput(dp);
 	return 0;
+}
+
+int
+ext2_rmdir(const char *path)
+{
+	struct ext2_inode_m *ip, *dp;
+	struct ext2_superblock_m *sb;
+	struct buffer *bp = NULL;
+	const char *p, *tmp;
+	int err = 0, ret;
+
+	ret = 0;
+	ip = ext2_namei(path, &err, &p, &dp, &bp);
+	if (ip == NULL) {
+		ext2_iput(dp);
+		return err;
+	}
+	tmp = p;
+	if (get_ubyte(tmp) == '.' && get_ubyte(tmp + 1) == '\0') {
+		ret = -EINVAL;
+		goto out;
+	}
+	if (get_ubyte(tmp) == '.' && get_ubyte(tmp + 1) == '.') {
+		ret = -ENOTEMPTY;
+		goto out;
+	}
+	if (empty_dir(ip, &err) != 0) {
+		ret = (err != 0) ? err : -ENOTEMPTY;
+		goto out;
+	}
+	if (ip == current_process->root_inode) {
+		ret = -EBUSY;
+		goto out;
+	}
+	if (ext2_permission(dp, PERM_WRITE) < 0) {
+		ret = -EACCES;
+		goto out;
+	}
+	if (!EXT2_S_ISDIR(ip->i_ino.i_mode)) {
+		ret = -ENOTDIR;
+		goto out;
+	}
+	sb = get_ext2_superblock(ip->i_dev);
+	if (ext2_remove_dir_entry(p, ip, bp) < 0) {
+		ret = -ENOENT;
+		goto out;
+	}
+	ip->i_ino.i_links_count--;
+	ip->i_flags |= I_MODIFIED;
+	ip->i_ino.i_mtime = CURRENT_TIME;
+	if (ip != dp) {
+		dp->i_ino.i_links_count--;
+		dp->i_flags |= I_MODIFIED;
+		dp->i_ino.i_mtime = CURRENT_TIME;
+	}
+	mutex_lock(&sb->mutex);
+	sb->bgd_table[EXT2_BLOCK_GROUP(ip, sb)].bg_used_dirs_count--;
+	sb->modified = 1;
+	mutex_unlock(&sb->mutex);
+out:
+	if (bp != NULL)
+		brelse(bp);
+	ext2_iput(dp);
+	if (dp != ip)
+		ext2_iput(ip);
+	return ret;
 }
