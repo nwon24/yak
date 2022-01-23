@@ -21,6 +21,7 @@
 #define __NR_setuid	0x17
 #define __NR_getuid	0x18
 #define __NR_sync	0x24
+#define __NR_mkdir	0x27
 #define __NR_setgid	0x2E
 #define __NR_getgid	0x2F
 #define __NR_geteuid	0x31
