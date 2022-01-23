@@ -26,6 +26,8 @@ static uint32_t *current_pg_table = NULL;
 
 static int virt_map_entry = 1023;
 
+static void free_page_table(uint32_t page_table);
+
 static inline void
 tmp_map_page(uint32_t page)
 {
@@ -263,15 +265,40 @@ check_user_ptr(void *addr)
 	return ret;
 }
 
-void
-free_page_table(uint32_t *pg_table)
+static void
+free_page_table(uint32_t pg_table)
 {
-	uint32_t *p;
+	uint32_t *p = (uint32_t *)pg_table;
 
-	for (p = pg_table; p < pg_table + (PAGE_SIZE / sizeof(uint32_t)); p++) {
+	while (p < (uint32_t *)pg_table + (PAGE_SIZE / sizeof(uint32_t))) {
 		if (*p & PAGE_PRESENT) {
-			page_frame_free(*p & 0xFFFFF000);
 			*p &= ~PAGE_PRESENT;
+			page_frame_free(*p & 0xFFFFF000);
 		}
 	}
+}
+
+void
+virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir)
+{
+	uint32_t old, *p, pg_table;
+	int nr_tables;
+
+	if (start >= KERNEL_VIRT_BASE)
+		panic("virt_free_chunck: trying to free kernel memory!");
+	if (pg_dir == NULL)
+		panic("virt_free_chunk: pg_dir is NULL");
+	old = get_tmp_page();
+	tmp_map_page((uint32_t)pg_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	nr_tables = len / 0x400000 + 1;
+	p = ((uint32_t *)VIRT_ADDR_TMP_PAGE) + (start >> VIRT_ADDR_PG_DIR_SHIFT);
+	while (nr_tables--) {
+		pg_table = *p & 0xFFFFF000;
+		free_page_table(pg_table);
+		page_frame_free(pg_table);
+		p++;
+	}
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
 }
