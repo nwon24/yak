@@ -19,7 +19,6 @@
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
-static struct ext2_inode_m *ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev, int *err);
 static int _ext2_chmod(struct ext2_inode_m *ip, mode_t mode);
 
 /*
@@ -95,7 +94,7 @@ ext2_open(const char *path, int flags, int mode, int *err)
  * Creates a new file in the given directory with the given name.
  * If the mode specifies that it will be a special file, the device major/minor combo is also given.
  */
-static struct ext2_inode_m *
+struct ext2_inode_m *
 ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev, int *err)
 {
 	ino_t new;
@@ -127,6 +126,7 @@ ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev
 		ip->i_ino.i_block[0] = dev;
 	ip->i_flags |= I_MODIFIED;
 	if ((*err = ext2_add_dir_entry(dir, ip, name, strlen(name))) < 0) {
+		ip->i_ino.i_links_count = 0;
 		ext2_iput(ip);
 		return NULL;
 	}
