@@ -112,16 +112,12 @@ arch_switch_to(struct process *prev, struct process *new)
 void
 arch_exit(void)
 {
-	/* uint32_t *pg_dir = (uint32_t *)current_cpu_state->cr3, *p; */
+	struct proc_image *i = &current_process->image;
 
-	/* for (p = pg_dir; p < pg_dir + (PAGE_SIZE / sizeof(uint32_t))) { */
-	/* 	if (*p & PAGE_PRESENT) { */
-	/* 		free_page_table(*p); */
-	/* 		*p &= ~PAGE_PRESENT; */
-	/* 		page_frame_free(*p & 0xFFFFF000); */
-	/* 	} */
-	/* } */
-	/* page_frame_free(current_cpu_state->cr3); */
+	if (i->vir_data_len > 0)
+		virt_free_chunk(i->vir_data_base, i->vir_data_len, (uint32_t *)current_cpu_state->cr3);
+	if (i->vir_code_count == 0 && i->vir_code_len > 0)
+		virt_free_chunk(i->vir_code_base, i->vir_code_len, (uint32_t *)current_cpu_state->cr3);
 }
 
 void
