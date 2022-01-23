@@ -20,6 +20,7 @@
 #include <kernel/proc.h>
 
 static struct ext2_inode_m *ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev, int *err);
+static int _ext2_chmod(struct ext2_inode_m *ip, mode_t mode);
 
 /*
  * Pointer should already have been verified.
@@ -217,4 +218,41 @@ ext2_chown(const char *path, uid_t uid, gid_t gid)
 	}
 	ext2_iput(ip);
 	return 0;
+}
+
+static int
+_ext2_chmod(struct ext2_inode_m *ip, mode_t mode)
+{
+	if (ip->i_ino.i_gid != current_process->egid)
+		mode &= ~EXT2_S_ISGID;
+	mode &= 07777;
+	if (current_process->euid == ip->i_ino.i_uid) {
+		ip->i_ino.i_mode = (ip->i_ino.i_mode & EXT2_S_IFMT) | mode;
+	} else {
+		ext2_iput(ip);
+		return -EACCES;
+	}
+	ip->i_ino.i_mtime = CURRENT_TIME;
+	ip->i_flags |= I_MODIFIED;
+	return 0;
+}
+
+int
+ext2_chmod(const char *path, mode_t mode)
+{
+	struct ext2_inode_m *ip;
+	int err;
+
+	ip = ext2_namei(path, &err, NULL, NULL, NULL);
+	if (ip == NULL)
+		return err;
+	err = _ext2_chmod(ip, mode);
+	ext2_iput(ip);
+	return err;
+}
+
+int
+ext2_fchmod(struct file *file, mode_t mode)
+{
+	return _ext2_chmod(file->f_inode, mode);
 }
