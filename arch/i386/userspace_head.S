@@ -64,6 +64,10 @@ first_user_code:
 	movl	$__NR_unlink, %eax
 	movl	$file3, %ebx
 	int	$0x80
+	movl	$__NR_mkdir, %eax
+	movl	$dir, %ebx
+	movl	$(S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH), %ecx
+	int	$0x80
 	movl	$__NR_sync, %eax
 	int	$0x80
 	movl	$__NR_exit, %eax
@@ -73,6 +77,7 @@ first_user_code:
 
 file:	.asciz	"/dev/tty"
 hd:	.asciz	"/dev/hd1"
+dir:	.asciz	"/lib"
 file2:	.asciz 	"/test"
 file3:	.asciz	"/test2"
 msg:	.asciz	"Hello, world!"
