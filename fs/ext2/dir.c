@@ -4,6 +4,8 @@
  * Just the basic directory structure (linked list) is here.
  * Contains system calls 'link' and 'unlink' for ext2.
  */
+#include <asm/uaccess.h>
+
 #include <fs/ext2.h>
 #include <fs/fs.h>
 
@@ -79,11 +81,12 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 		rec_len += 4 - (len % 4);
 	sb = get_ext2_superblock(dir->i_dev);
 	dentry = (struct ext2_dir_entry *)bp->b_data;
-	if (dentry->d_inode == 0) {
+	if (dentry->d_inode == 0 || dir->i_ino.i_size == 0) {
 		dentry->d_inode = ip->i_num;
 		dentry->d_name_len = len;
 		dentry->d_rec_len = EXT2_BLOCKSIZE(sb);
 		dentry->d_file_type = dentry_file_type(ip);
+		memmove((char *)dentry + 8, name, len);
 		brelse(bp);
 		ret = 0;
 		goto error;
@@ -104,6 +107,9 @@ ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char
 				break;
 			}
 			dentry = (struct ext2_dir_entry *)bp->b_data;
+			dir->i_ino.i_size += EXT2_BLOCKSIZE(sb);
+			dir->i_flags |= I_MODIFIED;
+			dir->i_ino.i_mtime = CURRENT_TIME;
 		}
 		/*
 		 * An inode value of 0 indicates that the entry is not present.
@@ -269,5 +275,56 @@ ext2_chdir(const char *path)
 	}
 	ext2_iput(current_process->cwd_inode);
 	current_process->cwd_inode = ip;
+	return 0;
+}
+
+int
+ext2_mkdir(const char *path, mode_t mode)
+{
+	mode_t m;
+	struct ext2_inode_m *ip, *dp;
+	const char *p, *tmp;
+	struct ext2_superblock_m *sb;
+	struct ext2_blk_group_desc *bgd;
+	int err;
+
+	m = (mode & ~current_process->umask & 0777) | EXT2_S_IFDIR;
+	ip = ext2_namei(path, &err, &p, &dp, NULL);
+	if (ip == NULL) {
+		for (tmp = p ; get_ubyte(tmp) != '\0' && get_ubyte(tmp) != '/'; tmp++);
+		if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) != '\0')
+			return -ENOENT;
+		else if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) == '\0')
+			put_ubyte(tmp, '\0');
+	} else {
+		return -EEXIST;
+	}
+	if (ext2_permission(dp, PERM_WRITE) < 0) {
+		ext2_iput(dp);
+		return -EACCES;
+	}
+	ip = ext2_new_file(p, dp, m, 0, &err);
+	if (ip == NULL) {
+		ext2_iput(dp);
+		return err;
+	}
+	sb = get_ext2_superblock(ip->i_dev);
+	ext2_add_dir_entry(ip, ip, ".", 1);
+	ip->i_ino.i_size = EXT2_BLOCKSIZE(sb);
+	ip->i_ino.i_links_count++;
+	ext2_add_dir_entry(ip, dp, "..", 2);
+	dp->i_ino.i_links_count++;
+	dp->i_flags |= I_MODIFIED;
+	dp->i_ino.i_mtime = CURRENT_TIME;
+	ip->i_flags |= I_MODIFIED;
+	ip->i_ino.i_mtime = CURRENT_TIME;
+	bgd = sb->bgd_table + EXT2_BLOCK_GROUP(ip, sb);
+	mutex_lock(&sb->mutex);
+	bgd->bg_used_dirs_count++;
+	sb->modified = 1;
+	mutex_unlock(&sb->mutex);
+	ext2_iput(ip);
+	if (ip != dp)
+		ext2_iput(dp);
 	return 0;
 }
