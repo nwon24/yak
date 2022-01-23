@@ -34,6 +34,7 @@ static struct fs_driver_ops ext2_driver_ops = {
 	.fs_chown = ext2_chown,
 	.fs_chmod = ext2_chmod,
 	.fs_fchmod = ext2_fchmod,
+	.fs_mkdir = ext2_mkdir,
 };
 
 /*
