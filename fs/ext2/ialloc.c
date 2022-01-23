@@ -24,7 +24,6 @@ ext2_ialloc(dev_t dev)
 	 * the first group with a free inode.
 	 */
 	sb = get_ext2_superblock(dev);
-	mutex_lock(&sb->mutex);
 	if (sb->sb.s_free_inodes_count == 0)
 		goto out;
 
@@ -33,7 +32,6 @@ ext2_ialloc(dev_t dev)
 			goto out;
 	}
  out:
-	mutex_unlock(&sb->mutex);
 	return num;
 }
 
@@ -71,9 +69,11 @@ ialloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *
 	 * Inode numbers begin at 1, in contrast to block addresses.
 	 */
 	num = ((p - bp->b_data) << 3) + i + 1;
+	mutex_lock(&sb->mutex);
 	bgd->bg_free_inodes_count--;
 	sb->sb.s_free_inodes_count--;
 	sb->modified = 1;
+	mutex_unlock(&sb->mutex);
  out:
 	if (bp != NULL)
 		brelse(bp);
@@ -90,7 +90,6 @@ ext2_ifree(dev_t dev, ino_t ino)
 	int i;
 
 	sb = get_ext2_superblock(dev);
-	mutex_lock(&sb->mutex);
 	/*
 	 * Do nothing if the inode is one of the reserved ones.
 	 * Reserved inodes are specified in the superblock if the version is more than 1,
@@ -107,12 +106,13 @@ ext2_ifree(dev_t dev, ino_t ino)
 	if (!(*p & (1 << i)))
 		panic("bfree: block is already free");
 	*p &= ~(1 << i);
+	mutex_lock(&sb->mutex);
 	bgd->bg_free_inodes_count++;
 	sb->sb.s_free_inodes_count++;
 	sb->modified = 1;
+	mutex_unlock(&sb->mutex);
 	bp->b_flags |= B_DWRITE;
  out:
-	mutex_unlock(&sb->mutex);
 	if (bp != NULL)
 		brelse(bp);
 }
