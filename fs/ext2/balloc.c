@@ -30,7 +30,6 @@ ext2_balloc(struct ext2_inode_m *ip)
 	 * If this fails, then try the other block groups.
 	 */
 	sb = get_ext2_superblock(ip->i_dev);
-	mutex_lock(&sb->mutex);
 	if (sb->sb.s_free_blocks_count == 0) {
 		block = 0;
 		goto out;
@@ -54,13 +53,13 @@ ext2_balloc(struct ext2_inode_m *ip)
 	ip->i_flags |= I_MODIFIED;
 	bp->b_flags |= B_DWRITE;
 	brelse(bp);
-	mutex_unlock(&sb->mutex);
 	return block;
 }
 
 /*
  * Allocate a block from the given block group descriptor table.
- * Must be called with the superblock locked.
+ * Superblock is not locked - we lock it for least amount of time possible
+ * and without calling any other functions.
  */
 static ext2_block
 balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *bgd)
@@ -92,9 +91,11 @@ balloc_bgd(dev_t dev, struct ext2_superblock_m *sb, struct ext2_blk_group_desc *
 	 * This is where some issues have been caused in the past.
 	 */
 	block += (bgd - sb->bgd_table) * EXT2_BLOCKS_PER_GROUP(sb) + sb->sb.s_first_data_block;
+	mutex_lock(&sb->mutex);
 	bgd->bg_free_blocks_count--;
 	sb->sb.s_free_blocks_count--;
 	sb->modified = 1;
+	mutex_unlock(&sb->mutex);
  out:
 	if (bp != NULL)
 		brelse(bp);
@@ -118,7 +119,6 @@ ext2_bfree(dev_t dev, ext2_block block)
 	if (block == 0)
 		return;
 	sb = get_ext2_superblock(dev);
-	mutex_lock(&sb->mutex);
 	bgd = sb->bgd_table + (block / EXT2_BLOCKS_PER_GROUP(sb));
 	bp = bread(dev, bgd->bg_block_bitmap);
 	b = block;
@@ -129,11 +129,12 @@ ext2_bfree(dev_t dev, ext2_block block)
 	if (!(*p & (1 << i)))
 		panic("bfree: block is already free");
 	*p &= ~(1 << i);
+	mutex_lock(&sb->mutex);
 	bgd->bg_free_blocks_count++;
 	sb->sb.s_free_blocks_count++;
 	sb->modified = 1;
-	bp->b_flags |= B_DWRITE;
 	mutex_unlock(&sb->mutex);
+	bp->b_flags |= B_DWRITE;
 	brelse(bp);
 }
 
