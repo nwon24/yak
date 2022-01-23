@@ -298,3 +298,18 @@ kernel_mkdir(const char *path, mode_t mode)
 		return -EROFS;
 	return fs->f_driver->fs_mkdir(path, mode);
 }
+
+int
+kernel_rmdir(const char *path)
+{
+	struct generic_filesystem *fs;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+	    return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	if (fs->f_read_only)
+		return -EROFS;
+	return fs->f_driver->fs_rmdir(path);
+}
