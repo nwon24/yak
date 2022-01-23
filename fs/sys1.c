@@ -255,3 +255,31 @@ kernel_chown(const char *name, uid_t uid, gid_t gid)
 		return -EROFS;
 	return fs->f_driver->fs_chown(name, uid, gid);
 }
+
+int
+kernel_chmod(const char *name, mode_t mode)
+{
+	struct generic_filesystem *fs;
+
+	if (name == NULL || !check_user_ptr((void *)name))
+		return -EFAULT;
+	fs = get_fs_from_path(name);
+	if (fs == NULL)
+		return -EINVAL;
+	if (fs->f_read_only)
+		return -EROFS;
+	return fs->f_driver->fs_chmod(name, mode);
+}
+
+int
+kernel_fchmod(int fd, mode_t mode)
+{
+	struct file *fp;
+
+	fp = current_process->file_table[fd];
+	if (fp == NULL)
+		return -EBADF;
+	if (fp->f_fs->f_read_only)
+		return -EROFS;
+	return fp->f_fs->f_driver->fs_fchmod(fp, mode);
+}
