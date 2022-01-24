@@ -97,16 +97,16 @@ loop:
 		*base = p2;
 	while (get_ubyte(p1) != '/' && get_ubyte(p1) != '\0')
 		p1++;
-	if ((dp = find_entry(ip, p2, p1 - p2, last_dir_bp)) == NULL) {
-		*error = -ENOENT;
-		return NULL;
-	}
 	if (ip != start) {
 		if (last_dir != NULL && EXT2_S_ISDIR(ip->i_ino.i_mode)) {
 			if (*last_dir != NULL)
 				ext2_iput(*last_dir);
 			*last_dir = ip;
 		}
+	}
+	if ((dp = find_entry(ip, p2, p1 - p2, last_dir_bp)) == NULL) {
+		*error = -ENOENT;
+		return NULL;
 	}
 	ip = dp;
 	goto loop;
