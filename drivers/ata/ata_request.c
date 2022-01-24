@@ -4,6 +4,8 @@
  */
 #include <stddef.h>
 
+#include <asm/interrupts.h>
+
 #include <kernel/config.h>
 #include <kernel/debug.h>
 #include <kernel/proc.h>
@@ -68,8 +70,10 @@ ata_finish_request(struct ata_request *req)
 void
 ata_wait_on_req(struct ata_request *req)
 {
+	disable_intr();
 	while (req->dev != NULL)
 		sleep(req);
+	restore_intr_state();
 }
 
 void
