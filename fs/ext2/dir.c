@@ -347,10 +347,12 @@ ext2_mkdir(const char *path, mode_t mode)
 	ip = ext2_namei(path, &err, &p, &dp, NULL);
 	if (ip == NULL) {
 		for (tmp = p ; get_ubyte(tmp) != '\0' && get_ubyte(tmp) != '/'; tmp++);
-		if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) != '\0')
+		if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) != '\0') {
+			ext2_iput(dp);
 			return -ENOENT;
-		else if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) == '\0')
+		} else if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) == '\0') {
 			put_ubyte(tmp, '\0');
+		}
 	} else {
 		ext2_iput(ip);
 		return -EEXIST;
@@ -435,7 +437,7 @@ ext2_rmdir(const char *path)
 		ret = -ENOENT;
 		goto out;
 	}
-	ip->i_ino.i_links_count = 0;
+	ip->i_ino.i_links_count -= 2;
 	ip->i_flags |= I_MODIFIED;
 	ip->i_ino.i_mtime = CURRENT_TIME;
 	if (ip != dp) {
