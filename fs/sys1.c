@@ -103,6 +103,8 @@ kernel_read(int fd, void *buf, size_t count)
 
 	if (buf == NULL || !check_user_ptr(buf))
 		return -EFAULT;
+	if (fd < 0)
+		return -EBADF;
 	fp = current_process->file_table[fd];
 	if (fp == NULL || (fp->f_flags & O_ACCMODE) == O_WRONLY)
 		return -EBADF;
@@ -118,6 +120,8 @@ kernel_write(int fd, void *buf, size_t count)
 
 	if (buf == NULL || !check_user_ptr(buf))
 		return -EFAULT;
+	if (fd < 0)
+		return -EBADF;
 	fp = current_process->file_table[fd];
 	if (fp == NULL || (fp->f_flags & O_ACCMODE) == O_RDONLY)
 		return -EBADF;
@@ -158,6 +162,8 @@ kernel_lseek(int fd, off_t offset, int whence)
 {
 	struct file *fp;
 
+	if (fd < 0)
+		return -EBADF;
 	fp = current_process->file_table[fd];
 	if (fp == NULL)
 		return -EBADF;
@@ -214,7 +220,7 @@ kernel_close(int fd)
 {
 	struct file **fp;
 
-	if (fd >= NR_OPEN)
+	if (fd >= NR_OPEN || fd < 0)
 		return -EBADF;
 	fp = current_process->file_table + fd;
 	if (*fp == NULL)
