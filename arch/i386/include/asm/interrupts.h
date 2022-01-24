@@ -31,7 +31,7 @@ static inline void
 restore_eflags(void)
 {
 	__asm__("pushl %0\n\t"
-		"popf" : : "g" (current_cpu_state->kernel_eflags));
+		"popf" : : "m" (current_cpu_state->kernel_eflags));
 }
 
 static inline int
