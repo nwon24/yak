@@ -42,7 +42,7 @@ getblk(dev_t dev, size_t blknr)
 
 		if ((bp = in_hash_queue(dev, blknr)) != NULL) {
 			if (bp->b_mutex == MUTEX_LOCKED) {
-				sleep(bp);
+				sleep(bp, PROC_SLEEP_INTERRUPTIBLE);
 				continue;
 			}
 			mutex_lock(&bp->b_mutex);
@@ -51,7 +51,7 @@ getblk(dev_t dev, size_t blknr)
 		}
 		if ((bp = free_list.b_next_free) == NULL) {
 			/* Nothing on free list */
-			sleep(&free_list);
+			sleep(&free_list, PROC_SLEEP_INTERRUPTIBLE);
 			continue;
 		}
 		remove_from_free_list(bp);

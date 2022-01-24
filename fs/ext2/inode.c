@@ -83,7 +83,7 @@ ext2_iget(dev_t dev, ino_t num)
 	while (1) {
 		if ((ip = in_hash_queue(dev, num)) != NULL) {
 			if (ip->i_mutex == MUTEX_LOCKED) {
-				sleep(ip);
+				sleep(ip, PROC_SLEEP_INTERRUPTIBLE);
 				continue;
 			}
 			mutex_lock(&ip->i_mutex);

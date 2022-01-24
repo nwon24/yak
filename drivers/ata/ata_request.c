@@ -71,7 +71,7 @@ void
 ata_wait_on_req(struct ata_request *req)
 {
 	while (req->dev != NULL)
-		sleep(req);
+		sleep(req, PROC_SLEEP_UNINTERRUPTIBLE);
 	enable_intr();
 }
 
