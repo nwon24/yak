@@ -73,7 +73,7 @@ int kernel_fork(void);
 void kernel_exit(int status);
 
 void schedule(void);
-void sleep(void *addr);
+void sleep(void *addr, int type);
 void wakeup(void *addr, int ret);
 
 void adjust_proc_queues(struct process *proc);
@@ -98,8 +98,11 @@ enum {
 
 #define PROC_EXITED	0
 #define PROC_RUNNING	1
-#define PROC_BLOCKED	2
-#define PROC_RUNNABLE	3
+#define PROC_RUNNABLE	2
+#define PROC_SLEEP_INTERRUPTIBLE	3
+#define PROC_SLEEP_UNINTERRUPTIBLE	4
+
+#define PROC_SLEEPING(proc)	((proc)->state == PROC_SLEEP_INTERRUPTIBLE || (proc)->state == PROC_SLEEP_UNINTERRUPTIBLE)
 
 /* In 10s of milliseconds */
 #define PROC_QUANTA	10
