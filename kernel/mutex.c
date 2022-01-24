@@ -21,7 +21,7 @@ mutex_lock(mutex *m)
 {
 	disable_intr();
 	while (*m == MUTEX_LOCKED)
-		sleep(m);
+		sleep(m, PROC_SLEEP_INTERRUPTIBLE);
 	*m = MUTEX_LOCKED;
 	restore_intr_state();
 }
