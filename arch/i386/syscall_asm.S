@@ -2,6 +2,7 @@
  * syscall.S
  * Dispatches to a system call.
  */
+#include <generic/errno.h>
 
 	.section .text
 	.global	handle_syscall
@@ -19,6 +20,8 @@ handle_syscall:
 	movl	(%edi), %eax
 	/* %ebx = addr, %ecx = nr_args */
 	movl	%eax, %ebx
+	testl	%ebx, %ebx
+	jz	bad_syscall
 	movl	4(%edi), %eax
 	movl	%eax, %ecx
 
@@ -47,8 +50,10 @@ handle_syscall:
 	cli
 	shll	$2, %edi
 	addl	%edi, %esp
-
-	popl	%ebx
+	jmp	1f
+bad_syscall:
+	movl	$-ENOSYS, %eax
+1:	popl	%ebx
 	popl	%esi
 	popl	%edi
 	movl	%ebp, %esp
