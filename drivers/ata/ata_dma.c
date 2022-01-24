@@ -131,6 +131,7 @@ retry:
 		}
 		return;
 	}
+	disable_intr();
 	if (req->dev->drive == ATA_BUS_DRIVE1)
 		bus_master_write(req->dev, BUS_MASTER_CMD_START | rw_bit, BUS_MASTER_CMD_PRI);
 	else
