@@ -8,12 +8,13 @@
 #include <asm/idt.h>
 
 #include <kernel/config.h>
+#include <kernel/debug.h>
 
 #ifdef CONFIG_USE_INLINE_ASM
 static inline void
 disable_intr(void)
 {
-	__asm__("pushf\n\t"
+	__asm__("pushfl\n\t"
 		"cli\n\t"
 		"popl %0\n\t" : "=m" (current_cpu_state->kernel_eflags) :);
 }
@@ -31,7 +32,7 @@ static inline void
 restore_eflags(void)
 {
 	__asm__("pushl %0\n\t"
-		"popf" : : "m" (current_cpu_state->kernel_eflags));
+		"popfl" : : "m" (current_cpu_state->kernel_eflags));
 }
 
 static inline int
