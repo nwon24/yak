@@ -100,9 +100,11 @@ loop:
 	}
 	ip = dp;
 	if (last_dir != NULL) {
-		if (*last_dir != NULL)
-			ext2_iput(*last_dir);
-		*last_dir = ip;
+		if (EXT2_S_ISDIR(ip->i_ino.i_mode)) {
+			if (*last_dir != NULL)
+				ext2_iput(*last_dir);
+			*last_dir = ip;
+		}
 	}
 	goto loop;
 }
@@ -234,7 +236,7 @@ find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, 
 	bp = bread(dir->i_dev, block);
 	d = (struct ext2_dir_entry *)bp->b_data;
 
-	while ((flag = ext2_match((const char *)d + 8, entry, len)) != 0) {
+	while ((flag = ext2_match(d, entry, len)) != 0) {
 		if ((char *)d - bp->b_data >= EXT2_BLOCKSIZE(sb)) {
 			*res = FIND_NEXT_BLOCK;
 			d = NULL;
@@ -260,11 +262,13 @@ find_entry_in_block(struct ext2_inode_m *dir, ssize_t block, const char *entry, 
 }
 
 int
-ext2_match(const void *kptr, const void *uptr, size_t n)
+ext2_match(struct ext2_dir_entry *dentry, const void *uptr, size_t n)
 {
 	const unsigned char *a, *b;
 
-	a = (const unsigned char *)kptr;
+	if (n != dentry->d_name_len)
+		return -1;
+	a = (const unsigned char *)dentry + 8;
 	b = (const unsigned char *)uptr;
 	while (n--) {
 		if (*a < get_ubyte(b))
