@@ -179,7 +179,7 @@ ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *
 	}
 	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
 	while (dentry < (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb))) {
-		if (dentry->d_inode == ip->i_num && ext2_match((char *)dentry + 8, name, strlen(name)) == 0) {
+		if (dentry->d_inode == ip->i_num && ext2_match(dentry, name, strlen(name)) == 0) {
 			/* Bingo. */
 			prev->d_rec_len += dentry->d_rec_len;
 			bp->b_flags |= B_DWRITE;
@@ -202,6 +202,7 @@ empty_dir(struct ext2_inode_m *dp, int *err)
 	struct buffer *bp;
 	struct ext2_dir_entry *dentry;
 	struct ext2_superblock_m *sb;
+	int not_empty = 0;
 
 	bp = bread(dp->i_dev, dp->i_ino.i_block[0]);
 	if (bp == NULL) {
@@ -210,24 +211,32 @@ empty_dir(struct ext2_inode_m *dp, int *err)
 	}
 	sb = get_ext2_superblock(dp->i_dev);
 	dentry = (struct ext2_dir_entry *)bp->b_data;
-	if (ext2_match((char *)dentry + 8, ".", 1) != 0) {
+	if (ext2_match(dentry, ".", 1) != 0) {
 		printk("WARNING: ext2 directory with inode number %d does not have the first entry as '.'. Filesystem corrupt.\r\n", dp->i_num);
-		return 1;
+		not_empty = 1;
+		goto out;
 	}
 	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
 	if (dentry >= (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb))) {
 		printk("WARNING: ext2 directory with inode number %d is missing '..'. Filesystem corrupt.\r\n", dp->i_num);
-		return 1;
+		not_empty = 1;
+		goto out;
 	}
-	if (ext2_match((char *)dentry + 8, "..", 2) != 0) {
+	if (ext2_match(dentry, "..", 2) != 0) {
 		printk("WARNING: ext2 directory with inode number %d is missing '..'. Filesystem corrupt.\r\n", dp->i_num);
-		return 1;
+		not_empty = 1;
+		goto out;
 	}
 	dentry = (struct ext2_dir_entry *)((char *)dentry + dentry->d_rec_len);
-	if (dentry < (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb)))
+	if (dentry < (struct ext2_dir_entry *)(bp->b_data + EXT2_BLOCKSIZE(sb))) {
 		/* There are other entries. */
-		return 1;
-	return 0;
+		not_empty = 1;
+		goto out;
+	}
+	not_empty = 0;
+ out:
+	brelse(bp);
+	return not_empty;
 }
 
 int
@@ -249,6 +258,12 @@ ext2_unlink(const char *pathname)
 		if (ip != dp)
 			ext2_iput(dp);
 		return -EACCES;
+	}
+	if (ip == current_process->root_inode) {
+		ext2_iput(ip);
+		if (ip != dp)
+			ext2_iput(dp);
+		return -EBUSY;
 	}
 	err = ext2_remove_dir_entry(p, ip, bp);
 	brelse(bp);
@@ -274,12 +289,11 @@ ext2_link(const char *path1, const char *path2)
 		return err;
 	if (EXT2_S_ISDIR(ip1->i_ino.i_mode) || EXT2_S_ISLNK(ip1->i_ino.i_mode)) {
 		/*
-		 * Do not support linking of directories of symbolic links.
+		 * Do not support linking of directories or symbolic links.
 		 */
 		ext2_iput(ip1);
 		return -EEXIST;
 	}
-
 	ip2 = ext2_namei(path2, &err, &p, &dp, NULL);
 	if (ip2 != NULL) {
 		if (ip1 != dp)
@@ -338,6 +352,7 @@ ext2_mkdir(const char *path, mode_t mode)
 		else if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) == '\0')
 			put_ubyte(tmp, '\0');
 	} else {
+		ext2_iput(ip);
 		return -EEXIST;
 	}
 	if (ext2_permission(dp, PERM_WRITE) < 0) {
@@ -410,12 +425,17 @@ ext2_rmdir(const char *path)
 		ret = -ENOTDIR;
 		goto out;
 	}
+	if ((ip->i_ino.i_mode & EXT2_S_ISVTX)
+	    && (current_process->euid != ip->i_ino.i_uid && current_process->euid != dp->i_ino.i_uid)) {
+		ret = -EPERM;
+		goto out;
+	}
 	sb = get_ext2_superblock(ip->i_dev);
 	if (ext2_remove_dir_entry(p, ip, bp) < 0) {
 		ret = -ENOENT;
 		goto out;
 	}
-	ip->i_ino.i_links_count--;
+	ip->i_ino.i_links_count = 0;
 	ip->i_flags |= I_MODIFIED;
 	ip->i_ino.i_mtime = CURRENT_TIME;
 	if (ip != dp) {
@@ -430,8 +450,8 @@ ext2_rmdir(const char *path)
 out:
 	if (bp != NULL)
 		brelse(bp);
-	ext2_iput(dp);
+	ext2_iput(ip);
 	if (dp != ip)
-		ext2_iput(ip);
+		ext2_iput(dp);
 	return ret;
 }
