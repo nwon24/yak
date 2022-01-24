@@ -49,12 +49,14 @@ switch_proc:
 
 
 void
-sleep(void *addr)
+sleep(void *addr, int type)
 {
 	disable_intr();
 	if (current_process == FIRST_PROC)
 		panic("Trying to sleep on first process");
-	current_process->state = PROC_BLOCKED;
+	if (type != PROC_SLEEP_INTERRUPTIBLE && type != PROC_SLEEP_UNINTERRUPTIBLE)
+		panic("sleep: bad type");
+	current_process->state = type;
 	current_process->sleeping_on = addr;
 	adjust_proc_queues(current_process);
 	schedule();
@@ -70,7 +72,7 @@ wakeup(void *addr, int ret)
 
 	disable_intr();
 	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
-		if (proc->state == PROC_BLOCKED && proc->sleeping_on == addr) {
+		if (PROC_SLEEPING(proc) && proc->sleeping_on == addr) {
 			sched = 1;
 			proc->state = PROC_RUNNABLE;
 			proc->sleeping_on = NULL;
