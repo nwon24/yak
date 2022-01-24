@@ -68,13 +68,10 @@ first_user_code:
 	movl	$dir, %ebx
 	movl	$(S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH), %ecx
 	int	$0x80
-	movl	$__NR_rmdir, %eax
-	movl	$dir, %ebx
-	int	$0x80
+#	movl	$__NR_rmdir, %eax
+#	movl	$dir, %ebx
+#	int	$0x80
 	movl	$__NR_sync, %eax
-	int	$0x80
-	movl	$__NR_exit, %eax
-	movl	$0, %ebx
 	int	$0x80
 3:	jmp	.
 
