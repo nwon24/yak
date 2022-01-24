@@ -54,7 +54,7 @@ int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
 struct ext2_inode_m *
 ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp)
 {
-	struct ext2_inode_m *ip, *dp;
+	struct ext2_inode_m *ip, *dp, *start;
 	const char *p1, *p2;
 
 	if (current_process->root_inode == NULL || current_process->cwd_inode == NULL)
@@ -74,16 +74,19 @@ ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m 
 	if (last_dir != NULL)
 		*last_dir = ip;
 	ip->i_count++;
+	start = ip;
 loop:
 	if (get_ubyte(p1) != '\0' && !EXT2_S_ISDIR(ip->i_ino.i_mode)) {
-		ext2_iput(ip);
+		if (last_dir != NULL && *last_dir != ip)
+			ext2_iput(ip);
 		*error = -ENOTDIR;
 		return NULL;
 	}
 	if (get_ubyte(p1) == '\0')
 		return ip;
 	if (ext2_permission(ip, PERM_SRCH) < 0) {
-		ext2_iput(ip);
+		if (last_dir != NULL && *last_dir != ip)
+			ext2_iput(ip);
 		*error = -EACCES;
 		return NULL;
 	}
@@ -98,14 +101,14 @@ loop:
 		*error = -ENOENT;
 		return NULL;
 	}
-	ip = dp;
-	if (last_dir != NULL) {
-		if (EXT2_S_ISDIR(ip->i_ino.i_mode)) {
+	if (ip != start) {
+		if (last_dir != NULL && EXT2_S_ISDIR(ip->i_ino.i_mode)) {
 			if (*last_dir != NULL)
 				ext2_iput(*last_dir);
 			*last_dir = ip;
 		}
 	}
+	ip = dp;
 	goto loop;
 }
 
