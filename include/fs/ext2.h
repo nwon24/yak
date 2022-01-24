@@ -258,7 +258,7 @@ int ext2_mknod(const char *path, mode_t mode, dev_t dev);
 
 off_t ext2_lseek(off_t *ptr, void *inode, off_t offset, int whence);
 
-int ext2_match(const void *a, const void *b, size_t c);
+int ext2_match(struct ext2_dir_entry *dentry, const void *b, size_t c);
 int ext2_chown(const char *path, uid_t uid, gid_t gid);
 int ext2_chmod(const char *path, mode_t mode);
 int ext2_fchmod(struct file *file, mode_t mode);
