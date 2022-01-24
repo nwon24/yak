@@ -70,10 +70,9 @@ ata_finish_request(struct ata_request *req)
 void
 ata_wait_on_req(struct ata_request *req)
 {
-	disable_intr();
 	while (req->dev != NULL)
 		sleep(req);
-	restore_intr_state();
+	enable_intr();
 }
 
 void
