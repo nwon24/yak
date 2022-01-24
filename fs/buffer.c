@@ -60,6 +60,8 @@ getblk(dev_t dev, size_t blknr)
 			bwrite(bp);
 			continue;
 		}
+		if (bp->b_mutex == MUTEX_LOCKED)
+			panic("buffer on free list is locked\r\n");
 		mutex_lock(&bp->b_mutex);
 		bp->b_dev = dev;
 		bp->b_blknr = blknr;
@@ -133,11 +135,11 @@ void
 brelse(struct buffer *bp)
 {
 	disable_intr();
-	put_into_free_list(bp);
-	enable_intr();
 	mutex_unlock(&bp->b_mutex);
+	put_into_free_list(bp);
 	wakeup(bp, WAKEUP_SWITCH);
 	wakeup(&free_list, WAKEUP_SWITCH);
+	enable_intr();
 }
 
 void
@@ -189,6 +191,7 @@ remove_from_free_list(struct buffer *bp)
 		panic("remove_from_free_list: free list has been corrupted");
 	bp->b_prev_free->b_next_free = bp->b_next_free;
 	bp->b_next_free->b_prev_free = bp->b_prev_free;
+	bp->b_next_free = bp->b_prev_free = NULL;
 }
 
 static void
