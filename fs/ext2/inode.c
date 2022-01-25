@@ -82,7 +82,7 @@ ext2_iget(dev_t dev, ino_t num)
 
 	while (1) {
 		if ((ip = in_hash_queue(dev, num)) != NULL) {
-			if (ip->i_mutex == MUTEX_LOCKED) {
+			if (mutex_locked(&ip->i_mutex)) {
 				sleep(ip, PROC_SLEEP_INTERRUPTIBLE);
 				continue;
 			}
@@ -109,7 +109,7 @@ ext2_iget(dev_t dev, ino_t num)
 void
 ext2_iput(struct ext2_inode_m *ip)
 {
-	if (ip->i_mutex != MUTEX_LOCKED)
+	if (!mutex_locked(&ip->i_mutex))
 		mutex_lock(&ip->i_mutex);
 	if (ip->i_count-- == 0)
 		panic("ext2_iput: ip->i_count == 0");
