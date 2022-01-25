@@ -64,6 +64,10 @@ struct process {
 
 	struct pgrp_info pgrp_info;
 
+	sighandler_t sighandlers[NSIG];	/* Function pointers to signal handlers */
+	int sigmask;			/* Signal masks */
+	int sigpending;			/* Pending signals */
+
 	struct context *context;
 
 	struct proc_image image;
@@ -87,6 +91,7 @@ void add_multitasking_hook(multitasking_hook hook);
 void processes_init(void);
 int kernel_fork(void);
 void kernel_exit(int status);
+sighandler_t kernel_signal(int sig, sighandler_t handler);
 
 void schedule(void);
 void sleep(void *addr, int type);
