@@ -3,9 +3,14 @@
  * Handles processes.
  * Implements the 'fork' and 'exit' system calls.
  */
+#include <stddef.h>
+
+#include <asm/uaccess.h>
+#include <asm/paging.h>
+
 #include <kernel/config.h>
 
-#include <stddef.h>
+#include <generic/wait.h>
 
 #include <drivers/timer.h>
 
@@ -102,6 +107,7 @@ processes_init(void)
 	process_queues[proc->priority] = proc;
 	/* Doubly linked list that just points to itself. */
 	proc->queue_next = proc->queue_prev = proc;
+	register_syscall(__NR_waitpid, (uint32_t)kernel_waitpid, 3);
 	do_mount_root();
 	run_multitasking_hooks();
 	system_change_state(SYSTEM_MULTITASKING);
@@ -167,7 +173,7 @@ kernel_exit(int status)
 			kernel_close(i);
 	}
 	for (proc = process_table; proc < process_table + NR_PROC; proc++) {
-		if (proc->state && proc->ppid == current_process->pid) {
+		if (proc->state != PROC_EXITED && proc->ppid == current_process->pid) {
 			proc->ppid = 1;
 			proc->image.vir_code_count--;
 		}
@@ -176,11 +182,96 @@ kernel_exit(int status)
 	}
 	current_process->root_fs->f_driver->fs_raw.fs_raw_iput(current_process->root_inode);
 	current_process->cwd_fs->f_driver->fs_raw.fs_raw_iput(current_process->cwd_inode);
-	status--;
+	current_process->exit_code = status;
 	arch_exit();
-	current_process->state = PROC_EXITED;
+	if (current_process->ppid) {
+		current_process->state = PROC_ZOMBIE;
+		kernel_kill(current_process->ppid, SIGCHLD);
+	} else {
+		current_process->state = PROC_EXITED;
+	}
 	adjust_proc_queues(current_process);
 	schedule();
+}
+
+pid_t
+kernel_waitpid(pid_t pid, int *stat_loc, int options)
+{
+	struct process *proc;
+	int flag = 0, children = 0;
+	pid_t ret = 0;
+
+	if ((options & WCONTINUED) || (options & WUNTRACED))
+		return -ENOSYS;
+repeat:
+	if (pid == -1) {
+		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+			if (proc->ppid != current_process->pid)
+				continue;
+			children++;
+			if (proc->state == PROC_ZOMBIE) {
+				ret = proc->pid;
+				flag++;
+				if (stat_loc != NULL && check_user_ptr((void *)stat_loc))
+					put_ulong(stat_loc, proc->exit_code);
+				proc->state = PROC_EXITED;
+			}
+		}
+	} else if (pid > 0) {
+		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+			if (proc->ppid != current_process->pid)
+				continue;
+			children++;
+			if (proc->pid == pid && proc->state == PROC_ZOMBIE) {
+				ret = proc->pid;
+				flag++;
+				if (stat_loc != NULL && check_user_ptr((void *)stat_loc))
+					put_ulong(stat_loc, proc->exit_code);
+				proc->state = PROC_EXITED;
+			}
+		}
+	} else if (pid == 0) {
+		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+			if (proc->ppid != current_process->pid)
+				continue;
+			children++;
+			if (proc->pgrp_info.pgid == current_process->pgrp_info.pgid
+			    && proc->state == PROC_ZOMBIE) {
+				ret = proc->pid;
+				flag++;
+				if (stat_loc != NULL && check_user_ptr((void *)stat_loc))
+					put_ulong(stat_loc, proc->exit_code);
+				proc->state = PROC_EXITED;
+			}
+		}
+	} else if (pid < -1) {
+		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+			if (proc->ppid != current_process->pid)
+				continue;
+			children++;
+			if (proc->pgrp_info.pgid == -pid
+			    && proc->state == PROC_ZOMBIE) {
+				ret = proc->pid;
+				flag++;
+				if (stat_loc != NULL && check_user_ptr((void *)stat_loc))
+					put_ulong(stat_loc, proc->exit_code);
+				proc->state = PROC_EXITED;
+			}
+		}
+	}
+	if (!children)
+		return -ECHILD;
+	if (flag)
+		return ret;
+	if (!flag && (options & WNOHANG))
+		return 0;
+	sleep(&process_table, PROC_SLEEP_INTERRUPTIBLE);
+	if (current_process->sigpending & (1 << (SIGCHLD - 1))) {
+		current_process->sigpending &= ~(1 << (SIGCHLD - 1));
+		goto repeat;
+	} else {
+		return -EINTR;
+	}
 }
 
 static struct process *
