@@ -49,8 +49,10 @@ struct fs_driver_ops {
 	struct fs_driver_raw_ops fs_raw;
 	size_t (*fs_get_attribute)(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
 	void *(*fs_open)(const char *path, int flags, int mode, int *err);
-	int (*fs_read)(struct file *file, void *buf, size_t count);
-	int (*fs_write)(struct file *file, void *buf, size_t count);
+	ssize_t (*fs_read)(struct file *file, void *buf, size_t count);
+	ssize_t (*fs_readi)(void *inode, void *buf, size_t count, off_t *off);
+	ssize_t (*fs_write)(struct file *file, void *buf, size_t count);
+	ssize_t (*fs_writei)(void *inode, void *buf, size_t count, off_t *off);
 	int (*fs_sync)(struct generic_filesystem *fs);
 	int (*fs_unlink)(const char *path);
 	off_t (*fs_lseek)(off_t *ptr, void *inode, off_t offset, int whence);
