@@ -20,27 +20,32 @@
 #include <kernel/debug.h>
 #include <kernel/mutex.h>
 
-static ssize_t file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
-static ssize_t file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
-static ssize_t blkdev_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
-static ssize_t blkdev_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count);
+static ssize_t file_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *off);
+static ssize_t file_write(struct ext2_inode_m *ip, void *buf, size_t count, off_t *off);
+static ssize_t blkdev_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *off);
+static ssize_t blkdev_write(struct ext2_inode_m *ip, void *buf, size_t count, off_t *off);
 
 int
 ext2_read(struct file *file, void *buf, size_t count)
 {
-	struct ext2_inode_m *ip;
-
 	if (file->f_fs->f_fs != EXT2)
 		return -EINVAL;
-	ip = file->f_inode;
-	if (ip == NULL) {
+	if (file->f_inode == NULL) {
 		printk("ext2_read: file has no inode!\r\n");
 		return -EINVAL;
 	}
+	return ext2_readi(file->f_inode, buf, count, &file->f_pos);
+}
+
+int
+ext2_readi(void *inode, void *buf, size_t count, off_t *off)
+{
+	struct ext2_inode_m *ip = inode;
+
 	if (EXT2_S_ISDIR(ip->i_ino.i_mode) || EXT2_S_ISREG(ip->i_ino.i_mode))
-		return file_read(file, ip, buf, count);
+		return file_read(ip, buf, count, off);
 	if (EXT2_S_ISBLK(ip->i_ino.i_mode))
-		return blkdev_read(file, ip, buf, count);
+		return blkdev_read(ip, buf, count, off);
 	if (EXT2_S_ISCHR(ip->i_ino.i_mode))
 		return chr_devio(ip->i_ino.i_block[0], buf, count, READ);
 	return -EINVAL;
@@ -58,17 +63,26 @@ ext2_write(struct file *file, void *buf, size_t count)
 		printk("ext2_write: file has no inode!\r\n");
 		return -EINVAL;
 	}
+	return ext2_writei(ip, buf, count, &file->f_pos);
+}
+
+int
+ext2_writei(void *inode, void *buf, size_t count, off_t *off)
+{
+	struct ext2_inode_m *ip;
+
+	ip = inode;
 	if (EXT2_S_ISDIR(ip->i_ino.i_mode) || EXT2_S_ISREG(ip->i_ino.i_mode))
-		file_write(file, ip, buf, count);
+		file_write(ip, buf, count, off);
 	if (EXT2_S_ISBLK(ip->i_ino.i_mode))
-		return blkdev_write(file, ip, buf, count);
+		return blkdev_write(ip, buf, count, off);
 	if (EXT2_S_ISCHR(ip->i_ino.i_mode))
 		return chr_devio(ip->i_ino.i_block[0], buf, count, WRITE);
 	return -EINVAL;
 }
 
 static ssize_t
-file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
+file_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 {
 	off_t c = count, off, nr;
 	struct buffer *bp;
@@ -77,10 +91,10 @@ file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 	char *p, *s;
 	ssize_t err = 0;
 
-	sb = file->f_fs->f_super;
+	sb = get_ext2_superblock(ip->i_dev);
 	p = buf;
 	while (c) {
-		block = ext2_bmap(ip, file->f_pos);
+		block = ext2_bmap(ip, *pos);
 		if (block) {
 			bp = bread(ip->i_dev, block);
 			if (bp == NULL) {
@@ -90,11 +104,11 @@ file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 		} else {
 			bp = NULL;
 		}
-		off = file->f_pos % EXT2_BLOCKSIZE(sb);
+		off = *pos % EXT2_BLOCKSIZE(sb);
 		s = bp->b_data + off;
 		nr = (EXT2_BLOCKSIZE(sb) - off < c) ? EXT2_BLOCKSIZE(sb) - off: c;
 		c -= nr;
-		file->f_pos += nr;
+		*pos += nr;
 		if (bp != NULL) {
 			while (nr--) {
 				put_ubyte(p, *s);
@@ -125,20 +139,19 @@ file_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 }
 
 static ssize_t
-file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
+file_write(struct ext2_inode_m *ip, void *buf, size_t count, off_t *fpos)
 {
-	off_t c = count, off, nr, pos;
+	off_t c = count, off, nr;
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
 	ext2_block block;
 	char *p, *s;
 	ssize_t err = 0;
 
-	pos = (file->f_flags & O_APPEND) ? (off_t)ip->i_ino.i_size : file->f_pos;
-	sb = file->f_fs->f_super;
+	sb = get_ext2_superblock(ip->i_dev);
 	p = buf;
 	while (c) {
-		block = ext2_create_block(ip, pos);
+		block = ext2_create_block(ip, *fpos);
 		if (block) {
 			bp = bread(ip->i_dev, block);
 			if (bp == NULL) {
@@ -148,11 +161,11 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 		} else {
 			break;
 		}
-		off = pos % EXT2_BLOCKSIZE(sb);
+		off = *fpos % EXT2_BLOCKSIZE(sb);
 		s = bp->b_data + off;
 		nr = (EXT2_BLOCKSIZE(sb) - off < c) ? EXT2_BLOCKSIZE(sb) - off : c;
 		c -= nr;
-		pos += nr;
+		*fpos += nr;
 		while (nr--) {
 			*s = get_ubyte(p);
 			p++;
@@ -166,7 +179,6 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 	ip->i_ino.i_size += count - c;
 	ip->i_flags |= I_MODIFIED;
 	mutex_unlock(&ip->i_mutex);
-	file->f_pos = pos;
 	if (bp != NULL)
 		brelse(bp);
 	if (err != 0)
@@ -175,7 +187,7 @@ file_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 }
 
 static ssize_t
-blkdev_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
+blkdev_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 {
 	struct buffer *bp;
 	dev_t dev;
@@ -190,7 +202,7 @@ blkdev_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 		return -ENXIO;
 	ubuf = buf;
 	while (c) {
-		block = file->f_pos / SECTOR_SIZE;
+		block = *pos / SECTOR_SIZE;
 		bp = getblk(dev, block);
 		if (bp == NULL)
 			return -ENOBUFS;
@@ -199,11 +211,11 @@ blkdev_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 			brelse(bp);
 			return -EIO;
 		}
-		off = file->f_pos % SECTOR_SIZE;
+		off = *pos % SECTOR_SIZE;
 		p = bp->b_data + off;
 		nr = (SECTOR_SIZE - off < c) ? SECTOR_SIZE - off : c;
 		c -= nr;
-		file->f_pos += nr;
+		*pos += nr;
 		while (nr--) {
 			put_ubyte(ubuf, *p);
 			p++;
@@ -215,7 +227,7 @@ blkdev_read(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
 }
 
 static ssize_t
-blkdev_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count)
+blkdev_write(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 {
 	off_t c = count, block, nr;
 	off_t off;
@@ -230,7 +242,7 @@ blkdev_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count
 	if (!is_blockdev(dev))
 		return -ENXIO;
 	while (c) {
-		block = file->f_pos / SECTOR_SIZE;
+		block = *pos / SECTOR_SIZE;
 		bp = getblk(dev, block);
 		if (bp == NULL)
 			return -ENOBUFS;
@@ -239,11 +251,11 @@ blkdev_write(struct file *file, struct ext2_inode_m *ip, void *buf, size_t count
 			brelse(bp);
 			return -EIO;
 		}
-		off = file->f_pos % SECTOR_SIZE;
+		off = *pos % SECTOR_SIZE;
 		p = bp->b_data + off;
 		nr = (SECTOR_SIZE - off < c) ? SECTOR_SIZE - off : c;
 		c -= nr;
-		file->f_pos += nr;
+		*pos += nr;
 		while (nr--) {
 			*p = get_ubyte(ubuf);
 			p++;
