@@ -17,6 +17,9 @@ endif
 CPP := $(CC) -E
 
 CFLAGS :=  -std=c99 -ffreestanding -O2 -Wall -Wextra -Werror -Winit-self -Wundef -pedantic -Wshadow -Wstrict-prototypes -MMD -MP -DKERNEL
+ifeq ($(CC), clang -target $(TARGET_TRIPLET))
+CFLAGS += -mno-sse
+endif
 CPPFLAGS := -ffreestanding -P
 # Still C compiler flags as we assemble .S files using GCC
 ASFLAGS := -ffreestanding -MMD -MP
