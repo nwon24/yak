@@ -4,8 +4,9 @@
  */
 
 #include <kernel/proc.h>
-
 #include <kernel/debug.h>
+
+#include <generic/errno.h>
 
 static struct signal signal_table[NSIG];
 
@@ -50,4 +51,20 @@ signals_init(void)
 	signal_init(SIGPIPE, SIGACTION_T);
 	signal_init(SIGALRM, SIGACTION_T);
 	signal_init(SIGTERM, SIGACTION_T);
+	register_syscall(__NR_signal, (uint32_t)kernel_signal, 2);
+}
+
+sighandler_t
+kernel_signal(int sig, sighandler_t handler)
+{
+	sighandler_t ret, *ptr;
+
+	if (sig < 1 || sig > NSIG)
+		return SIG_ERR;
+	if ((sig == SIGKILL || sig == SIGSTOP) && handler == SIG_IGN)
+		return SIG_ERR;
+	ptr = current_process->sighandlers + sig - 1;
+	ret = *ptr;
+	*ptr = handler;
+	return ret;
 }
