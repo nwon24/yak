@@ -60,6 +60,7 @@ struct process {
 	int priority;
 	int quanta;
 	int counter;
+	uint8_t exit_code;
 	void *sleeping_on;
 
 	struct pgrp_info pgrp_info;
@@ -102,6 +103,8 @@ void adjust_proc_queues(struct process *proc);
 
 void signals_init(void);
 
+pid_t kernel_waitpid(pid_t pid, int *stat_loc, int options);
+
 enum system_state {
 	SYSTEM_SINGLETASKING,
 	SYSTEM_MULTITASKING,
@@ -121,10 +124,11 @@ enum {
 #define LAST_PROC	(&process_table[NR_PROC])
 
 #define PROC_EXITED	0
-#define PROC_RUNNING	1
-#define PROC_RUNNABLE	2
-#define PROC_SLEEP_INTERRUPTIBLE	3
-#define PROC_SLEEP_UNINTERRUPTIBLE	4
+#define PROC_ZOMBIE	1
+#define PROC_RUNNING	2
+#define PROC_RUNNABLE	3
+#define PROC_SLEEP_INTERRUPTIBLE	4
+#define PROC_SLEEP_UNINTERRUPTIBLE	5
 
 #define PROC_SLEEPING(proc)	((proc)->state == PROC_SLEEP_INTERRUPTIBLE || (proc)->state == PROC_SLEEP_UNINTERRUPTIBLE)
 
