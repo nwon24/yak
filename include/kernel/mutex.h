@@ -6,10 +6,14 @@
 
 struct process;
 
-typedef int mutex;
+typedef struct _mutex {
+	int lock;
+	struct process *owner;
+} mutex;
 
 void mutex_init(mutex *mutex);
 void mutex_lock(mutex *mutex);
 void mutex_unlock(mutex *mutex);
+int mutex_locked(mutex *mutex);
 
 #endif /* MUTEX_H */
