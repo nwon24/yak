@@ -213,4 +213,5 @@ ext2_mount_root(void)
 	sb->sb.s_mnt_count++;
 	sb->modified = 1;
 	mutex_unlock(&sb->mutex);
+	mutex_unlock(&ip->i_mutex);
 }
