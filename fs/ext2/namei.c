@@ -102,6 +102,8 @@ loop:
 			if (*last_dir != NULL)
 				ext2_iput(*last_dir);
 			*last_dir = ip;
+		} else {
+			ext2_iput(ip);
 		}
 	}
 	if ((dp = find_entry(ip, p2, p1 - p2, last_dir_bp)) == NULL) {
