@@ -10,6 +10,9 @@
 
 static struct signal signal_table[NSIG];
 
+static int send_signal(struct process *target, int sig);
+static int sig_permission(struct process *sender, struct process *target);
+
 static inline void
 signal_init(int signal, enum sig_def_action action)
 {
@@ -52,6 +55,7 @@ signals_init(void)
 	signal_init(SIGALRM, SIGACTION_T);
 	signal_init(SIGTERM, SIGACTION_T);
 	register_syscall(__NR_signal, (uint32_t)kernel_signal, 2);
+	register_syscall(__NR_kill, (uint32_t)kernel_kill, 2);
 }
 
 sighandler_t
@@ -67,4 +71,70 @@ kernel_signal(int sig, sighandler_t handler)
 	ret = *ptr;
 	*ptr = handler;
 	return ret;
+}
+
+int
+kernel_kill(pid_t pid, int sig)
+{
+	struct process *proc;
+	int eligible = 0;
+	int noperm = 0;
+
+	if (sig < 0 || sig > NSIG)
+		return -EINVAL;
+	if (pid > 0) {
+		return send_signal(process_table + pid, sig);
+	} else if (pid == 0) {
+		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+			if (proc->state != PROC_EXITED && proc->pgrp_info.pgid == current_process->pgrp_info.pgid && proc != current_process) {
+				if (send_signal(proc, sig) == -EPERM)
+					noperm++;
+				eligible++;
+			}
+		}
+	} else if (pid == -1) {
+		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+			if (proc->state != PROC_EXITED && proc->pid != 1 && proc != current_process) {
+				if (send_signal(proc, sig) == -EPERM)
+					noperm++;
+				eligible++;
+			}
+		}
+	} else if (pid < -1) {
+		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+			if (proc->state != PROC_EXITED
+			    && proc->pgrp_info.pgid == current_process->pgrp_info.pgid
+			    && proc != current_process
+			    && proc->pid == -pid) {
+				if (send_signal(proc, sig) == -EPERM)
+					noperm++;
+				eligible++;
+			}
+		}
+	}
+	if (eligible == 0)
+		return -ESRCH;
+	if (noperm == eligible)
+		return -EPERM;
+	return 0;
+}
+
+static int
+send_signal(struct process *target, int sig)
+{
+	if (sig_permission(current_process, target) != 0)
+		return -EPERM;
+	if (sig != 0)
+		target->sigpending |= (1 << (sig - 1));
+	return 0;
+}
+
+static int
+sig_permission(struct process *sender, struct process *target)
+{
+	if (sender->uid == target->suid || sender->uid == target->uid)
+		return 0;
+	if (sender->euid == target->suid || sender->euid == target->uid)
+		return 0;
+	return 1;
 }
