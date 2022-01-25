@@ -41,7 +41,7 @@ getblk(dev_t dev, size_t blknr)
 		int old_blksize;
 
 		if ((bp = in_hash_queue(dev, blknr)) != NULL) {
-			if (bp->b_mutex == MUTEX_LOCKED) {
+			if (mutex_locked(&bp->b_mutex)) {
 				sleep(bp, PROC_SLEEP_INTERRUPTIBLE);
 				continue;
 			}
@@ -60,7 +60,7 @@ getblk(dev_t dev, size_t blknr)
 			bwrite(bp);
 			continue;
 		}
-		if (bp->b_mutex == MUTEX_LOCKED)
+		if (mutex_locked(&bp->b_mutex))
 			panic("buffer on free list is locked\r\n");
 		mutex_lock(&bp->b_mutex);
 		bp->b_dev = dev;
@@ -123,7 +123,7 @@ buffer_sync(void)
 
 	bp = cache_start;
 	while (bp < cache_start + NR_BUF_BUFFERS) {
-		if ((bp->b_flags & B_DWRITE) && bp->b_mutex != MUTEX_LOCKED) {
+		if ((bp->b_flags & B_DWRITE) && !mutex_locked(&bp->b_mutex)) {
 			bp->b_flags &= ~B_DWRITE;
 			bwrite(bp);
 		}
@@ -134,12 +134,14 @@ buffer_sync(void)
 void
 brelse(struct buffer *bp)
 {
+	if (!mutex_locked(&bp->b_mutex))
+		return;
 	disable_intr();
-	mutex_unlock(&bp->b_mutex);
 	put_into_free_list(bp);
 	wakeup(bp, WAKEUP_SWITCH);
 	wakeup(&free_list, WAKEUP_SWITCH);
-	enable_intr();
+	mutex_unlock(&bp->b_mutex);
+	restore_intr_state();
 }
 
 void
