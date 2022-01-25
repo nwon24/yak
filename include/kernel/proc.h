@@ -62,7 +62,6 @@ struct process {
 	int counter;
 	void *sleeping_on;
 
-	struct signal signals[NSIG];
 	struct pgrp_info pgrp_info;
 
 	struct context *context;
@@ -95,7 +94,7 @@ void wakeup(void *addr, int ret);
 
 void adjust_proc_queues(struct process *proc);
 
-void signals_init(struct process *proc);
+void signals_init(void);
 
 enum system_state {
 	SYSTEM_SINGLETASKING,
