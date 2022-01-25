@@ -85,7 +85,7 @@ processes_init(void)
 	for (i = 0; i < PROC_QUANTA; i++)
 		process_queues[i] = NULL;
 	current_process = proc;
-	signals_init(current_process);
+	signals_init();
 	proc->pid = 0;
 	proc->uid = proc->euid = proc->suid = 0;
 	proc->gid = proc->egid = proc->sgid = 0;
