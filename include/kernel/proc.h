@@ -8,6 +8,8 @@
 
 #include <fs/fs.h>
 
+#include <generic/signal.h>
+
 #include <kernel/mutex.h>
 
 #define NR_PROC	64
@@ -18,6 +20,20 @@ struct proc_image {
 	uint32_t vir_code_count; /* Number of processes sharing text section */
 	uint32_t vir_data_base; /* Readable and writeable */
 	uint32_t vir_data_len;
+};
+
+enum sig_def_action {
+	SIGACTION_T,	/* Abnormal termination */
+	SIGACTION_A,	/* Abnormal termination with addition actions (e.g., core dump) */
+	SIGACTION_I,	/* Ignore signal */
+	SIGACTION_S,	/* Stop process */
+	SIGACTION_C,	/* Continue the process if stopped, otherwise, ignore */
+};
+
+struct signal {
+	int sig;
+	int def_action;
+	void (*func)(int);
 };
 
 /*
@@ -46,6 +62,7 @@ struct process {
 	int counter;
 	void *sleeping_on;
 
+	struct signal signals[NSIG];
 	struct pgrp_info pgrp_info;
 
 	struct context *context;
@@ -77,6 +94,8 @@ void sleep(void *addr, int type);
 void wakeup(void *addr, int ret);
 
 void adjust_proc_queues(struct process *proc);
+
+void signals_init(struct process *proc);
 
 enum system_state {
 	SYSTEM_SINGLETASKING,
