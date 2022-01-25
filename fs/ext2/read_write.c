@@ -2,6 +2,7 @@
  * ext2/read_write.c
  * Implements the 'read' and 'write' system calls for ext2.
  * Also has 'lseek', as that is somewhat related.
+ * Don't support large files, abd anything more than 2 GIB - 1 won't fit into 'off_t'.
  */
 #include <asm/types.h>
 #include <asm/uaccess.h>
@@ -55,6 +56,7 @@ int
 ext2_write(struct file *file, void *buf, size_t count)
 {
 	struct ext2_inode_m *ip;
+	off_t old_pos;
 
 	if (file->f_fs->f_fs != EXT2)
 		return -EINVAL;
@@ -62,6 +64,14 @@ ext2_write(struct file *file, void *buf, size_t count)
 	if (ip == NULL) {
 		printk("ext2_write: file has no inode!\r\n");
 		return -EINVAL;
+	}
+	if (file->f_flags & O_APPEND) {
+		old_pos = file->f_pos;
+		file->f_pos = (off_t)ip->i_ino.i_size;
+		if (file->f_pos < 0) {
+			file->f_pos = old_pos;
+			return -EFBIG;
+		}
 	}
 	return ext2_writei(ip, buf, count, &file->f_pos);
 }
@@ -91,6 +101,10 @@ file_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 	char *p, *s;
 	ssize_t err = 0;
 
+	if (c < 0)
+		return -EOVERFLOW;
+	if (*pos < 0)
+		return -EFBIG;
 	sb = get_ext2_superblock(ip->i_dev);
 	p = buf;
 	while (c) {
@@ -148,6 +162,10 @@ file_write(struct ext2_inode_m *ip, void *buf, size_t count, off_t *fpos)
 	char *p, *s;
 	ssize_t err = 0;
 
+	if (c < 0)
+		return -EOVERFLOW;
+	if (*fpos < 0)
+		return -EFBIG;
 	sb = get_ext2_superblock(ip->i_dev);
 	p = buf;
 	while (c) {
@@ -197,6 +215,8 @@ blkdev_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 
 	if (c < 0)
 		return -EOVERFLOW;
+	if (*pos < 0)
+		return -EFBIG;
 	dev = ip->i_ino.i_block[0];
 	if (!is_blockdev(dev))
 		return -ENXIO;
@@ -237,6 +257,8 @@ blkdev_write(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 
 	if (c < 0)
 		return -EOVERFLOW;
+	if (*pos < 0)
+		return -EFBIG;
 	ubuf = buf;
 	dev = ip->i_ino.i_block[0];
 	if (!is_blockdev(dev))
