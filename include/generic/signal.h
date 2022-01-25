@@ -33,8 +33,10 @@
 #define SIGXFSZ		28
 #define SIGWINCH	29
 
+typedef void (*sighandler_t)(int);
+
 /* 0 and 1 are not valid addresses of functions (hopefully) */
-#define SIG_DFL		((void (*)(int))0)
-#define SIG_IGN		((void (*)(int))1)
+#define SIG_DFL		((sighandler_t)0)
+#define SIG_IGN		((sighandler_t)1)
 
 #endif /* SIGNAL_H */
