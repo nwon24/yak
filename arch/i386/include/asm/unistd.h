@@ -25,6 +25,7 @@
 #define __NR_rmdir	0x28
 #define __NR_setgid	0x2E
 #define __NR_getgid	0x2F
+#define __NR_signal	0x30
 #define __NR_geteuid	0x31
 #define __NR_getegid	0x32
 #define __NR_setsid	0x42
