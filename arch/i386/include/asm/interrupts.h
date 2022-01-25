@@ -10,13 +10,16 @@
 #include <kernel/config.h>
 #include <kernel/debug.h>
 
+#define IF_MASK	0x200
+
 #ifdef CONFIG_USE_INLINE_ASM
 static inline void
 disable_intr(void)
 {
 	__asm__("pushfl\n\t"
 		"cli\n\t"
-		"popl %0\n\t" : "=m" (current_cpu_state->kernel_eflags) :);
+		"popl %0\n\t"
+		"andl %1, %0" : "=m" (current_cpu_state->kernel_eflags) : "i" (IF_MASK));
 }
 
 static inline void
@@ -31,8 +34,11 @@ enable_intr(void)
 static inline void
 restore_eflags(void)
 {
-	__asm__("pushl %0\n\t"
-		"popfl" : : "m" (current_cpu_state->kernel_eflags));
+	__asm__("pushfl\n\t"
+		"popl %%eax\n\t"
+		"orl %0, %%eax\n\t"
+		"pushl %%eax\n\t"
+		"popfl" : : "m" (current_cpu_state->kernel_eflags) : "%eax");
 }
 
 static inline int
