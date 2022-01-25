@@ -25,8 +25,12 @@ static void remove_from_queue(struct process *proc);
 void
 schedule(void)
 {
-	struct process **proc, *old;
+	struct process **proc, *old, *tmp;
 
+	for (tmp = FIRST_PROC; tmp < LAST_PROC; tmp++) {
+		if (tmp->state == PROC_SLEEP_INTERRUPTIBLE && tmp->sigpending)
+			tmp->state = PROC_RUNNABLE;
+	}
 	old = current_process;
 	for (proc = process_queues + HIGHEST_PRIORITY; proc >= process_queues + LOWEST_PRIORITY; proc--) {
 		if (*proc == NULL)
