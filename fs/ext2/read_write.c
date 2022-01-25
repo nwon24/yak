@@ -26,7 +26,7 @@ static ssize_t file_write(struct ext2_inode_m *ip, void *buf, size_t count, off_
 static ssize_t blkdev_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *off);
 static ssize_t blkdev_write(struct ext2_inode_m *ip, void *buf, size_t count, off_t *off);
 
-int
+ssize_t
 ext2_read(struct file *file, void *buf, size_t count)
 {
 	if (file->f_fs->f_fs != EXT2)
@@ -38,7 +38,7 @@ ext2_read(struct file *file, void *buf, size_t count)
 	return ext2_readi(file->f_inode, buf, count, &file->f_pos);
 }
 
-int
+ssize_t
 ext2_readi(void *inode, void *buf, size_t count, off_t *off)
 {
 	struct ext2_inode_m *ip = inode;
@@ -52,7 +52,7 @@ ext2_readi(void *inode, void *buf, size_t count, off_t *off)
 	return -EINVAL;
 }
 
-int
+ssize_t
 ext2_write(struct file *file, void *buf, size_t count)
 {
 	struct ext2_inode_m *ip;
@@ -76,7 +76,7 @@ ext2_write(struct file *file, void *buf, size_t count)
 	return ext2_writei(ip, buf, count, &file->f_pos);
 }
 
-int
+ssize_t
 ext2_writei(void *inode, void *buf, size_t count, off_t *off)
 {
 	struct ext2_inode_m *ip;
