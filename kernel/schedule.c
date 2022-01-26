@@ -23,6 +23,7 @@ struct process *process_queues[PROC_QUANTA];
 
 static void add_to_queue(struct process *proc);
 static void remove_from_queue(struct process *proc);
+static int nice_to_pri(int nice);
 
 void
 schedule(void)
@@ -144,4 +145,30 @@ add_to_queue(struct process *proc)
 	p->queue_next = proc;
 	proc->queue_prev = p;
 	proc->queue_next = tmp;
+}
+
+int
+kernel_nice(int inc)
+{
+	int *nice = &current_process->nice;
+
+	*nice += inc;
+	if (*nice > 19)
+		*nice = 19;
+	else if (*nice < -20)
+		*nice = -20;
+	current_process->priority = nice_to_pri(*nice);
+	current_process->counter = current_process->quanta = current_process->priority;
+	adjust_proc_queues(current_process);
+	return *nice;
+}
+
+static int
+nice_to_pri(int nice)
+{
+	int tmp, rat;
+
+	rat = 40 / PROC_QUANTA;
+	tmp = -(nice / rat);
+	return tmp + rat;
 }
