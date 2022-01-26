@@ -1,6 +1,10 @@
 #ifndef PROC_H
 #define PROC_H
 
+#define SIG_RESTORER	212
+
+#ifndef __ASSEMBLER__
+
 #include <stdint.h>
 
 #include <asm/cpu_state.h>
@@ -13,6 +17,7 @@
 #include <kernel/mutex.h>
 
 #define NR_PROC	64
+
 
 struct proc_image {
 	uint32_t vir_code_base;	/* Only readable */
@@ -68,6 +73,7 @@ struct process {
 	sighandler_t sighandlers[NSIG];	/* Function pointers to signal handlers */
 	int sigmask;			/* Signal masks */
 	int sigpending;			/* Pending signals */
+	void *sigrestorer;		/* Restorer code in user space */
 
 	struct context *context;
 
@@ -120,6 +126,8 @@ enum {
 	WAKEUP_RETURN,
 	WAKEUP_SWITCH
 };
+
+#endif /* __ASSEMBLER__ */
 
 #define FIRST_PROC	(&process_table[0])
 #define LAST_PROC	(&process_table[NR_PROC])
