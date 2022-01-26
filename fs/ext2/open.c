@@ -256,3 +256,37 @@ ext2_fchmod(struct file *file, mode_t mode)
 {
 	return _ext2_chmod(file->f_inode, mode);
 }
+
+int
+ext2_chroot(const char *path)
+{
+	struct ext2_inode_m *ip, *dp;
+	const char *p, *tmp;
+	int err;
+
+	ip = ext2_namei(path, &err, &p, &dp, NULL);
+	if (ip == NULL) {
+		if (err != ENOENT) {
+			ext2_iput(dp);
+			return err;
+		}
+		for (tmp = p; get_ubyte(tmp) != '\0' && get_ubyte(tmp) != '/'; p++);
+		if (get_ubyte(tmp) == '\0') {
+			ext2_iput(dp);
+			return -ENOENT;
+		} else {
+			if (get_ubyte(tmp + 1) != '\0') {
+				ext2_iput(dp);
+				return -ENOENT;
+			}
+			ip = dp;
+		}
+	}
+	if (!EXT2_S_ISDIR(ip->i_ino.i_mode)) {
+		ext2_iput(ip);
+		return -ENOTDIR;
+	}
+	ext2_iput(current_process->root_inode);
+	current_process->root_inode = ip;
+	return 0;
+}
