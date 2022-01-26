@@ -2,6 +2,7 @@
  * signal.c
  * Signal handling part of kernel.
  */
+#include <asm/interrupts.h>
 
 #include <kernel/proc.h>
 #include <kernel/debug.h>
@@ -84,9 +85,11 @@ signal_handler(struct process *proc, int *sig)
 int
 kernel_pause(void)
 {
+	disable_intr();
 	current_process->state = PROC_SLEEP_INTERRUPTIBLE;
 	adjust_proc_queues(current_process);
 	schedule();
+	enable_intr();
 	return -EINTR;
 }
 
