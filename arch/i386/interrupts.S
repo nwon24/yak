@@ -186,12 +186,12 @@ syscall:
 	pushl	current_cpu_state
 	call	handle_syscall
 	addl	$8, %esp
-	pushl	%eax
 	/*
 	 * Signal recognition is only done during swtich
 	 * from kernel to user space.
 	 */
 	movl	IRET_FRAME_CS(%esp), %ebx
+	pushl	%eax
 	testl	$3, %ebx
 	jz	1f
 	subl	$4, %esp
