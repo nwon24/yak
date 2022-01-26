@@ -11,6 +11,8 @@
 
 #include <drivers/driver.h>
 
+#include <kernel/proc.h>
+
 	.macro save_regs
 	pushl	%ds
 	pushl	%es
@@ -184,7 +186,35 @@ syscall:
 	pushl	current_cpu_state
 	call	handle_syscall
 	addl	$8, %esp
-	/* Can't use 'restart' here as %eax needs to be preserved. */
+	pushl	%eax
+	/*
+	 * Signal recognition is only done during swtich
+	 * from kernel to user space.
+	 */
+	movl	IRET_FRAME_CS(%esp), %ebx
+	testl	$3, %ebx
+	jz	1f
+	subl	$4, %esp
+	pushl	%esp
+	pushl	current_process
+	/*
+	 * Not actually a signal handler, but the function
+	 * that gets the signal handler.
+	 */
+	call	signal_handler
+	movl	4(%esp), %ecx
+	addl	$12, %esp
+	testl	%eax, %eax
+	jz	1f
+	xchgl	%eax, IRET_FRAME_EIP(%esp)
+	subl	$8, IRET_FRAME_ESP(%esp)
+	movl	IRET_FRAME_ESP(%esp), %edx
+	movl	current_process, %ebx
+	movl	SIG_RESTORER(%ebx), %eax
+	movl	%eax, (%edx)
+	movl	%ecx, 4(%edx)
+	movl	%edx, IRET_FRAME_ESP(%esp)
+1:	popl	%eax
 	popl	%ebp
 	popl	%edi
 	popl	%esi
