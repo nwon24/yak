@@ -18,6 +18,7 @@
 
 #define NR_PROC	64
 
+#define NO_ALARM	0
 
 struct proc_image {
 	uint32_t vir_code_base;	/* Only readable */
@@ -75,6 +76,8 @@ struct process {
 	int sigpending;			/* Pending signals */
 	void *sigrestorer;		/* Restorer code in user space */
 
+	unsigned int alarm;
+
 	struct context *context;
 
 	struct proc_image image;
@@ -100,6 +103,7 @@ int kernel_fork(void);
 void kernel_exit(int status);
 sighandler_t kernel_signal(int sig, sighandler_t handler);
 int kernel_kill(pid_t pid, int sig);
+int kernel_alarm(unsigned int seconds);
 
 void schedule(void);
 void sleep(void *addr, int type);
