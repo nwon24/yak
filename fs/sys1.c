@@ -319,3 +319,16 @@ kernel_rmdir(const char *path)
 		return -EROFS;
 	return fs->f_driver->fs_rmdir(path);
 }
+
+int
+kernel_chroot(const char *path)
+{
+	struct generic_filesystem *fs;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+		return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	return fs->f_driver->fs_chroot(path);
+}
