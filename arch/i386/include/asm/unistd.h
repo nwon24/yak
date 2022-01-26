@@ -16,6 +16,7 @@
 #define __NR_link	0x9
 #define __NR_unlink	0xA
 #define __NR_chdir	0xC
+#define __NR_time	0xD
 #define __NR_mknod	0xE
 #define __NR_chmod	0xF
 #define __NR_lseek	0x13
@@ -32,6 +33,7 @@
 #define __NR_signal	0x30
 #define __NR_geteuid	0x31
 #define __NR_getegid	0x32
+#define __NR_umask	0x3C
 #define __NR_setsid	0x42
 #define __NR_fchmod	0x5E
 #define __NR_chown	0xB6
