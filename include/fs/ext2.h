@@ -264,6 +264,7 @@ int ext2_match(struct ext2_dir_entry *dentry, const void *b, size_t c);
 int ext2_chown(const char *path, uid_t uid, gid_t gid);
 int ext2_chmod(const char *path, mode_t mode);
 int ext2_fchmod(struct file *file, mode_t mode);
+int ext2_chroot(const char *path);
 
 int ext2_chdir(const char *path);
 int ext2_mkdir(const char *path, mode_t mode);
