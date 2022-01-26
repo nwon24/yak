@@ -8,6 +8,8 @@
 
 #include <asm/interrupts.h>
 
+#include <drivers/timer.h>
+
 #include <kernel/proc.h>
 #include <kernel/mutex.h>
 
@@ -28,8 +30,14 @@ schedule(void)
 	struct process **proc, *old, *tmp;
 
 	for (tmp = FIRST_PROC; tmp < LAST_PROC; tmp++) {
-		if (tmp->state == PROC_SLEEP_INTERRUPTIBLE && tmp->sigpending)
+		if (tmp->alarm != NO_ALARM && (unsigned int)tmp->alarm < timer_ticks) {
+			tmp->sigpending |= (1 << (SIGALRM - 1));
+			tmp->alarm = NO_ALARM;
+		}
+		if (tmp->state == PROC_SLEEP_INTERRUPTIBLE && tmp->sigpending) {
 			tmp->state = PROC_RUNNABLE;
+			adjust_proc_queues(tmp);
+		}
 	}
 	old = current_process;
 	for (proc = process_queues + HIGHEST_PRIORITY; proc >= process_queues + LOWEST_PRIORITY; proc--) {
