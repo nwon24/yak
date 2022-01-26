@@ -24,6 +24,7 @@
 #define __NR_getuid	0x18
 #define __NR_alarm	0x1B
 #define __NR_pause	0x1D
+#define __NR_nice	0x22
 #define __NR_sync	0x24
 #define __NR_kill	0x25
 #define __NR_mkdir	0x27
