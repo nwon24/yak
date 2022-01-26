@@ -28,6 +28,7 @@ first_user_code:
 	movl	$__NR_alarm, %eax
 	movl	$2, %ebx
 	int	$0x80
+	/* Should be unreachable, as default handling of SIGALRM is to exit */
 	movl	$__NR_pause, %eax
 	int	$0x80
 	movl	$__NR_write, %eax
