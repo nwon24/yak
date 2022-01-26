@@ -29,6 +29,7 @@
 #define __NR_kill	0x25
 #define __NR_mkdir	0x27
 #define __NR_rmdir	0x28
+#define __NR_dup	0x29
 #define __NR_setgid	0x2E
 #define __NR_getgid	0x2F
 #define __NR_signal	0x30
@@ -36,6 +37,7 @@
 #define __NR_getegid	0x32
 #define __NR_umask	0x3C
 #define __NR_chroot	0x3D
+#define __NR_dup2	0x3F
 #define __NR_setsid	0x42
 #define __NR_fchmod	0x5E
 #define __NR_chown	0xB6
