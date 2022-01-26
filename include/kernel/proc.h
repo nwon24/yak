@@ -78,6 +78,8 @@ struct process {
 
 	unsigned int alarm;
 
+	int nice;
+
 	struct context *context;
 
 	struct proc_image image;
@@ -104,6 +106,7 @@ void kernel_exit(int status);
 sighandler_t kernel_signal(int sig, sighandler_t handler);
 int kernel_kill(pid_t pid, int sig);
 int kernel_alarm(unsigned int seconds);
+int kernel_nice(int inc);
 
 void schedule(void);
 void sleep(void *addr, int type);
