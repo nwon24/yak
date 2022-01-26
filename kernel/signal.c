@@ -6,6 +6,8 @@
 #include <kernel/proc.h>
 #include <kernel/debug.h>
 
+#include <drivers/timer.h>
+
 #include <generic/errno.h>
 
 static struct signal signal_table[NSIG];
@@ -123,6 +125,7 @@ signals_init(void)
 	register_syscall(__NR_signal, (uint32_t)kernel_signal, 2);
 	register_syscall(__NR_kill, (uint32_t)kernel_kill, 2);
 	register_syscall(__NR_pause, (uint32_t)kernel_pause, 0);
+	register_syscall(__NR_alarm, (uint32_t)kernel_alarm, 1);
 }
 
 static sighandler_t
@@ -217,4 +220,14 @@ sig_permission(struct process *sender, struct process *target)
 	if (sender->euid == target->suid || sender->euid == target->uid)
 		return 0;
 	return 1;
+}
+
+int
+kernel_alarm(unsigned int seconds)
+{
+	unsigned int old;
+
+	old = current_process->alarm;
+	current_process->alarm = timer_ticks + seconds * HZ;
+	return (old - timer_ticks) / HZ;
 }
