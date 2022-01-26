@@ -13,6 +13,7 @@ static struct signal signal_table[NSIG];
 static int send_signal(struct process *target, int sig);
 static int sig_permission(struct process *sender, struct process *target);
 static sighandler_t get_signal_handler(struct process *proc, int sig);
+static sighandler_t _do_signal(int sig, sighandler_t handler, void *restorer);
 
 static inline void
 signal_init(int signal, enum sig_def_action action)
@@ -59,7 +60,7 @@ get_signal_handler(struct process *proc, int sig)
 }
 
 sighandler_t
-signal_handler(struct process *proc)
+signal_handler(struct process *proc, int *sig)
 {
 	int i;
 	sighandler_t ret;
@@ -71,6 +72,7 @@ signal_handler(struct process *proc)
 			if (ret == NULL)
 				/* Ignore signal, so find the next one */
 				continue;
+			*sig = i + 1;
 			return ret;
 		}
 	}
@@ -123,8 +125,8 @@ signals_init(void)
 	register_syscall(__NR_pause, (uint32_t)kernel_pause, 0);
 }
 
-sighandler_t
-kernel_signal(int sig, sighandler_t handler)
+static sighandler_t
+_do_signal(int sig, sighandler_t handler, void *restorer)
 {
 	sighandler_t ret, *ptr;
 
@@ -135,7 +137,20 @@ kernel_signal(int sig, sighandler_t handler)
 	ptr = current_process->sighandlers + sig - 1;
 	ret = *ptr;
 	*ptr = handler;
+	current_process->sigrestorer = restorer;
 	return ret;
+}
+
+sighandler_t
+kernel_signal(int sig, sighandler_t handler)
+{
+	if (handler != SIG_DFL && handler != SIG_IGN) {
+		printk("WARNING: signal() system call should not be used for user defined signal handlers.\r\n");
+		printk("Use sigaction() (once it is implemented, of course)\r\n");
+		printk("You program will probably crash soon.\r\n");
+		return NULL;
+	}
+	return _do_signal(sig, handler, NULL);
 }
 
 int
