@@ -12,6 +12,7 @@ static struct signal signal_table[NSIG];
 
 static int send_signal(struct process *target, int sig);
 static int sig_permission(struct process *sender, struct process *target);
+static sighandler_t get_signal_handler(struct process *proc, int sig);
 
 static inline void
 signal_init(int signal, enum sig_def_action action)
@@ -20,6 +21,69 @@ signal_init(int signal, enum sig_def_action action)
 		return;
 	signal_table[signal - 1].def_action = action;
 	signal_table[signal - 1].sig = signal;
+}
+
+static sighandler_t
+get_signal_handler(struct process *proc, int sig)
+{
+	sighandler_t handler;
+
+	handler = proc->sighandlers[sig];
+	if (handler == SIG_DFL) {
+		switch (signal_table[sig].def_action) {
+		case SIGACTION_A:
+		case SIGACTION_T:
+			kernel_exit(sig);
+			return NULL;
+		case SIGACTION_I:
+			return NULL;
+		case SIGACTION_C:
+			if (current_process->state == PROC_STOPPED) {
+				current_process->state = PROC_RUNNABLE;
+				adjust_proc_queues(current_process);
+			}
+			break;
+		case SIGACTION_S:
+			current_process->state = PROC_STOPPED;
+			kernel_kill(current_process->ppid, SIGCHLD);
+			adjust_proc_queues(current_process);
+			schedule();
+			break;
+		}
+	} else if (handler == SIG_IGN) {
+		return NULL;
+	} else {
+		return handler;
+	}
+	return NULL;
+}
+
+sighandler_t
+signal_handler(struct process *proc)
+{
+	int i;
+	sighandler_t ret;
+
+	for (i = 0; i < NSIG; i++) {
+		if (proc->sigpending & (1 << i)) {
+			proc->sigpending &= ~(1 << i);
+			ret =  get_signal_handler(proc, i);
+			if (ret == NULL)
+				/* Ignore signal, so find the next one */
+				continue;
+			return ret;
+		}
+	}
+	return NULL;
+}
+
+int
+kernel_pause(void)
+{
+	current_process->state = PROC_SLEEP_INTERRUPTIBLE;
+	adjust_proc_queues(current_process);
+	schedule();
+	return -EINTR;
 }
 
 void
@@ -56,6 +120,7 @@ signals_init(void)
 	signal_init(SIGTERM, SIGACTION_T);
 	register_syscall(__NR_signal, (uint32_t)kernel_signal, 2);
 	register_syscall(__NR_kill, (uint32_t)kernel_kill, 2);
+	register_syscall(__NR_pause, (uint32_t)kernel_pause, 0);
 }
 
 sighandler_t
@@ -124,7 +189,7 @@ send_signal(struct process *target, int sig)
 {
 	if (sig_permission(current_process, target) != 0)
 		return -EPERM;
-	if (sig != 0)
+	if (sig == SIGKILL || (sig != 0 && target->state != PROC_STOPPED))
 		target->sigpending |= (1 << (sig - 1));
 	return 0;
 }
