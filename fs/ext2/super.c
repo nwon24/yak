@@ -206,6 +206,7 @@ ext2_mount_root(void)
 	current_process->root_inode = ip;
 	if (current_process->root_inode == NULL)
 		panic("ext2_mount_root: unable to get root inode");
+	ip->i_count++;
 	current_process->cwd_inode = current_process->root_inode;
 	current_process->root_fs = &ext2_fs_struct;
 	current_process->cwd_fs = &ext2_fs_struct;
