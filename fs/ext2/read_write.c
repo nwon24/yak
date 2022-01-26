@@ -83,7 +83,7 @@ ext2_writei(void *inode, void *buf, size_t count, off_t *off)
 
 	ip = inode;
 	if (EXT2_S_ISDIR(ip->i_ino.i_mode) || EXT2_S_ISREG(ip->i_ino.i_mode))
-		file_write(ip, buf, count, off);
+		return file_write(ip, buf, count, off);
 	if (EXT2_S_ISBLK(ip->i_ino.i_mode))
 		return blkdev_write(ip, buf, count, off);
 	if (EXT2_S_ISCHR(ip->i_ino.i_mode))
