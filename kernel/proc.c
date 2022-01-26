@@ -138,6 +138,7 @@ kernel_fork(void)
 		proc->state = 0;
 		return -EAGAIN;
 	}
+	proc->alarm = NO_ALARM;
 	if (!current_process->priority) {
 		/* First fork */
 		proc->priority = PROC_QUANTA - 1;
