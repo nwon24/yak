@@ -1,6 +1,23 @@
 #ifndef CPU_STATE_H
 #define CPU_STATE_H
 
+#define IRET_FRAME_EBP		0
+#define IRET_FRAME_EDI		4
+#define IRET_FRAME_ESI		8
+#define IRET_FRAME_EDX		12
+#define IRET_FRAME_ECX		16
+#define IRET_FRAME_EBX		20
+#define IRET_FRAME_EAX		24
+#define IRET_FRAME_GS		28
+#define IRET_FRAME_FS		32
+#define IRET_FRAME_ES		36
+#define IRET_FRAME_DS		40
+#define IRET_FRAME_EIP		48
+#define IRET_FRAME_CS		52
+#define IRET_FRAME_EFLAGS	56
+#define IRET_FRAME_ESP		60
+#define IRET_FRAME_SS		64
+
 #ifndef __ASSEMBLER__
 
 #include <stdint.h>
