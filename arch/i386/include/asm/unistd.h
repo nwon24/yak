@@ -34,6 +34,7 @@
 #define __NR_geteuid	0x31
 #define __NR_getegid	0x32
 #define __NR_umask	0x3C
+#define __NR_chroot	0x3D
 #define __NR_setsid	0x42
 #define __NR_fchmod	0x5E
 #define __NR_chown	0xB6
