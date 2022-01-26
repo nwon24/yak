@@ -4,6 +4,8 @@
  */
 #include <asm/types.h>
 
+#include <drivers/timer.h>
+
 #include <generic/errno.h>
 
 #include <kernel/proc.h>
@@ -72,4 +74,22 @@ kernel_setsid(void)
 	current_process->pgrp_info.pgid = current_process->pid;
 	current_process->tty = -1;
 	return current_process->pgrp_info.pgid;
+}
+
+mode_t
+kernel_umask(mode_t cmask)
+{
+	mode_t old;
+
+	old = current_process->umask;
+	current_process->umask = cmask & 0777;
+	return old;
+}
+
+time_t
+kernel_time(time_t *tloc)
+{
+	if (tloc != NULL)
+		*tloc = CURRENT_TIME;
+	return CURRENT_TIME;
 }
