@@ -102,6 +102,7 @@ void wakeup(void *addr, int ret);
 void adjust_proc_queues(struct process *proc);
 
 void signals_init(void);
+int kernel_pause(void);
 
 pid_t kernel_waitpid(pid_t pid, int *stat_loc, int options);
 
@@ -129,6 +130,7 @@ enum {
 #define PROC_RUNNABLE	3
 #define PROC_SLEEP_INTERRUPTIBLE	4
 #define PROC_SLEEP_UNINTERRUPTIBLE	5
+#define PROC_STOPPED	6
 
 #define PROC_SLEEPING(proc)	((proc)->state == PROC_SLEEP_INTERRUPTIBLE || (proc)->state == PROC_SLEEP_UNINTERRUPTIBLE)
 
