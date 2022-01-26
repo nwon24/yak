@@ -92,6 +92,7 @@ struct process {
 	void *cwd_inode;
 
 	struct file *file_table[NR_OPEN];
+	int close_on_exec;
 };
 
 extern struct process *current_process;
