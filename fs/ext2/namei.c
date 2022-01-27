@@ -20,6 +20,8 @@
 
 #define EXT2_MAX_SYMLINKS	5
 
+static int symlinks = 0;
+
 /*
  * 'FIND_NEXT_BLOCK' means it couldn't find the directory entry.
  * 'FIND_NONE' means it hit the end of the directory linked list.
@@ -64,7 +66,6 @@ ext2_namei(const char *path,
 {
 	struct ext2_inode_m *ip, *dp, *start, *prev_dir = NULL;
 	const char *p1, *p2;
-	int symlinks;
 
 	if (current_process->root_inode == NULL || current_process->cwd_inode == NULL)
 		panic("Current process has no root directory or working directory");
@@ -79,7 +80,7 @@ ext2_namei(const char *path,
 	if (root == NULL)
 		root = current_process->root_inode;
 	if (cwd == NULL)
-		root = current_process->cwd_inode;
+		cwd = current_process->cwd_inode;
 	p1 = path;
 	ip = (get_ubyte(p1) == '/') ? root : cwd;
 	if (ip == NULL)
@@ -110,6 +111,7 @@ loop:
 			if (prev_dir != NULL && prev_dir != ip)
 				ext2_iput(prev_dir);
 			*error = -ELOOP;
+			symlinks = 0;
 			return NULL;
 		}
 		/*
@@ -122,14 +124,16 @@ loop:
 			ext2_iput(ip);
 			if (prev_dir != ip)
 				ext2_iput(prev_dir);
+			symlinks = 0;
 			return NULL;
 		}
+		symlinks++;
 		ip = dp;
-		goto loop;
 	}
 	if (get_ubyte(p1) == '\0') {
 		if (prev_dir != NULL && prev_dir != ip)
 			ext2_iput(prev_dir);
+		symlinks = 0;
 		return ip;
 	}
 	if (ext2_permission(ip, PERM_SRCH) < 0) {
@@ -138,6 +142,7 @@ loop:
 		if (prev_dir != NULL && prev_dir != ip)
 			ext2_iput(prev_dir);
 		*error = -EACCES;
+		symlinks = 0;
 		return NULL;
 	}
 	while (get_ubyte(p1) == '/')
@@ -161,6 +166,7 @@ loop:
 		*error = -ENOENT;
 		if (prev_dir != NULL)
 			ext2_iput(prev_dir);
+		symlinks = 0;
 		return NULL;
 	}
 	ip = dp;
