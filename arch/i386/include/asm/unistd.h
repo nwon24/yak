@@ -20,6 +20,7 @@
 #define __NR_mknod	0xE
 #define __NR_chmod	0xF
 #define __NR_lseek	0x13
+#define __NR_getpid	0x14
 #define __NR_setuid	0x17
 #define __NR_getuid	0x18
 #define __NR_alarm	0x1B
@@ -40,8 +41,10 @@
 #define __NR_umask	0x3C
 #define __NR_chroot	0x3D
 #define __NR_dup2	0x3F
+#define __NR_getppid	0x40
 #define __NR_setsid	0x42
 #define __NR_fchmod	0x5E
+#define __NR_getpgid	0x84
 #define __NR_chown	0xB6
 
 #endif /* ARCH_UNISTD_H */
