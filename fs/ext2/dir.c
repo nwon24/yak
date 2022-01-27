@@ -19,7 +19,6 @@
 
 static int dentry_file_type(struct ext2_inode_m *ip);
 static int empty_dir(struct ext2_inode_m *dp, int *err);
-static int ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *bp);
 
 static int
 dentry_file_type(struct ext2_inode_m *ip)
@@ -157,7 +156,7 @@ error:
  * Need to check the entry name as well as a directory could have
  * two links to the same inode under different names.
  */
-static int
+int
 ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *bp)
 {
 	struct ext2_dir_entry *dentry, *prev;
