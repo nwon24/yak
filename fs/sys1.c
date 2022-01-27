@@ -332,3 +332,18 @@ kernel_chroot(const char *path)
 		return -EINVAL;
 	return fs->f_driver->fs_chroot(path);
 }
+
+int
+kernel_symlink(const char *path1, const char *path2)
+{
+	struct generic_filesystem *fs;
+
+	if (path1 == NULL || !check_user_ptr((void *)path1))
+		return -EFAULT;
+	if (path2 == NULL || !check_user_ptr((void *)path2))
+		return -EFAULT;
+	fs = get_fs_from_path(path1);
+	if (fs == NULL)
+		return -EINVAL;
+	return fs->f_driver->fs_symlink(path1, path2);
+}
