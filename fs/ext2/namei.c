@@ -18,6 +18,8 @@
 #include <kernel/proc.h>
 #include <kernel/debug.h>
 
+#define EXT2_MAX_SYMLINKS	5
+
 /*
  * 'FIND_NEXT_BLOCK' means it couldn't find the directory entry.
  * 'FIND_NONE' means it hit the end of the directory linked list.
@@ -52,10 +54,17 @@ int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
 }
 
 struct ext2_inode_m *
-ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp)
+ext2_namei(const char *path,
+	   int *error,
+	   const char **base,
+	   struct ext2_inode_m **last_dir,
+	   struct buffer **last_dir_bp,
+	   struct ext2_inode_m *root,
+	   struct ext2_inode_m *cwd)
 {
-	struct ext2_inode_m *ip, *dp, *start;
+	struct ext2_inode_m *ip, *dp, *start, *prev_dir = NULL;
 	const char *p1, *p2;
+	int symlinks;
 
 	if (current_process->root_inode == NULL || current_process->cwd_inode == NULL)
 		panic("Current process has no root directory or working directory");
@@ -67,26 +76,67 @@ ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m 
 		*error = -EINVAL;
 		return NULL;
 	}
+	if (root == NULL)
+		root = current_process->root_inode;
+	if (cwd == NULL)
+		root = current_process->cwd_inode;
 	p1 = path;
-	ip = (get_ubyte(p1) == '/') ? current_process->root_inode : current_process->cwd_inode;
+	ip = (get_ubyte(p1) == '/') ? root : cwd;
 	if (ip == NULL)
 		panic("ext2_namei: current_process has no root inode or working directory inode");
 	if (last_dir != NULL)
 		*last_dir = ip;
+	else
+		prev_dir = ip;
 	ip->i_count++;
 	start = ip;
+	symlinks = 0;
 loop:
-	if (get_ubyte(p1) != '\0' && !EXT2_S_ISDIR(ip->i_ino.i_mode)) {
+	if (get_ubyte(p1) != '\0' && !EXT2_S_ISDIR(ip->i_ino.i_mode) && !EXT2_S_ISLNK(ip->i_ino.i_mode)) {
 		if (last_dir != NULL && *last_dir != ip)
 			ext2_iput(ip);
 		*error = -ENOTDIR;
 		return NULL;
 	}
-	if (get_ubyte(p1) == '\0')
+	if (EXT2_S_ISLNK(ip->i_ino.i_mode)) {
+		/*
+		 * Just assume that if we are doing more than 5 symlinks we are in a loop.
+		 * Who uses paths that have 5 symlinks in them?
+		 * Who uses symlinks anyway?
+		 * See harmful.cat-v.org/software/symlinks.
+		 */
+		if (symlinks >= EXT2_MAX_SYMLINKS) {
+			ext2_iput(ip);
+			if (prev_dir != NULL && prev_dir != ip)
+				ext2_iput(prev_dir);
+			*error = -ELOOP;
+			return NULL;
+		}
+		/*
+		 * WARNING: 'ext2_follow_symlink' calls 'ext2_namei'.
+		 * It is in a separate function because it also has to figure out if it is a 'fast'
+		 * symlink or the symlink is stored in a block.
+		 */
+		dp = ext2_follow_symlink(ip, root, (last_dir == NULL) ? prev_dir : *last_dir, error);
+		if (dp == NULL) {
+			ext2_iput(ip);
+			if (prev_dir != ip)
+				ext2_iput(prev_dir);
+			return NULL;
+		}
+		ip = dp;
+		goto loop;
+	}
+	if (get_ubyte(p1) == '\0') {
+		if (prev_dir != NULL && prev_dir != ip)
+			ext2_iput(prev_dir);
 		return ip;
+	}
 	if (ext2_permission(ip, PERM_SRCH) < 0) {
 		if (last_dir != NULL && *last_dir != ip)
 			ext2_iput(ip);
+		if (prev_dir != NULL && prev_dir != ip)
+			ext2_iput(prev_dir);
 		*error = -EACCES;
 		return NULL;
 	}
@@ -103,11 +153,14 @@ loop:
 				ext2_iput(*last_dir);
 			*last_dir = ip;
 		} else {
-			ext2_iput(ip);
+			ext2_iput(prev_dir);
+			prev_dir = ip;
 		}
 	}
 	if ((dp = find_entry(ip, p2, p1 - p2, last_dir_bp)) == NULL) {
 		*error = -ENOENT;
+		if (prev_dir != NULL)
+			ext2_iput(prev_dir);
 		return NULL;
 	}
 	ip = dp;
