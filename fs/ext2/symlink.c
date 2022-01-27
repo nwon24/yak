@@ -11,6 +11,8 @@
 #include <fs/fs.h>
 #include <fs/ext2.h>
 
+#include <kernel/debug.h>
+
 #define EXT2_SYMLINK_MAX(sb)	EXT2_BLOCKSIZE(sb)
 
 #define EXT2_FAST_SYMLINK_LEN	60
@@ -82,6 +84,7 @@ ext2_symlink(const char *path1, const char *path2)
 		bp->b_flags |= B_DWRITE;
 		brelse(bp);
 	}
+	ip->i_ino.i_size = len;
 	ip->i_ino.i_mtime = CURRENT_TIME;
 	ip->i_flags |= I_MODIFIED;
 	ext2_iput(ip);
