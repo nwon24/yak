@@ -25,16 +25,9 @@ first_user_code:
 	movl	$msg, %ecx
 	movl	$13, %edx
 	int	$0x80
-	movl	$__NR_alarm, %eax
-	movl	$2, %ebx
-	int	$0x80
-	/* Should be unreachable, as default handling of SIGALRM is to exit */
-	movl	$__NR_pause, %eax
-	int	$0x80
-	movl	$__NR_write, %eax
-	movl	$0, %ebx
-	movl	$msg, %ecx
-	movl	$13, %edx
+	movl	$__NR_symlink, %eax
+	movl	$path1, %ebx
+	movl	$path2, %ecx
 	int	$0x80
 	movl	$__NR_sync, %eax
 	int	$0x80
@@ -42,3 +35,5 @@ first_user_code:
 
 file:	.asciz	"/dev/tty"
 msg:	.asciz	"Hello, world!"
+path1:	.asciz	"/dev"
+path2:	.asciz	"/link"
