@@ -31,7 +31,7 @@ ext2_open(const char *path, int flags, int mode, int *err)
 	const char *base, *p;
 	void *ret;
 
-	if ((ip = ext2_namei(path, err, &base, &base_dir, NULL)) == NULL) {
+	if ((ip = ext2_namei(path, err, &base, &base_dir, NULL, NULL, NULL)) == NULL) {
 		if (!(flags & O_CREAT)) {
 			ext2_iput(base_dir);
 			*err = -ENOENT;
@@ -141,7 +141,7 @@ ext2_mknod(const char *path, mode_t mode, dev_t dev)
 	int err;
 
 	mode &= ~current_process->umask;
-	ip = ext2_namei(path, &err, &base, &dp, NULL);
+	ip = ext2_namei(path, &err, &base, &dp, NULL, NULL, NULL);
 	/*
 	 * We need to check no entry was found.
 	 * If it didn't find a directory, thatn -ENOENT should be returned.
@@ -201,7 +201,7 @@ ext2_chown(const char *path, uid_t uid, gid_t gid)
 	struct ext2_inode_m *ip;
 	int err;
 
-	ip = ext2_namei(path, &err, NULL, NULL, NULL);
+	ip = ext2_namei(path, &err, NULL, NULL, NULL, NULL, NULL);
 	if (ip == NULL)
 		return err;
 	if (current_process->euid != ip->i_ino.i_uid) {
@@ -243,7 +243,7 @@ ext2_chmod(const char *path, mode_t mode)
 	struct ext2_inode_m *ip;
 	int err;
 
-	ip = ext2_namei(path, &err, NULL, NULL, NULL);
+	ip = ext2_namei(path, &err, NULL, NULL, NULL, NULL, NULL);
 	if (ip == NULL)
 		return err;
 	err = _ext2_chmod(ip, mode);
@@ -264,7 +264,7 @@ ext2_chroot(const char *path)
 	const char *p, *tmp;
 	int err;
 
-	ip = ext2_namei(path, &err, &p, &dp, NULL);
+	ip = ext2_namei(path, &err, &p, &dp, NULL, NULL, NULL);
 	if (ip == NULL) {
 		if (err != ENOENT) {
 			ext2_iput(dp);

@@ -246,7 +246,7 @@ ext2_unlink(const char *pathname)
 	const char *p;
 	int err;
 
-	ip = ext2_namei(pathname, &err, &p, &dp, &bp);
+	ip = ext2_namei(pathname, &err, &p, &dp, &bp, NULL, NULL);
 	if (ip == NULL) {
 		if (bp != NULL)
 			brelse(bp);
@@ -283,7 +283,7 @@ ext2_link(const char *path1, const char *path2)
 	const char *p;
 	int err;
 
-	ip1 = ext2_namei(path1, &err, NULL, NULL, NULL);
+	ip1 = ext2_namei(path1, &err, NULL, NULL, NULL, NULL, NULL);
 	if (ip1 == NULL)
 		return err;
 	if (EXT2_S_ISDIR(ip1->i_ino.i_mode) || EXT2_S_ISLNK(ip1->i_ino.i_mode)) {
@@ -293,7 +293,7 @@ ext2_link(const char *path1, const char *path2)
 		ext2_iput(ip1);
 		return -EEXIST;
 	}
-	ip2 = ext2_namei(path2, &err, &p, &dp, NULL);
+	ip2 = ext2_namei(path2, &err, &p, &dp, NULL, NULL, NULL);
 	if (ip2 != NULL) {
 		if (ip1 != dp)
 			ext2_iput(dp);
@@ -316,7 +316,7 @@ ext2_chdir(const char *path)
 	struct ext2_inode_m *ip, *dp;
 	int err;
 
-	ip = ext2_namei(path, &err, NULL, &dp, NULL);
+	ip = ext2_namei(path, &err, NULL, &dp, NULL, NULL, NULL);
 	if (path[strlen(path)] == '/') {
 		if (!EXT2_S_ISDIR(dp->i_ino.i_mode)) {
 			ext2_iput(dp);
@@ -343,7 +343,7 @@ ext2_mkdir(const char *path, mode_t mode)
 	int err;
 
 	m = (mode & ~current_process->umask & 0777) | EXT2_S_IFDIR;
-	ip = ext2_namei(path, &err, &p, &dp, NULL);
+	ip = ext2_namei(path, &err, &p, &dp, NULL, NULL, NULL);
 	if (ip == NULL) {
 		for (tmp = p ; get_ubyte(tmp) != '\0' && get_ubyte(tmp) != '/'; tmp++);
 		if (get_ubyte(tmp) == '/' && get_ubyte(tmp + 1) != '\0') {
@@ -396,7 +396,7 @@ ext2_rmdir(const char *path)
 	int err = 0, ret;
 
 	ret = 0;
-	ip = ext2_namei(path, &err, &p, &dp, &bp);
+	ip = ext2_namei(path, &err, &p, &dp, &bp, NULL, NULL);
 	if (ip == NULL) {
 		ext2_iput(dp);
 		return err;
