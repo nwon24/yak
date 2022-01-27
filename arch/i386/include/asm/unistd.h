@@ -36,6 +36,7 @@
 #define __NR_geteuid	0x31
 #define __NR_getegid	0x32
 #define __NR_fcntl	0x37
+#define __NR_setpgid	0x38
 #define __NR_umask	0x3C
 #define __NR_chroot	0x3D
 #define __NR_dup2	0x3F
