@@ -222,7 +222,7 @@ void ext2_iput(struct ext2_inode_m *ip);
 void ext2_public_iput(void *ip);
 void ext2_inodes_init(void);
 
-struct ext2_inode_m *ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp);
+struct ext2_inode_m *ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp, struct ext2_inode_m *root, struct ext2_inode_m *cwd);
 
 struct ext2_inode_m *ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev, int *err);
 
@@ -272,6 +272,7 @@ int ext2_mkdir(const char *path, mode_t mode);
 int ext2_rmdir(const char *path);
 
 int ext2_symlink(const char *path1, const char *path2);
+struct ext2_inode_m *ext2_follow_symlink(struct ext2_inode_m *symlink, struct ext2_inode_m *root, struct ext2_inode_m *cwd, int *err);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
