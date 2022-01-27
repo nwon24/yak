@@ -43,6 +43,7 @@
 #define __NR_dup2	0x3F
 #define __NR_getppid	0x40
 #define __NR_setsid	0x42
+#define __NR_symlink	0x53
 #define __NR_fchmod	0x5E
 #define __NR_getpgid	0x84
 #define __NR_chown	0xB6
