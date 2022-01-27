@@ -42,6 +42,7 @@
 #define __NR_chroot	0x3D
 #define __NR_dup2	0x3F
 #define __NR_getppid	0x40
+#define __NR_getpgrp	0x41
 #define __NR_setsid	0x42
 #define __NR_symlink	0x53
 #define __NR_fchmod	0x5E
