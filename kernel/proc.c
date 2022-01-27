@@ -107,8 +107,8 @@ processes_init(void)
 	process_queues[proc->priority] = proc;
 	/* Doubly linked list that just points to itself. */
 	proc->queue_next = proc->queue_prev = proc;
-	register_syscall(__NR_waitpid, (uint32_t)kernel_waitpid, 3);
-	register_syscall(__NR_nice, (uint32_t)kernel_nice, 1);
+	register_syscall(__NR_waitpid, (size_t)kernel_waitpid, 3);
+	register_syscall(__NR_nice, (size_t)kernel_nice, 1);
 	do_mount_root();
 	run_multitasking_hooks();
 	system_change_state(SYSTEM_MULTITASKING);

@@ -120,26 +120,26 @@ static inline void
 fs_init(void)
 {
 	buffer_init();
-	register_syscall(__NR_open, (uint32_t)kernel_open, 3);
-	register_syscall(__NR_read, (uint32_t)kernel_read, 3);
-	register_syscall(__NR_write, (uint32_t)kernel_write, 3);
-	register_syscall(__NR_sync, (uint32_t)kernel_sync, 0);
-	register_syscall(__NR_unlink, (uint32_t)kernel_unlink, 1);
-	register_syscall(__NR_lseek, (uint32_t)kernel_lseek, 3);
-	register_syscall(__NR_creat, (uint32_t)kernel_creat, 2);
-	register_syscall(__NR_link, (uint32_t)kernel_link, 2);
-	register_syscall(__NR_mknod, (uint32_t)kernel_mknod, 3);
-	register_syscall(__NR_close, (uint32_t)kernel_close, 1);
-	register_syscall(__NR_chdir, (uint32_t)kernel_chdir, 1);
-	register_syscall(__NR_chown, (uint32_t)kernel_chown, 3);
-	register_syscall(__NR_chmod, (uint32_t)kernel_chmod, 2);
-	register_syscall(__NR_fchmod, (uint32_t)kernel_fchmod, 2);
-	register_syscall(__NR_mkdir, (uint32_t)kernel_mkdir, 2);
-	register_syscall(__NR_rmdir, (uint32_t)kernel_rmdir, 1);
-	register_syscall(__NR_chroot, (uint32_t)kernel_chroot, 1);
-	register_syscall(__NR_dup, (uint32_t)kernel_dup, 1);
-	register_syscall(__NR_dup2, (uint32_t)kernel_dup2, 2);
-	register_syscall(__NR_fcntl, (uint32_t)kernel_fcntl, 3);
+	register_syscall(__NR_open, (size_t)kernel_open, 3);
+	register_syscall(__NR_read, (size_t)kernel_read, 3);
+	register_syscall(__NR_write, (size_t)kernel_write, 3);
+	register_syscall(__NR_sync, (size_t)kernel_sync, 0);
+	register_syscall(__NR_unlink, (size_t)kernel_unlink, 1);
+	register_syscall(__NR_lseek, (size_t)kernel_lseek, 3);
+	register_syscall(__NR_creat, (size_t)kernel_creat, 2);
+	register_syscall(__NR_link, (size_t)kernel_link, 2);
+	register_syscall(__NR_mknod, (size_t)kernel_mknod, 3);
+	register_syscall(__NR_close, (size_t)kernel_close, 1);
+	register_syscall(__NR_chdir, (size_t)kernel_chdir, 1);
+	register_syscall(__NR_chown, (size_t)kernel_chown, 3);
+	register_syscall(__NR_chmod, (size_t)kernel_chmod, 2);
+	register_syscall(__NR_fchmod, (size_t)kernel_fchmod, 2);
+	register_syscall(__NR_mkdir, (size_t)kernel_mkdir, 2);
+	register_syscall(__NR_rmdir, (size_t)kernel_rmdir, 1);
+	register_syscall(__NR_chroot, (size_t)kernel_chroot, 1);
+	register_syscall(__NR_dup, (size_t)kernel_dup, 1);
+	register_syscall(__NR_dup2, (size_t)kernel_dup2, 2);
+	register_syscall(__NR_fcntl, (size_t)kernel_fcntl, 3);
 }
 
 #endif /* FS_H */

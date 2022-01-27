@@ -50,9 +50,9 @@ arch_processes_init(uint32_t start, uint32_t size)
 	 * to the point interrupts are enabled.
 	 */
 	set_idt_entry(SYSCALL_IRQ, (uint32_t)syscall, KERNEL_CS_SELECTOR, DPL_3, IDT_32BIT_INT_GATE);
-	register_syscall(__NR_fork, (uint32_t)kernel_fork, 0);
-	register_syscall(0, (uint32_t)kernel_test, 1);
-	register_syscall(__NR_exit, (uint32_t)kernel_exit, 1);
+	register_syscall(__NR_fork, (size_t)kernel_fork, 0);
+	register_syscall(0, (size_t)kernel_test, 1);
+	register_syscall(__NR_exit, (size_t)kernel_exit, 1);
 	current_page_directory = virt_map_chunk(start, size, NULL, PAGE_WRITABLE | PAGE_USER);
 	if (!current_page_directory)
 		return -1;

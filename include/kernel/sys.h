@@ -24,16 +24,16 @@ int kernel_setpgid(pid_t pid, pid_t pgid);
 static inline void
 sys_other_init(void)
 {
-	register_syscall(__NR_getuid, (uint32_t)kernel_getuid, 0);
-	register_syscall(__NR_geteuid, (uint32_t)kernel_geteuid, 0);
-	register_syscall(__NR_getgid, (uint32_t)kernel_getgid, 0);
-	register_syscall(__NR_getegid, (uint32_t)kernel_getegid, 0);
-	register_syscall(__NR_setuid, (uint32_t)kernel_setuid, 1);
-	register_syscall(__NR_setgid, (uint32_t)kernel_setgid, 1);
-	register_syscall(__NR_setsid, (uint32_t)kernel_setsid, 0);
-	register_syscall(__NR_umask, (uint32_t)kernel_umask, 1);
-	register_syscall(__NR_time, (uint32_t)kernel_time, 1);
-	register_syscall(__NR_setpgid, (uint32_t)kernel_setpgid, 2);
+	register_syscall(__NR_getuid, (size_t)kernel_getuid, 0);
+	register_syscall(__NR_geteuid, (size_t)kernel_geteuid, 0);
+	register_syscall(__NR_getgid, (size_t)kernel_getgid, 0);
+	register_syscall(__NR_getegid, (size_t)kernel_getegid, 0);
+	register_syscall(__NR_setuid, (size_t)kernel_setuid, 1);
+	register_syscall(__NR_setgid, (size_t)kernel_setgid, 1);
+	register_syscall(__NR_setsid, (size_t)kernel_setsid, 0);
+	register_syscall(__NR_umask, (size_t)kernel_umask, 1);
+	register_syscall(__NR_time, (size_t)kernel_time, 1);
+	register_syscall(__NR_setpgid, (size_t)kernel_setpgid, 2);
 }
 
 #endif /* SYS_H */

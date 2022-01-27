@@ -125,10 +125,10 @@ signals_init(void)
 	signal_init(SIGPIPE, SIGACTION_T);
 	signal_init(SIGALRM, SIGACTION_T);
 	signal_init(SIGTERM, SIGACTION_T);
-	register_syscall(__NR_signal, (uint32_t)kernel_signal, 2);
-	register_syscall(__NR_kill, (uint32_t)kernel_kill, 2);
-	register_syscall(__NR_pause, (uint32_t)kernel_pause, 0);
-	register_syscall(__NR_alarm, (uint32_t)kernel_alarm, 1);
+	register_syscall(__NR_signal, (size_t)kernel_signal, 2);
+	register_syscall(__NR_kill, (size_t)kernel_kill, 2);
+	register_syscall(__NR_pause, (size_t)kernel_pause, 0);
+	register_syscall(__NR_alarm, (size_t)kernel_alarm, 1);
 }
 
 static sighandler_t
