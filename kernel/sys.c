@@ -123,3 +123,34 @@ kernel_setpgid(pid_t pid, pid_t pgid)
 	}
 	return -ESRCH;
 }
+
+pid_t
+kernel_getpid(void)
+{
+	return current_process->pid;
+}
+
+pid_t
+kernel_getppid(void)
+{
+	return current_process->ppid;
+}
+
+pid_t
+kernel_getpgid(pid_t pid)
+{
+	struct process *proc;
+
+	if (pid < 0)
+		return -EINVAL;
+	if (pid == 0)
+		return current_process->pgrp_info.pgid;
+	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+		if (proc->pid == pid) {
+			if (proc->pgrp_info.sid != current_process->pgrp_info.sid)
+				return -EPERM;
+			return proc->pgrp_info.pgid;
+		}
+	}
+	return -ESRCH;
+}
