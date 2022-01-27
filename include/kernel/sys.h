@@ -20,6 +20,9 @@ pid_t kernel_setsid(void);
 mode_t kernel_umask(mode_t cmask);
 time_t kernel_time(time_t *tloc);
 int kernel_setpgid(pid_t pid, pid_t pgid);
+int kernel_getpid(void);
+int kernel_getppid(void);
+int kernel_getpgid(pid_t pid);
 
 static inline void
 sys_other_init(void)
@@ -34,6 +37,9 @@ sys_other_init(void)
 	register_syscall(__NR_umask, (size_t)kernel_umask, 1);
 	register_syscall(__NR_time, (size_t)kernel_time, 1);
 	register_syscall(__NR_setpgid, (size_t)kernel_setpgid, 2);
+	register_syscall(__NR_getpid, (size_t)kernel_getpid, 0);
+	register_syscall(__NR_getppid, (size_t)kernel_getppid, 0);
+	register_syscall(__NR_getpgid, (size_t)kernel_getpgid, 1);
 }
 
 #endif /* SYS_H */
