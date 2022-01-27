@@ -28,7 +28,7 @@ ext2_symlink(const char *path1, const char *path2)
 	int err = 0;
 	size_t len;
 
-	ip = ext2_namei(path2, &err, &name, &dp, NULL);
+	ip = ext2_namei(path2, &err, &name, &dp, NULL, NULL, NULL);
 	if (ip != NULL) {
 		ext2_iput(ip);
 		if (ip != dp)
@@ -89,4 +89,24 @@ ext2_symlink(const char *path1, const char *path2)
 	ip->i_flags |= I_MODIFIED;
 	ext2_iput(ip);
 	return 0;
+}
+
+struct ext2_inode_m *
+ext2_follow_symlink(struct ext2_inode_m *ip, struct ext2_inode_m *root, struct ext2_inode_m *cwd, int *err)
+{
+	struct buffer *bp;
+	struct ext2_inode_m *ret;
+
+	if (!EXT2_S_ISLNK(ip->i_ino.i_mode))
+		return NULL;
+	if (ip->i_ino.i_size < EXT2_FAST_SYMLINK_LEN)
+		return ext2_namei((const char *)&ip->i_ino.i_block[0], err, NULL, NULL, NULL, root, cwd);
+	bp = bread(ip->i_dev, ip->i_ino.i_block[0]);
+	if (bp == NULL) {
+		*err = -EIO;
+		return NULL;
+	}
+	ret = ext2_namei((const char *)bp->b_data, err, NULL, NULL, NULL, root, cwd);
+	brelse(bp);
+	return ret;
 }
