@@ -114,6 +114,7 @@ int kernel_rmdir(const char *path);
 int kernel_chroot(const char *path);
 int kernel_dup(int fd);
 int kernel_dup2(int fd1, int fd2);
+int kernel_fcntl(int fd, int cmd, int arg);
 
 static inline void
 fs_init(void)
@@ -138,6 +139,7 @@ fs_init(void)
 	register_syscall(__NR_chroot, (uint32_t)kernel_chroot, 1);
 	register_syscall(__NR_dup, (uint32_t)kernel_dup, 1);
 	register_syscall(__NR_dup2, (uint32_t)kernel_dup2, 2);
+	register_syscall(__NR_fcntl, (uint32_t)kernel_fcntl, 3);
 }
 
 #endif /* FS_H */
