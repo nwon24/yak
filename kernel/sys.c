@@ -154,3 +154,9 @@ kernel_getpgid(pid_t pid)
 	}
 	return -ESRCH;
 }
+
+pid_t
+kernel_getpgrp(void)
+{
+	return current_process->pgrp_info.pgid;
+}
