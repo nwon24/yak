@@ -93,3 +93,33 @@ kernel_time(time_t *tloc)
 		*tloc = CURRENT_TIME;
 	return CURRENT_TIME;
 }
+
+int
+kernel_setpgid(pid_t pid, pid_t pgid)
+{
+	struct process *proc;
+
+	if (pgid < 0)
+		return -EINVAL;
+	if (pid == 0)
+		pid = current_process->pid;
+	if (pgid == 0)
+		pgid = pid;
+	if (pid == current_process->pid) {
+		if (current_process->pgrp_info.leader)
+			return -EPERM;
+		current_process->pgrp_info.pgid = pgid;
+		return 0;
+	}
+	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+		if (proc->pid == pid && proc->ppid == current_process->pid) {
+			if (proc->pgrp_info.leader)
+				return -EPERM;
+			if (proc->pgrp_info.sid != current_process->pgrp_info.sid)
+				return -EPERM;
+			proc->pgrp_info.pgid = pgid;
+			return 0;
+		}
+	}
+	return -ESRCH;
+}
