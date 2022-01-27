@@ -29,6 +29,10 @@ first_user_code:
 	movl	$path1, %ebx
 	movl	$path2, %ecx
 	int	$0x80
+	movl	$__NR_open, %eax
+	movl	$link, %ebx
+	movl	$O_RDWR, %ecx
+	int	$0x80
 	movl	$__NR_sync, %eax
 	int	$0x80
 3:	jmp	.
@@ -37,3 +41,4 @@ file:	.asciz	"/dev/tty"
 msg:	.asciz	"Hello, world!"
 path1:	.asciz	"/dev"
 path2:	.asciz	"/link"
+link:	.asciz	"/link/tty"
