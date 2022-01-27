@@ -49,5 +49,5 @@ mutex_unlock(mutex *m)
 int
 mutex_locked(mutex *m)
 {
-	return m->lock == MUTEX_LOCKED;
+	return m->lock == MUTEX_LOCKED && m->owner != current_process;
 }
