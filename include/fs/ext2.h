@@ -253,6 +253,7 @@ void ext2_inode_sync(void);
 
 int ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char *name, int len);
 int ext2_remove_dir_entry(const char *name, struct ext2_inode_m *ip, struct buffer *bp);
+int ext2_empty_dir(struct ext2_inode_m *dp, int *err);
 
 int ext2_unlink(const char *path);
 int ext2_link(const char *path1, const char *path2);
@@ -271,6 +272,7 @@ int ext2_chroot(const char *path);
 int ext2_chdir(const char *path);
 int ext2_mkdir(const char *path, mode_t mode);
 int ext2_rmdir(const char *path);
+int ext2_rename(const char *new, const char *old);
 
 int ext2_symlink(const char *path1, const char *path2);
 struct ext2_inode_m *ext2_follow_symlink(struct ext2_inode_m *symlink, struct ext2_inode_m *root, struct ext2_inode_m *cwd, int *err);
