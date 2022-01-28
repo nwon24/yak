@@ -283,6 +283,8 @@ int ext2_stat(const char *path, struct stat *statp);
 int ext2_fstat(struct file *file, struct stat *statp);
 int ext2_lstat(const char *path, struct stat *statp);
 
+int ext2_access(const char *path, int amode);
+
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
 #define EXT2_WTIME(s)		((s)->sb.s_wtime)
