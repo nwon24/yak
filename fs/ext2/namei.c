@@ -99,7 +99,8 @@ loop:
 		*error = -ENOTDIR;
 		return NULL;
 	}
-	if (get_ubyte(p1) == '\0') {
+	if (get_ubyte(p1) == '\0'
+	    || (get_ubyte(p1) == '/' && get_ubyte(p1 + 1) == '\0')) {
 		if (prev_dir != NULL && prev_dir != ip)
 			ext2_iput(prev_dir);
 		symlinks = 0;
@@ -343,4 +344,73 @@ ext2_match(struct ext2_dir_entry *dentry, const void *uptr, size_t n)
 		b++;
 	}
 	return 0;
+}
+
+/*
+ * This is here because it seems to belong nowhere else.
+ * Won't be fun debugging this one.
+ * TODO: Check for 'old' being an ancestor of 'new'.
+ */
+int
+ext2_rename(const char *old, const char *new)
+{
+	struct ext2_inode_m *ipold, *ipnew, *dpold, *dpnew;
+	const char *pold, *pnew, *tmp;
+	struct buffer *bp;
+	int err;
+
+	bp = NULL;
+	ipold = ext2_namei(old, &err, &pold, &dpold, &bp, NULL, NULL);
+	if ((get_ubyte(pold) == '.' && get_ubyte(pold + 1) == '.' && get_ubyte(pold + 2) == '\0')
+	    || (get_ubyte(pold) == '.' && get_ubyte(pold + 1) == '\0')) {
+		if (ipold != NULL)
+			ext2_iput(ipold);
+		if (dpold != ipold)
+			ext2_iput(dpold);
+		if (bp != NULL)
+			brelse(bp);
+		return -EINVAL;
+	}
+	if (ipold == NULL) {
+		if (err != -ENOENT) {
+			if (bp != NULL)
+				brelse(bp);
+			ext2_iput(dpold);
+			return err;
+		}
+		for (tmp = pold; get_ubyte(tmp) != '\0' && get_ubyte(tmp) != '/'; tmp++);
+		if (get_ubyte(tmp) == '\0') {
+			ext2_iput(dpold);
+			if (bp != NULL)
+				brelse(bp);
+			return -ENOENT;
+		} else {
+			ipold = dpold;
+		}
+	}
+	ipnew = ext2_namei(new, &err, &pnew, &dpnew, NULL, NULL, NULL);
+	if (ipnew != NULL) {
+		if (!EXT2_S_ISDIR(ipnew->i_ino.i_mode)) {
+			err = -EEXIST;
+			goto end;
+		}
+		if (ext2_empty_dir(ipnew, &err) != 0) {
+			if (err != -EIO)
+				err = -ENOTEMPTY;
+			goto end;
+		}
+	}
+	ext2_remove_dir_entry(pold, ipold, bp);
+	ext2_add_dir_entry(dpnew, ipold, pnew, strlen(pnew));
+	err = 0;
+end:
+	if (bp != NULL)
+		brelse(bp);
+	ext2_iput(ipold);
+	if (ipold != dpold)
+		ext2_iput(dpold);
+	ext2_iput(ipnew);
+	if (dpnew != ipnew)
+		ext2_iput(dpnew);
+	return err;
 }
