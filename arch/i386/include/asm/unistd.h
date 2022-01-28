@@ -29,6 +29,7 @@
 #define __NR_nice	0x22
 #define __NR_sync	0x24
 #define __NR_kill	0x25
+#define __NR_rename	0x26
 #define __NR_mkdir	0x27
 #define __NR_rmdir	0x28
 #define __NR_dup	0x29
