@@ -360,3 +360,26 @@ kernel_lchown(const char *path, uid_t uid, gid_t gid)
 		return -EINVAL;
 	return fs->f_driver->fs_lchown(path, uid, gid);
 }
+
+int
+kernel_rename(const char *old, const char *new)
+{
+	struct generic_filesystem *fs1, *fs2;
+
+	if (old == NULL || !check_user_ptr((void *)old))
+		return -EFAULT;
+	if (new == NULL || !check_user_ptr((void *)new))
+		return -EFAULT;
+	fs1 = get_fs_from_path(old);
+	if (fs1 == NULL)
+		return -EINVAL;
+	fs2 = get_fs_from_path(new);
+	if (fs2 == NULL)
+		return -EINVAL;
+	if (fs1 != fs2)
+		return -EXDEV;
+	if (fs1->f_read_only)
+		return -EROFS;
+	return fs1->f_driver->fs_rename(old, new);
+
+}
