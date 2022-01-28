@@ -5,6 +5,8 @@
 
 #include <asm/types.h>
 
+#include <generic/stat.h>
+
 #include <fs/fs.h>
 
 /* Number of bytes from start of volume */
@@ -276,6 +278,10 @@ int ext2_rename(const char *new, const char *old);
 
 int ext2_symlink(const char *path1, const char *path2);
 struct ext2_inode_m *ext2_follow_symlink(struct ext2_inode_m *symlink, struct ext2_inode_m *root, struct ext2_inode_m *cwd, int *err);
+
+int ext2_stat(const char *path, struct stat *statp);
+int ext2_fstat(struct file *file, struct stat *statp);
+int ext2_lstat(const char *path, struct stat *statp);
 
 #define EXT2_BLOCKSIZE(s)	(1024 << (s)->sb.s_log_block_size)
 #define EXT2_MTIME(s)		((s)->sb.s_mtime)
