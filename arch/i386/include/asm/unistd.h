@@ -19,6 +19,7 @@
 #define __NR_time	0xD
 #define __NR_mknod	0xE
 #define __NR_chmod	0xF
+#define __NR_lchown	0x10
 #define __NR_lseek	0x13
 #define __NR_getpid	0x14
 #define __NR_setuid	0x17
