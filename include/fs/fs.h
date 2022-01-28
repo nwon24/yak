@@ -73,6 +73,7 @@ struct fs_driver_ops {
 	int (*fs_stat)(const char *path, struct stat *statp);
 	int (*fs_lstat)(const char *path, struct stat *statp);
 	int (*fs_fstat)(struct file *fp, struct stat *statp);
+	int (*fs_access)(const char *path, int amode);
 };
 
 struct generic_filesystem {
@@ -128,6 +129,7 @@ int kernel_rename(const char *old, const char *new);
 int kernel_stat(const char *path, struct stat *statp);
 int kernel_lstat(const char *path, struct stat *statp);
 int kernel_fstat(int fd, struct stat *statp);
+int kernel_access(const char *path, int amode);
 
 static inline void
 fs_init(void)
@@ -159,6 +161,7 @@ fs_init(void)
 	register_syscall(__NR_stat, (size_t)kernel_stat, 2);
 	register_syscall(__NR_fstat, (size_t)kernel_fstat, 2);
 	register_syscall(__NR_lstat, (size_t)kernel_lstat, 2);
+	register_syscall(__NR_access, (size_t)kernel_access, 2);
 }
 
 #endif /* FS_H */
