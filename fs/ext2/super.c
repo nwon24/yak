@@ -40,6 +40,7 @@ static struct fs_driver_ops ext2_driver_ops = {
 	.fs_rmdir = ext2_rmdir,
 	.fs_chroot = ext2_chroot,
 	.fs_symlink = ext2_symlink,
+	.fs_lchown = ext2_lchown,
 };
 
 /*
