@@ -347,3 +347,16 @@ kernel_symlink(const char *path1, const char *path2)
 		return -EINVAL;
 	return fs->f_driver->fs_symlink(path1, path2);
 }
+
+int
+kernel_lchown(const char *path, uid_t uid, gid_t gid)
+{
+	struct generic_filesystem *fs;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+		return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	return fs->f_driver->fs_lchown(path, uid, gid);
+}
