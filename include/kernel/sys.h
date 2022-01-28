@@ -24,6 +24,7 @@ int kernel_getpid(void);
 int kernel_getppid(void);
 int kernel_getpgid(pid_t pid);
 int kernel_getpgrp(void);
+int kernel_stime(time_t *tloc);
 
 static inline void
 sys_other_init(void)
@@ -42,6 +43,7 @@ sys_other_init(void)
 	register_syscall(__NR_getppid, (size_t)kernel_getppid, 0);
 	register_syscall(__NR_getpgid, (size_t)kernel_getpgid, 1);
 	register_syscall(__NR_getpgrp, (size_t)kernel_getpgrp, 0);
+	register_syscall(__NR_stime, (size_t)kernel_stime, 1);
 }
 
 #endif /* SYS_H */

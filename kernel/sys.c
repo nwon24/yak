@@ -3,6 +3,7 @@
  * Misc. system calls.
  */
 #include <asm/types.h>
+#include <asm/paging.h>
 
 #include <drivers/timer.h>
 
@@ -89,9 +90,24 @@ kernel_umask(mode_t cmask)
 time_t
 kernel_time(time_t *tloc)
 {
-	if (tloc != NULL)
+	if (tloc != NULL) {
+		if (!check_user_ptr(tloc))
+			return -EFAULT;
 		*tloc = CURRENT_TIME;
+	}
 	return CURRENT_TIME;
+}
+
+int
+kernel_stime(time_t *tloc)
+{
+	if (tloc == NULL || !check_user_ptr(tloc))
+		return -EFAULT;
+	if (current_process->uid == 0 && current_process->euid == 0)
+		startup_time = *tloc;
+	else
+		return -EPERM;
+	return 0;
 }
 
 int
