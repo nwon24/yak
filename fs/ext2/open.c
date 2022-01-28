@@ -20,6 +20,7 @@
 #include <kernel/proc.h>
 
 static int _ext2_chmod(struct ext2_inode_m *ip, mode_t mode);
+static int _ext2_chown(struct ext2_inode_m *ip, uid_t uid, gid_t gid);
 
 /*
  * Pointer should already have been verified.
@@ -196,7 +197,7 @@ ext2_close(struct file *file)
 }
 
 int
-ext2_chown(const char *path, uid_t uid, gid_t gid)
+ext2_lchown(const char *path, uid_t uid, gid_t gid)
 {
 	struct ext2_inode_m *ip;
 	int err;
@@ -204,6 +205,38 @@ ext2_chown(const char *path, uid_t uid, gid_t gid)
 	ip = ext2_namei(path, &err, NULL, NULL, NULL, NULL, NULL);
 	if (ip == NULL)
 		return err;
+	return _ext2_chown(ip, uid, gid);
+}
+
+int
+ext2_chown(const char *path, uid_t uid, gid_t gid)
+{
+	struct ext2_inode_m *ip, *dp, *target;
+	int err;
+
+	ip = ext2_namei(path, &err, NULL, &dp, NULL, NULL, NULL);
+	if (ip == NULL)
+		return err;
+	if (EXT2_S_ISLNK(ip->i_ino.i_mode)) {
+		target = ext2_follow_symlink(ip, current_process->root_inode, dp, &err);
+		if (target == NULL) {
+			ext2_iput(ip);
+			if (dp != ip)
+				ext2_iput(dp);
+			return err;
+		}
+		ext2_iput(ip);
+	} else {
+		target = ip;
+	}
+	if (dp != ip)
+		ext2_iput(dp);
+	return _ext2_chown(target, uid, gid);
+}
+
+static int
+_ext2_chown(struct ext2_inode_m *ip, uid_t uid, gid_t gid)
+{
 	if (current_process->euid != ip->i_ino.i_uid) {
 		ext2_iput(ip);
 		return -EPERM;
