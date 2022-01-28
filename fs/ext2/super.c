@@ -45,6 +45,7 @@ static struct fs_driver_ops ext2_driver_ops = {
 	.fs_stat = ext2_stat,
 	.fs_lstat = ext2_lstat,
 	.fs_fstat = ext2_fstat,
+	.fs_access = ext2_access,
 };
 
 /*
