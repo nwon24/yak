@@ -27,10 +27,37 @@ If you have the patience to hunt down why this is the case feel free.
 Otherwise, it is recommended to build a GCC cross compiler and use that to build the kernel.
 The rest of this section is for building a GCC cross compiler, as the LLVM toolchain is a cross compiler by default.**
 
-See [here](https://wiki.osdev.org/GCC_Cross_Compiler) for how to build a cross compiler for the `i686-elf` target.
-Since it is recommended to build a cross compiler that is the same version as the host compiler, you may want to upgrade
-your system compiler to the latest version before building a cross compiler.
-In that case see [here](https://wiki.osdev.org/Building_GCC) or [here](https://gcc.gnu.org/install) for more information.
+The kernel now uses its own hosted toolchain for the `i686-hobbix` target. Patches for GCC and Binutils are in the [toolchain](./toolchain) subdirectory.
+
+**NOTE: Soon there will be a script that does the following for you.**
+
+**WARNING: The GNU Auto* tools are extremely picky about versions.
+If the `automake` you have on your system does not match the one with which the source's configure scripts were generated, the
+`automake` command below will fail. If that is the case, manually download and compile the correct version.**
+
+After patching GCC and Binutils, run the following commands to build:
+```sh
+cd toolchain/
+mkdir build-binutils
+cd binutils/ld
+aclocal
+automake
+cd ../../build-binutils
+../binutils/configure --prefix="$HOME/opt" --target=i686-hobbix --with-sysroot=../../testing/sysroot --without-werror
+make
+make install
+cd ..
+cd gcc
+contrib/download_prequisites
+cd libstdc++-v3
+autoconf
+cd ../
+mkdir build-gcc
+../gcc/configure --prefix="$HOME/opt" --target=i686-hobbix --with-sysroot=../../testing/sysroot --enable-languages=c,c++
+make all-gcc all-target-libgcc
+make install-gcc install-target-libgcc
+
+**WARNING: We seem to be unable to build libstdc++-v3 right now. There's errors with the `include/basic_string.h`.**
 ## GRUB
 The kernel uses the GRUB bootloader.
 More specifically, it uses GRUB2, which you probably have. GRUB legacy is ancient.
