@@ -424,3 +424,23 @@ kernel_fstat(int fd, struct stat *statp)
 		return -EBADF;
 	return fp->f_fs->f_driver->fs_fstat(fp, statp);
 }
+
+int
+kernel_access(const char *path, int amode)
+{
+	struct generic_filesystem *fs;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+		return -EFAULT;
+	if (!((amode & R_OK)
+	      && (amode & W_OK)
+	      && (amode & X_OK))
+	    && amode != F_OK)
+		return -EINVAL;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	if (fs->f_read_only && (amode & W_OK))
+		return -EROFS;
+	return fs->f_driver->fs_access(path, amode);
+}

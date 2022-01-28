@@ -5,7 +5,7 @@
 #define SEEK_CUR	1
 #define SEEK_END	2
 
-#DEFINE F_OK		0
+#define F_OK		0
 #define X_OK		1
 #define W_OK		2
 #define R_OK		4
@@ -32,6 +32,7 @@
 #define __NR_stime	0x19
 #define __NR_alarm	0x1B
 #define __NR_pause	0x1D
+#define __NR_access	0x21
 #define __NR_nice	0x22
 #define __NR_sync	0x24
 #define __NR_kill	0x25

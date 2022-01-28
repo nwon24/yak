@@ -38,7 +38,36 @@ static struct ext2_inode_m *find_entry_indirect(struct ext2_inode_m *dir, ssize_
 static struct ext2_inode_m *find_entry_dindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, size_t len, int *res, struct buffer **last_dir_bp);
 static struct ext2_inode_m *find_entry_tindirect(struct ext2_inode_m *dir, ssize_t block, const char *entry, size_t len, int *res, struct buffer **last_dir_bp);
 
-int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
+/*
+ * Can only use real UID and real GID here.
+ */
+int
+ext2_access(const char *path, int amode)
+{
+	struct ext2_inode_m *ip;
+	mode_t mode;
+	int err, ret;
+
+	if (current_process->uid == 0)
+		return 0;
+	ip = ext2_namei(path, &err, NULL, NULL, NULL, NULL, NULL);
+	if (ip == NULL)
+		return err;
+	mode = ip->i_ino.i_mode;
+	if (current_process->uid == ip->i_ino.i_uid)
+		mode >>= 6;
+	else if (current_process->gid == ip->i_ino.i_gid)
+		mode >>= 3;
+	if ((mode & amode) != 0)
+		ret = 0;
+	else
+		ret = -EACCES;
+	ext2_iput(ip);
+	return ret;
+}
+
+int
+ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
 {
 	int mode = ip->i_ino.i_mode;
 
