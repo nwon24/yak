@@ -56,7 +56,7 @@ mkdir build-gcc
 ../gcc/configure --prefix="$HOME/opt" --target=i686-hobbix --with-sysroot=../../testing/sysroot --enable-languages=c,c++
 make all-gcc all-target-libgcc
 make install-gcc install-target-libgcc
-
+```
 **WARNING: We seem to be unable to build libstdc++-v3 right now. There's errors with the `include/basic_string.h`.**
 ## GRUB
 The kernel uses the GRUB bootloader.
