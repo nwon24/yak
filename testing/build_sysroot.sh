@@ -6,3 +6,5 @@ sudo rm -f $1/dev/tty
 sudo rm -f $1/dev/tty0
 sudo mknod $1/dev/tty c 4 0
 sudo mknod $1/dev/tty0 c 5 0
+mkdir -p $1/usr/lib
+mkdir -p $1/usr/include
