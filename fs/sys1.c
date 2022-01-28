@@ -383,3 +383,44 @@ kernel_rename(const char *old, const char *new)
 	return fs1->f_driver->fs_rename(old, new);
 
 }
+
+int
+kernel_stat(const char *path, struct stat *statp)
+{
+	struct generic_filesystem *fs;
+
+	if (statp == NULL || !check_user_ptr((void *)statp))
+		return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	return fs->f_driver->fs_stat(path, statp);
+}
+
+int
+kernel_lstat(const char *path, struct stat *statp)
+{
+	struct generic_filesystem *fs;
+
+	if (statp == NULL || !check_user_ptr((void *)statp))
+		return -EFAULT;
+	fs = get_fs_from_path(path);
+	if (fs == NULL)
+		return -EINVAL;
+	return fs->f_driver->fs_lstat(path, statp);
+}
+
+int
+kernel_fstat(int fd, struct stat *statp)
+{
+	struct file *fp;
+
+	if (statp == NULL || !check_user_ptr((void *)statp))
+		return -EFAULT;
+	if (fd < 0 || fd >= NR_OPEN)
+		return -EBADF;
+	fp = current_process->file_table[fd];
+	if (fp == NULL)
+		return -EBADF;
+	return fp->f_fs->f_driver->fs_fstat(fp, statp);
+}
