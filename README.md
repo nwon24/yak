@@ -2,17 +2,19 @@
 A hobby Unix-like kernel project.
 
 # Goals
-- [x] Basic ext2 implmentation (e.g., `open`, `read`, `write`, `close`, `link`, `unlink`)
+- [x] Basic ext2 implmentation (e.g., `open`, `read`, `write`, `close`, `link`, `unlink`, `rename`)
 - [x] Framebuffer console driver
 - [x] Higher half kernel
 - [ ] `exec` system call (with `ELF` files)
 - [ ] Basic PS/2 keyboard driver (USB is very complicated)
 - [ ] OS Specific Toolchain
-- [ ] ext2 symlinks, mount/umount
+- [ ] Port musl C library
+- [x] ext2 symlinks
+- [ ] mount/umount system calls
 - [ ] Port to x86_64
 # Prerequisites
 ## Operating system
-Any modern Linux operating system will do fine. The BSDs should also work.
+Any modern Linux operating system will do fine. The BSDs should also work, but make sure GNU make is being used.
 ## Toolchain
 You can compile this with either the GNU toolchain or the LLVM toolchain.
 See the [GCC](https://gnu.org/software/gcc) and [binutils](https://gnu.org/software/binutils) pages for more information on the GNU toolchain.
@@ -22,7 +24,7 @@ See the [LLVM](https://llvm.org) page for information on LLVM.
 With the exact same code, a kernel compiled with `GCC` will run fine, while a kernel compiled with `clang` will hang
 early with a page fault.
 If you have the patience to hunt down why this is the case feel free.
-Otherwise, it is recommended to build a `GCC` cross compiler and use that to build the kernel.
+Otherwise, it is recommended to build a GCC cross compiler and use that to build the kernel.
 The rest of this section is for building a GCC cross compiler, as the LLVM toolchain is a cross compiler by default.**
 
 See [here](https://wiki.osdev.org/GCC_Cross_Compiler) for how to build a cross compiler for the `i686-elf` target.
