@@ -31,7 +31,7 @@ The kernel now uses its own hosted toolchain for the `i686-hobbix` target. Patch
 
 **NOTE: Soon there will be a script that does the following for you.**
 
-**WARNING: The GNU Auto* tools are extremely picky about versions.
+**WARNING: The GNU Auto\* tools are extremely picky about versions.
 If the `automake` you have on your system does not match the one with which the source's configure scripts were generated, the
 `automake` command below will fail. If that is the case, manually download and compile the correct version.**
 
