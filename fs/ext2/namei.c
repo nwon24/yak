@@ -409,8 +409,6 @@ end:
 	ext2_iput(ipold);
 	if (ipold != dpold)
 		ext2_iput(dpold);
-	ext2_iput(ipnew);
-	if (dpnew != ipnew)
-		ext2_iput(dpnew);
+	ext2_iput(dpnew);
 	return err;
 }
