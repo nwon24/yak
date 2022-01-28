@@ -1,0 +1,137 @@
+From 16af06736c2f93862e9324a183ad9d09ef9d031b Mon Sep 17 00:00:00 2001
+From: nwon24 <WON0128@mhs.vic.edu.au>
+Date: Fri, 28 Jan 2022 22:45:13 +1100
+Subject: [PATCH] Hobbix GCC build
+
+---
+ config.sub                  |  3 ++-
+ fixincludes/mkfixinc.sh     |  1 +
+ gcc/config.gcc              | 12 ++++++++++++
+ gcc/config/hobbix.h         | 21 +++++++++++++++++++++
+ libgcc/config.host          |  8 ++++++++
+ libstdc++-v3/crossconfig.m4 |  6 ++++++
+ 6 files changed, 50 insertions(+), 1 deletion(-)
+ create mode 100644 gcc/config/hobbix.h
+
+diff --git a/config.sub b/config.sub
+index 38f3d037a..4b6e4c693 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1749,7 +1749,8 @@ case $os in
+ 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
+ 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+ 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
+-	     | fiwix* )
++	     | fiwix* \
++	     | hobbix* )
+ 		;;
+ 	# This one is extra strict with allowed versions
+ 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)
+diff --git a/fixincludes/mkfixinc.sh b/fixincludes/mkfixinc.sh
+index df90720b7..0bbf5b07c 100755
+--- a/fixincludes/mkfixinc.sh
++++ b/fixincludes/mkfixinc.sh
+@@ -11,6 +11,7 @@ target=fixinc.sh
+ 
+ # Check for special fix rules for particular targets
+ case $machine in
++    *-hobbix* | \
+     i?86-*-cygwin* | \
+     i?86-*-mingw32* | \
+     x86_64-*-mingw32* | \
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index 90aec3f8f..640206678 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -665,6 +665,12 @@ x86_cpus="generic intel"
+ 
+ # Common parts for widely ported systems.
+ case ${target} in
++*-*-hobbix*)
++  gas=yes
++  gnu_ld=yes
++  default_use_cxa_atexit=yes
++  use_gcc_stdint=wrap
++  ;;
+ *-*-darwin*)
+   tmake_file="t-darwin "
+   tm_file="${tm_file} darwin.h"
+@@ -1079,6 +1085,12 @@ case ${target} in
+ esac
+ 
+ case ${target} in
++i[34567]86-*-hobbix*)
++        tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h hobbix.h"
++       ;;
++x86_64-*-hobbix*)
++        tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h hobbix.h"
++	;;
+ aarch64*-*-elf | aarch64*-*-fuchsia* | aarch64*-*-rtems*)
+ 	tm_file="${tm_file} dbxelf.h elfos.h newlib-stdint.h"
+ 	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-errata.h aarch64/aarch64-elf-raw.h"
+diff --git a/gcc/config/hobbix.h b/gcc/config/hobbix.h
+new file mode 100644
+index 000000000..b9bf7af84
+--- /dev/null
++++ b/gcc/config/hobbix.h
+@@ -0,0 +1,21 @@
++#undef TARGET_HOBBIX
++#define TARGET_HOBBIX	1
++
++#undef LIB_SPEC
++#define LIB_SPEC "-lc"
++
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()	\
++  do {					\
++    builtin_define ("__hobbix__");	\
++    builtin_define ("__unix__");	\
++    builtin_assert ("system=hobbix");	\
++    builtin_assert ("system=unix");	\
++    builtin_assert ("system=posix");	\
++  } while(0);
+diff --git a/libgcc/config.host b/libgcc/config.host
+index 094fd3ad2..683f77ae2 100644
+--- a/libgcc/config.host
++++ b/libgcc/config.host
+@@ -360,6 +360,14 @@ i[34567]86-*-cygwin* | x86_64-*-cygwin*)
+ esac
+ 
+ case ${host} in
++i[34567]86-*-hobbix*)
++        extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++        tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++        ;;
++x86_64-*-hobbix*)
++        extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++        tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++        ;;
+ aarch64*-*-elf | aarch64*-*-rtems*)
+ 	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+ 	extra_parts="$extra_parts crtfastmath.o"
+diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
+index ae5283b7a..3b54f42f6 100644
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -5,6 +5,12 @@ dnl
+ AC_DEFUN([GLIBCXX_CROSSCONFIG],[
+ # Base decisions on target environment.
+ case "${host}" in
++  *-hobbix*)
++    GLIBCXX_CHECK_COMPILER_FEATURES
++    GLIBCXX_CHECK_LINKER_FEATURES
++    GLIBCXX_CHECK_MATH_SUPPORT
++    GLIBCXX_CHECK_STDLIB_SUPPORT
++    ;;
+   arm*-*-symbianelf*)
+     # This is a freestanding configuration; there is nothing to do here.
+     ;;
+-- 
+2.35.0
+
