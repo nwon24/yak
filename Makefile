@@ -12,6 +12,7 @@ INC_DIR := include
 KERNEL_DIR := kernel
 MM_DIR := mm
 FS_DIR := fs
+CMDS_DIR := cmd
 DRIVERS_DIR := drivers
 TESTING_DIR := testing
 
@@ -52,6 +53,7 @@ clean:
 	$(E) " CLEAN"
 
 include $(TESTING_DIR)/Makefile
+include $(CMDS_DIR)/Makefile
 
 distclean:
 	$(Q)make clean
