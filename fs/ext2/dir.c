@@ -47,6 +47,12 @@ dentry_file_type(struct ext2_inode_m *ip)
 }
 
 int
+ext2_empty_dir(struct ext2_inode_m *dp, int *err)
+{
+	return empty_dir(dp, err);
+}
+
+int
 ext2_add_dir_entry(struct ext2_inode_m *dir, struct ext2_inode_m *ip, const char *name, int len)
 {
 	struct buffer *bp = NULL;
