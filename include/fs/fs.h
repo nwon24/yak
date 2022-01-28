@@ -8,6 +8,7 @@
 
 #include <fs/buffer.h>
 
+#include <generic/stat.h>
 #include <generic/unistd.h>
 
 #include <kernel/mutex.h>
@@ -69,6 +70,9 @@ struct fs_driver_ops {
 	int (*fs_symlink)(const char *path1, const char *path2);
 	int (*fs_lchown)(const char *path, uid_t uid, gid_t gid);
 	int (*fs_rename)(const char *old, const char *new);
+	int (*fs_stat)(const char *path, struct stat *statp);
+	int (*fs_lstat)(const char *path, struct stat *statp);
+	int (*fs_fstat)(struct file *fp, struct stat *statp);
 };
 
 struct generic_filesystem {
@@ -121,6 +125,9 @@ int kernel_fcntl(int fd, int cmd, int arg);
 int kernel_symlink(const char *path1, const char *path2);
 int kernel_lchown(const char *path, uid_t uid, gid_t gid);
 int kernel_rename(const char *old, const char *new);
+int kernel_stat(const char *path, struct stat *statp);
+int kernel_lstat(const char *path, struct stat *statp);
+int kernel_fstat(int fd, struct stat *statp);
 
 static inline void
 fs_init(void)
@@ -149,6 +156,9 @@ fs_init(void)
 	register_syscall(__NR_symlink, (size_t)kernel_symlink, 2);
 	register_syscall(__NR_lchown, (size_t)kernel_lchown, 3);
 	register_syscall(__NR_rename, (size_t)kernel_rename, 2);
+	register_syscall(__NR_stat, (size_t)kernel_stat, 2);
+	register_syscall(__NR_fstat, (size_t)kernel_fstat, 2);
+	register_syscall(__NR_lstat, (size_t)kernel_lstat, 2);
 }
 
 #endif /* FS_H */
