@@ -99,6 +99,12 @@ loop:
 		*error = -ENOTDIR;
 		return NULL;
 	}
+	if (get_ubyte(p1) == '\0') {
+		if (prev_dir != NULL && prev_dir != ip)
+			ext2_iput(prev_dir);
+		symlinks = 0;
+		return ip;
+	}
 	if (EXT2_S_ISLNK(ip->i_ino.i_mode)) {
 		/*
 		 * Just assume that if we are doing more than 5 symlinks we are in a loop.
@@ -129,12 +135,6 @@ loop:
 		}
 		symlinks++;
 		ip = dp;
-	}
-	if (get_ubyte(p1) == '\0') {
-		if (prev_dir != NULL && prev_dir != ip)
-			ext2_iput(prev_dir);
-		symlinks = 0;
-		return ip;
 	}
 	if (ext2_permission(ip, PERM_SRCH) < 0) {
 		if (last_dir != NULL && *last_dir != ip)
