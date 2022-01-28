@@ -68,6 +68,7 @@ struct fs_driver_ops {
 	int (*fs_chroot)(const char *path);
 	int (*fs_symlink)(const char *path1, const char *path2);
 	int (*fs_lchown)(const char *path, uid_t uid, gid_t gid);
+	int (*fs_rename)(const char *old, const char *new);
 };
 
 struct generic_filesystem {
@@ -119,6 +120,7 @@ int kernel_dup2(int fd1, int fd2);
 int kernel_fcntl(int fd, int cmd, int arg);
 int kernel_symlink(const char *path1, const char *path2);
 int kernel_lchown(const char *path, uid_t uid, gid_t gid);
+int kernel_rename(const char *old, const char *new);
 
 static inline void
 fs_init(void)
@@ -146,6 +148,7 @@ fs_init(void)
 	register_syscall(__NR_fcntl, (size_t)kernel_fcntl, 3);
 	register_syscall(__NR_symlink, (size_t)kernel_symlink, 2);
 	register_syscall(__NR_lchown, (size_t)kernel_lchown, 3);
+	register_syscall(__NR_rename, (size_t)kernel_rename, 2);
 }
 
 #endif /* FS_H */
