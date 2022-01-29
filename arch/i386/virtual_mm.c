@@ -327,6 +327,7 @@ free_address_space(struct exec_image *image)
  * 'exec' should still be able to return if something
  * goes wrong, so we can't overwrite the existing page directory
  * until we are sure everything is okay.
+ * Also try to allocate the stack at top of user memory.
  */
 int
 arch_valloc_segments(struct exec_image *image)
@@ -357,6 +358,8 @@ arch_valloc_segments(struct exec_image *image)
 		if (virt_map_chunk(image->e_rodata_vaddr, image->e_rodata_size, pg_dir, PAGE_USER) == 0)
 			return -1;
 	}
+	if (virt_map_chunk(KERNEL_VIRT_BASE - USER_STACK_SIZE, USER_STACK_SIZE, pg_dir, PAGE_USER | PAGE_WRITABLE) == 0)
+		return -1;
 	/* No going back after this */
 	/*	free_address_space(&current_process->image); */
 	tmp_map_page((uint32_t)pg_dir);
@@ -368,5 +371,6 @@ arch_valloc_segments(struct exec_image *image)
 	load_cr3(current_cpu_state->cr3);
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove(&current_process->image, image, sizeof(*image));
 	return 0;
 }
