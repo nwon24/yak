@@ -208,13 +208,6 @@ struct ext2_dir_entry {
 #define I_MODIFIED	(1 << 0)
 #define I_MOUNT		(1 << 1)
 
-enum ext2_perm_mask {
-	PERM_EXEC = 4,
-	PERM_SRCH = 4,
-	PERM_WRITE = 2,
-	PERM_READ = 1,
-};
-
 int ext2_init(void);
 struct ext2_superblock_m *get_ext2_superblock(dev_t dev);
 size_t ext2_get_attribute(struct generic_filesystem *fs, enum fs_attribute_cmd cmd);
@@ -223,8 +216,10 @@ struct ext2_inode_m *ext2_iget(dev_t dev, ino_t num);
 void ext2_iput(struct ext2_inode_m *ip);
 void ext2_public_iput(void *ip);
 void ext2_inodes_init(void);
+void ext2_inode_ctl(void *inode, int cmd, void *res);
 
 struct ext2_inode_m *ext2_namei(const char *path, int *error, const char **base, struct ext2_inode_m **last_dir, struct buffer **last_dir_bp, struct ext2_inode_m *root, struct ext2_inode_m *cwd);
+void *ext2_public_namei(const char *path, int *err);
 
 struct ext2_inode_m *ext2_new_file(const char *name, struct ext2_inode_m *dir, mode_t mode, dev_t dev, int *err);
 
@@ -248,7 +243,8 @@ ssize_t ext2_write(struct file *file, void *buf, size_t count);
 ssize_t ext2_writei(void *inode, void *buf, size_t count, off_t *off);
 int ext2_close(struct file *file);
 
-int ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask);
+int ext2_permission(struct ext2_inode_m *ip, int mask);
+int ext2_public_permission(void *ip, int mask);
 
 int ext2_sync(struct generic_filesystem *fs);
 void ext2_inode_sync(void);
