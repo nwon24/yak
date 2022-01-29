@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include <kernel/config.h>
+#include <kernel/exec.h>
 
 #include <mm/mmap.h>
 
@@ -19,6 +20,8 @@ uint32_t virt_map_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir, int flag
 void virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir);
 void copy_address_space(uint32_t from_pg_dir, uint32_t to_pg_dir);
 int check_user_ptr(void *addr);
+void free_address_space(struct exec_image *image);
+int arch_valloc_segments(struct exec_image *image);
 
 extern uint32_t current_page_directory;
 
