@@ -18,6 +18,8 @@
 #define IRET_FRAME_ESP		60
 #define IRET_FRAME_SS		64
 
+#define IRET_FRAME_OFF		76
+
 #ifndef __ASSEMBLER__
 
 #include <stdint.h>
