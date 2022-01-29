@@ -25,13 +25,10 @@ first_user_code:
 	movl	$msg, %ecx
 	movl	$13, %edx
 	int	$0x80
-	movl	$__NR_symlink, %eax
-	movl	$path1, %ebx
-	movl	$path2, %ecx
-	int	$0x80
-	movl	$__NR_open, %eax
-	movl	$link, %ebx
-	movl	$O_RDWR, %ecx
+	movl	$__NR_execve, %eax
+	movl	$execf, %ebx
+	movl	$argv, %ecx
+	movl	$envp, %edx
 	int	$0x80
 	movl	$__NR_sync, %eax
 	int	$0x80
@@ -39,6 +36,7 @@ first_user_code:
 
 file:	.asciz	"/dev/tty"
 msg:	.asciz	"Hello, world!"
-path1:	.asciz	"/dev"
-path2:	.asciz	"/link"
-link:	.asciz	"/link/tty"
+execf:	.asciz	"/usr/bin/hello"
+argv:	.long	execf
+	.long	0
+envp:	.long	0
