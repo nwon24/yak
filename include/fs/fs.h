@@ -21,6 +21,13 @@
 #define NR_OPEN		20
 
 enum {
+	PERM_EXEC = 1,
+	PERM_SRCH = 1,
+	PERM_WRITE = 2,
+	PERM_READ = 4,
+};
+
+enum {
 	READ,
 	WRITE
 };
@@ -44,6 +51,9 @@ struct file;
 
 struct fs_driver_raw_ops {
 	void (*fs_raw_iput)(void *ip);
+	void *(*fs_raw_namei)(const char *path, int *err);
+	void (*fs_raw_inode_ctl)(void *inode, int cmd, void *res);
+	int (*fs_raw_permission)(void *inode, int mask);
 };
 
 struct fs_driver_ops {
@@ -97,6 +107,7 @@ struct file {
 };
 
 struct generic_filesystem *find_filesystem(dev_t dev);
+struct generic_filesystem *get_fs_from_path(const char *path);
 struct generic_filesystem *register_filesystem(struct generic_filesystem *fs);
 size_t filesystem_get_attr(dev_t dev, enum fs_attribute_cmd cmd);
 void register_mount_root_routine(void (*routine)(void));
@@ -163,5 +174,17 @@ fs_init(void)
 	register_syscall(__NR_lstat, (size_t)kernel_lstat, 2);
 	register_syscall(__NR_access, (size_t)kernel_access, 2);
 }
+
+struct exec_elf_file {
+	struct generic_filesystem *fs;
+	void *inode;
+};
+
+enum {
+	INODE_GET_MODE,
+	INODE_GET_MTIME,
+	INODE_GET_ATIME,
+	INODE_GET_CTIME,
+};
 
 #endif /* FS_H */
