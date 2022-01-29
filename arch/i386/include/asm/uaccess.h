@@ -44,13 +44,14 @@ cp_from_user(void *dest, void *src, size_t count)
 	unsigned char *dstp, *srcp;
 
 	dstp = (unsigned char *)dest;
-	scrp = (unsigned char *)src;
+	srcp = (unsigned char *)src;
 
 	while (count--) {
 		*dstp = get_ubyte(src);
 		dstp++;
 		srcp++;
 	}
+	return dest;
 }
 
 #endif /* UACCESS_H */
