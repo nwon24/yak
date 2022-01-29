@@ -182,6 +182,8 @@ syscall:
 	save_regs
 	restore_kernel_seg
 	save_state
+	movl	current_cpu_state, %eax
+	movl	%esp, IRET_FRAME_OFF(%eax)
 	pushl	syscall_nr
 	pushl	current_cpu_state
 	call	handle_syscall
