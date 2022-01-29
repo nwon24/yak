@@ -67,7 +67,7 @@ ext2_access(const char *path, int amode)
 }
 
 int
-ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
+ext2_permission(struct ext2_inode_m *ip, int mask)
 {
 	int mode = ip->i_ino.i_mode;
 
@@ -82,6 +82,19 @@ ext2_permission(struct ext2_inode_m *ip, enum ext2_perm_mask mask)
 	if ((mode & mask) != 0)
 		return 0;
 	return -1;
+}
+
+int
+ext2_public_permission(void *inode, int mask)
+{
+	return ext2_permission(inode, mask);
+}
+
+void *
+ext2_public_namei(const char *path, int *err)
+{
+	*err = 0;
+	return ext2_namei(path, err, NULL, NULL, NULL, NULL, NULL);
 }
 
 struct ext2_inode_m *
