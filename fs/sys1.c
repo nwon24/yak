@@ -16,8 +16,6 @@
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
-static struct generic_filesystem *get_fs_from_path(const char *path);
-
 struct file file_table[NR_FILE];
 
 static inline struct file *
@@ -49,7 +47,7 @@ find_fd(void)
  * Returns NULL if invalid.
  * Pointer should already have been verified.
  */
-static struct generic_filesystem *
+struct generic_filesystem *
 get_fs_from_path(const char *path)
 {
 	if (path == NULL)
