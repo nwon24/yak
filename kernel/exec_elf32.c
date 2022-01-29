@@ -36,6 +36,10 @@ elf32_load_elf(struct exec_image *image, struct exec_elf_file *file, Elf32_Ehdr 
 
 	image->e_entry = ehdr->e_entry;
 	text_off = data_off = rodata_off = 0;
+	image->e_text_vaddr = image->e_text_size = 0;
+	image->e_data_vaddr = image->e_data_size = 0;
+	image->e_rodata_vaddr = image->e_rodata_size = 0;
+	image->e_bss_vaddr = image->e_bss_size = 0;
 	for (phnum = 0; phnum < ehdr->e_phnum; phnum++) {
 		elf32_read_phdr(file, ehdr, &phdr, phnum);
 		if (phdr.p_type == PT_LOAD) {
