@@ -60,11 +60,11 @@ elf32_load_elf(struct exec_image *image, struct exec_elf_file *file, Elf32_Ehdr 
 	}
 	if (arch_valloc_segments(image) < 0)
 		return -ENOMEM;
-	if (text_off)
+	if (image->e_text_size)
 		elf_read(file, (void *)image->e_text_vaddr, image->e_text_size, text_off);
-	if (data_off)
+	if (image->e_data_size)
 		elf_read(file, (void *)image->e_data_vaddr, image->e_data_size - image->e_bss_size, data_off);
-	if (rodata_off)
+	if (image->e_rodata_size)
 		elf_read(file, (void *)image->e_rodata_vaddr, image->e_rodata_size, rodata_off);
 	if (image->e_bss_size) {
 		for (c = 0; c < image->e_bss_size; c++)
