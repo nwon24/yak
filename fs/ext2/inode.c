@@ -295,3 +295,28 @@ put_into_free_list(struct ext2_inode_m *ip)
 	free_list.i_prev_free->i_next_free = ip;
 	free_list.i_prev_free = ip;
 }
+
+/*
+ * This is just a hack for now, as we have no
+ * 'struct vnode' or something like that.
+ */
+void
+ext2_inode_ctl(void *inode, int cmd, void *res)
+{
+	struct ext2_inode_m *ip;
+
+	ip = inode;
+	switch (cmd) {
+	case INODE_GET_MODE:
+		*(mode_t *)res = ip->i_ino.i_mode;
+		break;
+	case INODE_GET_MTIME:
+		*(time_t *)res = ip->i_ino.i_mtime;
+		break;
+	case INODE_GET_ATIME:
+		*(time_t *)res = ip->i_ino.i_atime;
+		break;
+	case INODE_GET_CTIME:
+		*(time_t *)res = ip->i_ino.i_ctime;
+	}
+}
