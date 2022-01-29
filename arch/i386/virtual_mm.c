@@ -8,6 +8,7 @@
 #include <asm/cpu_state.h>
 #include <asm/paging.h>
 
+#include <kernel/exec.h>
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
@@ -268,14 +269,21 @@ check_user_ptr(void *addr)
 static void
 free_page_table(uint32_t pg_table)
 {
-	uint32_t *p = (uint32_t *)pg_table;
+	uint32_t *p, old;
 
-	while (p < (uint32_t *)pg_table + (PAGE_SIZE / sizeof(uint32_t))) {
+	old = get_tmp_page();
+	tmp_map_page(pg_table);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	p = (uint32_t *)VIRT_ADDR_TMP_PAGE;
+	while (p < (uint32_t *)VIRT_ADDR_TMP_PAGE + (PAGE_SIZE / sizeof(uint32_t))) {
 		if (*p & PAGE_PRESENT) {
 			*p &= ~PAGE_PRESENT;
 			page_frame_free(*p & 0xFFFFF000);
 		}
+		p++;
 	}
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
 }
 
 void
@@ -295,10 +303,70 @@ virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir)
 	p = ((uint32_t *)VIRT_ADDR_TMP_PAGE) + (start >> VIRT_ADDR_PG_DIR_SHIFT);
 	while (nr_tables--) {
 		pg_table = *p & 0xFFFFF000;
+		printk("freeing page table %x\r\n", pg_table);
 		free_page_table(pg_table);
 		page_frame_free(pg_table);
 		p++;
 	}
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
+}
+
+void
+free_address_space(struct exec_image *image)
+{
+	if (image->e_data_size > 0)
+		virt_free_chunk(image->e_data_vaddr, image->e_data_size, (uint32_t *)current_cpu_state->cr3);
+	if (image->e_rodata_size > 0)
+		virt_free_chunk(image->e_rodata_vaddr, image->e_rodata_size, (uint32_t *)current_cpu_state->cr3);
+	if (image->e_text_size > 0)
+		virt_free_chunk(image->e_text_vaddr, image->e_text_size, (uint32_t *)current_cpu_state->cr3);
+}
+
+/*
+ * 'exec' should still be able to return if something
+ * goes wrong, so we can't overwrite the existing page directory
+ * until we are sure everything is okay.
+ */
+int
+arch_valloc_segments(struct exec_image *image)
+{
+	uint32_t *pg_dir, old;
+	uint32_t tmp_page[PAGE_SIZE / sizeof(uint32_t)];
+
+	pg_dir = (uint32_t *)page_frame_alloc();
+	if ((uint32_t)pg_dir == NO_FREE_PAGE)
+		return -1;
+	old = get_tmp_page();
+	tmp_map_page((uint32_t)pg_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove((void *)VIRT_ADDR_TMP_PAGE, (void *)init_page_directory, PAGE_SIZE);
+	if (image->e_text_vaddr > KERNEL_VIRT_BASE)
+		return -1;
+	if (image->e_text_size > 0) {
+		if (virt_map_chunk(image->e_text_vaddr, image->e_text_size, pg_dir, PAGE_USER) == 0)
+			return -1;
+	}
+	if (image->e_data_vaddr > KERNEL_VIRT_BASE)
+		return -1;
+	if (image->e_data_size > 0) {
+		if (virt_map_chunk(image->e_data_vaddr, image->e_data_size, pg_dir, PAGE_USER | PAGE_WRITABLE) == 0)
+			return -1;
+	}
+	if (image->e_rodata_size > 0) {
+		if (virt_map_chunk(image->e_rodata_vaddr, image->e_rodata_size, pg_dir, PAGE_USER) == 0)
+			return -1;
+	}
+	/* No going back after this */
+	/*	free_address_space(&current_process->image); */
+	tmp_map_page((uint32_t)pg_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove(tmp_page, (void *)VIRT_ADDR_TMP_PAGE, PAGE_SIZE);
+	tmp_map_page(current_cpu_state->cr3);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
+	load_cr3(current_cpu_state->cr3);
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	return 0;
 }
