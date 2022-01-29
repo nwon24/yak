@@ -19,6 +19,9 @@
 static struct fs_driver_ops ext2_driver_ops = {
 	.fs_raw = {
 		.fs_raw_iput = ext2_public_iput,
+		.fs_raw_namei = ext2_public_namei,
+		.fs_raw_inode_ctl = ext2_inode_ctl,
+		.fs_raw_permission = ext2_public_permission,
 	},
 	.fs_get_attribute = ext2_get_attribute,
 	.fs_open = ext2_open,
