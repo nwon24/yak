@@ -140,9 +140,11 @@ virt_unmap_virt(uint32_t virt)
  * page directory.
  * The address of the page directory is its physical one, such as one
  * returned  from 'page_frame_alloc'.
+ * This code is quite unreadable.
+ * If 'phys' is 0, then the physical address doesn't matter.
  */
 uint32_t
-virt_map_chunk(uint32_t start, uint32_t size, uint32_t *page_dir, int flags)
+virt_map_chunk(uint32_t start, uint32_t size, uint32_t *page_dir, int flags, uint32_t phys)
 {
 	uint32_t pg_table, pg_dir, old, tmp;
 	int nr_tables, i, j, index;
@@ -164,24 +166,43 @@ virt_map_chunk(uint32_t start, uint32_t size, uint32_t *page_dir, int flags)
 	}
 	tmp_map_page(pg_dir);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
-	memmove((void *)VIRT_ADDR_TMP_PAGE, (void *)init_page_directory, PAGE_SIZE);
+	if (page_dir == NULL)
+		memmove((void *)VIRT_ADDR_TMP_PAGE, (void *)init_page_directory, PAGE_SIZE);
 	/* Figure out the number of page tables needed. Each page table can map up to 4 MiB of memory */
 	nr_tables = size / 0x400000 + 1;
 	tmp = start & 0xFFFFF000;
 	for (j = 0; j < nr_tables; j++) {
-		if ((pg_table = page_frame_alloc()) == NO_FREE_PAGE) {
-			tmp_map_page(old);
-			tlb_flush(VIRT_ADDR_TMP_PAGE);
-			goto error;
-		}
-		tmp_map_page(pg_table);
-		tlb_flush(VIRT_ADDR_TMP_PAGE);
-		memset((void *)VIRT_ADDR_TMP_PAGE, 0, PAGE_SIZE);
 		index = tmp >> VIRT_ADDR_PG_DIR_SHIFT;
+		tmp_map_page(pg_dir);
+		tlb_flush(VIRT_ADDR_TMP_PAGE);
+		if (!((pg_table = *(uint32_t *)(VIRT_ADDR_TMP_PAGE + (index << 2) + (j << 2))) & PAGE_PRESENT)) {
+			if ((pg_table = page_frame_alloc()) == NO_FREE_PAGE) {
+				tmp_map_page(old);
+				tlb_flush(VIRT_ADDR_TMP_PAGE);
+				goto error;
+			}
+			tmp_map_page(pg_table);
+			tlb_flush(VIRT_ADDR_TMP_PAGE);
+			memset((void *)VIRT_ADDR_TMP_PAGE, 0, PAGE_SIZE);
+		} else {
+			pg_table &= 0xFFFFF000;
+			tmp_map_page(pg_table);
+			tlb_flush(VIRT_ADDR_TMP_PAGE);
+		}
 		for (i = ((tmp >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK) << 2; i < PAGE_SIZE; i += 4, tmp += PAGE_SIZE) {
+			uint32_t page_frame;
+
 			if (tmp > start + size)
 				break;
-			*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = tmp | PAGE_PRESENT | flags;
+			if (phys == 0) {
+				page_frame = page_frame_alloc();
+				if (page_frame == NO_FREE_PAGE)
+					goto error;
+				*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = page_frame | PAGE_PRESENT | flags;
+			} else {
+				*(uint32_t *)(VIRT_ADDR_TMP_PAGE + i) = phys | PAGE_PRESENT | flags;
+				phys += PAGE_SIZE;
+			}
 		}
 		tmp_map_page(pg_dir);
 		tlb_flush(VIRT_ADDR_TMP_PAGE);
@@ -303,7 +324,6 @@ virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir)
 	p = ((uint32_t *)VIRT_ADDR_TMP_PAGE) + (start >> VIRT_ADDR_PG_DIR_SHIFT);
 	while (nr_tables--) {
 		pg_table = *p & 0xFFFFF000;
-		printk("freeing page table %x\r\n", pg_table);
 		free_page_table(pg_table);
 		page_frame_free(pg_table);
 		p++;
@@ -345,20 +365,20 @@ arch_valloc_segments(struct exec_image *image)
 	if (image->e_text_vaddr > KERNEL_VIRT_BASE)
 		return -1;
 	if (image->e_text_size > 0) {
-		if (virt_map_chunk(image->e_text_vaddr, image->e_text_size, pg_dir, PAGE_USER) == 0)
+		if (virt_map_chunk(image->e_text_vaddr, image->e_text_size, pg_dir, PAGE_USER, 0) == 0)
 			return -1;
 	}
 	if (image->e_data_vaddr > KERNEL_VIRT_BASE)
 		return -1;
 	if (image->e_data_size > 0) {
-		if (virt_map_chunk(image->e_data_vaddr, image->e_data_size, pg_dir, PAGE_USER | PAGE_WRITABLE) == 0)
+		if (virt_map_chunk(image->e_data_vaddr, image->e_data_size, pg_dir, PAGE_USER | PAGE_WRITABLE, 0) == 0)
 			return -1;
 	}
 	if (image->e_rodata_size > 0) {
-		if (virt_map_chunk(image->e_rodata_vaddr, image->e_rodata_size, pg_dir, PAGE_USER) == 0)
+		if (virt_map_chunk(image->e_rodata_vaddr, image->e_rodata_size, pg_dir, PAGE_USER, 0) == 0)
 			return -1;
 	}
-	if (virt_map_chunk(KERNEL_VIRT_BASE - USER_STACK_SIZE, USER_STACK_SIZE, pg_dir, PAGE_USER | PAGE_WRITABLE) == 0)
+	if (virt_map_chunk(KERNEL_VIRT_BASE - USER_STACK_SIZE, USER_STACK_SIZE, pg_dir, PAGE_USER | PAGE_WRITABLE, 0) == 0)
 		return -1;
 	/* No going back after this */
 	/*	free_address_space(&current_process->image); */
@@ -371,6 +391,7 @@ arch_valloc_segments(struct exec_image *image)
 	load_cr3(current_cpu_state->cr3);
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	page_frame_free((uint32_t)pg_dir);
 	memmove(&current_process->image, image, sizeof(*image));
 	return 0;
 }
