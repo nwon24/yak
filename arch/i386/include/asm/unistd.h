@@ -20,6 +20,7 @@
 #define __NR_creat	0x8
 #define __NR_link	0x9
 #define __NR_unlink	0xA
+#define __NR_execve	0xB
 #define __NR_chdir	0xC
 #define __NR_time	0xD
 #define __NR_mknod	0xE
