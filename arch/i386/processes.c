@@ -1,6 +1,7 @@
 /*
  * processes.c
  * Architecture specific code for handling processes.
+ * Contains code used in 'fork' and 'exec'
  */
 #include <asm/cpu_state.h>
 #include <asm/paging.h>
@@ -9,6 +10,7 @@
 #include <asm/syscall.h>
 #include <asm/segment.h>
 #include <asm/interrupts.h>
+#include <asm/uaccess.h>
 
 #include <drivers/tty.h>
 #include <drivers/timer.h>
@@ -27,9 +29,15 @@
 #include <mm/mm.h>
 #include <mm/vm.h>
 
+#define MAX_ARG_PAGES	32
+
 int elf32_read_ehdr(struct exec_elf_file *file, Elf32_Ehdr *hdr);
 int elf_check_hdr(void *hdr, struct exec_elf_params *param);
 int elf32_load_elf(struct exec_image *image, struct exec_elf_file *file, Elf32_Ehdr *hdr);
+
+static size_t exec_count_str(const char **str);
+static size_t exec_strlen(const char *s);
+static int exec_set_up_stack(const char *argv[], const char *envp[]);
 
 void restart(void);
 
@@ -62,7 +70,7 @@ arch_processes_init(uint32_t start, uint32_t size)
 	register_syscall(0, (size_t)kernel_test, 1);
 	register_syscall(__NR_exit, (size_t)kernel_exit, 1);
 	register_syscall(__NR_execve, (size_t)kernel_execve, 3);
-	current_page_directory = virt_map_chunk(start, size, NULL, PAGE_WRITABLE | PAGE_USER);
+	current_page_directory = virt_map_chunk(start, size, NULL, PAGE_WRITABLE | PAGE_USER, start);
 	if (!current_page_directory)
 		return -1;
 	current_cpu_state->cr3 = current_page_directory;
@@ -131,7 +139,7 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 {
 	struct exec_elf_params param;
 	struct exec_image image;
-	int type;
+	int type, err;
 	Elf32_Ehdr ehdr;
 
 	if (elf32_read_ehdr(file, &ehdr) != sizeof(ehdr))
@@ -147,12 +155,54 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 		return -ENOEXEC;
 	if (type != ET_EXEC)
 		return -ENOEXEC;
-	printk("arch_load_elf: number of program headers: %u\r\n", ehdr.e_phnum);
-	printk("arch_load_elf: entry point %x\r\n", ehdr.e_entry);
-	printk("arch_load_elf: program header table offset %u\r\n", ehdr.e_phoff);
-	printk("arch_load_elf: header size %u\r\n", ehdr.e_ehsize);
-	elf32_load_elf(&image, file, &ehdr);
+	err = elf32_load_elf(&image, file, &ehdr);
+	//	exec_set_up_stack(argv, envp);
+	/* Subract 0x8000 just to give some space since we haven't set up the stack yet */
+	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = KERNEL_VIRT_BASE - 0x8000;
+	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
+	if (err < 0)
+		return err;
 	return 0;
+}
+
+static int
+exec_set_up_stack(const char *argv[], const char *envp[])
+{
+	char *sp;
+	size_t argv_count, envp_count;
+	size_t total_len;
+
+	total_len = 0;
+	sp = (char *)KERNEL_VIRT_BASE;
+	argv_count = exec_count_str(argv);
+	total_len += argv_count * sizeof(void *);
+	envp_count = exec_count_str(envp);
+	total_len += envp_count * sizeof(void *);
+	printk("argv_count %d envp_count %d\r\n", argv_count, envp_count);
+	return 0;
+}
+
+static size_t
+exec_count_str(const char **str)
+{
+	const char **p;
+
+	for (p = str; (void *)get_ulong((void *)p) != NULL; p++);
+	return p - str + 1;
+}
+
+/*
+ * Like the regular 'strlen' except it includes the terminating '\0'
+ */
+static size_t
+exec_strlen(const char *s)
+{
+	size_t len;
+	const char *p;
+
+	for (len = 0, p = s; get_ubyte(p) != '\0'; p++)
+		len++;
+	return len + 1;
 }
 
 void
