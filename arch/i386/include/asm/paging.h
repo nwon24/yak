@@ -16,7 +16,7 @@ extern uint32_t _end_kernel;
 uint32_t kernel_virt_map_page(uint32_t page_frame);
 uint32_t virt_map_phys(uint32_t phys);
 void virt_unmap_virt(uint32_t virt);
-uint32_t virt_map_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir, int flags);
+uint32_t virt_map_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir, int flags, uint32_t phys);
 void virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir);
 void copy_address_space(uint32_t from_pg_dir, uint32_t to_pg_dir);
 int check_user_ptr(void *addr);
@@ -74,7 +74,7 @@ void load_cr3(uint32_t cr3);
 #define PAGE_SUPERVISOR		0
 #define PAGE_USER		0x4
 
-#define PG_ENABLE		0x80010000
+#define PG_ENABLE		0x80000001
 
 /* Page directory entry is upper 10 bits of 32 bit virtual address */
 #define VIRT_ADDR_PG_DIR_SHIFT	22
