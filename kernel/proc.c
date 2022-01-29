@@ -101,10 +101,9 @@ processes_init(void)
 	proc->umask = 0;
 	proc->quanta = proc->priority;
 	proc->counter = proc->quanta;
-	proc->image.vir_code_base = (uint32_t)&_start_user_head;
-	proc->image.vir_code_len = &_end_user_head - &_start_user_head;
-	proc->image.vir_data_base = 0;
-	proc->image.vir_data_len = 0;
+	memset(&proc->image, 0, sizeof(proc->image));
+	proc->image.e_text_vaddr = (uint32_t)&_start_user_head;
+	proc->image.e_text_size = (char *)&_end_user_head - (char *)&_start_user_head;
 	process_queues[proc->priority] = proc;
 	/* Doubly linked list that just points to itself. */
 	proc->queue_next = proc->queue_prev = proc;
@@ -155,8 +154,6 @@ kernel_fork(void)
 	/* Not in queue, let 'adjust_proc_queues' take care of that. */
 	proc->queue_prev = proc->queue_next = NULL;
 	memmove(&proc->image, &current_process->image, sizeof(proc->image));
-	proc->image.vir_code_count++;
-	current_process->image.vir_code_count++;
 	adjust_proc_queues(proc);
 	for (i = 0; i < NR_OPEN; i++) {
 		if (current_process->file_table[i] != NULL)
@@ -176,12 +173,8 @@ kernel_exit(int status)
 			kernel_close(i);
 	}
 	for (proc = process_table; proc < process_table + NR_PROC; proc++) {
-		if (proc->state != PROC_EXITED && proc->ppid == current_process->pid) {
+		if (proc->state != PROC_EXITED && proc->ppid == current_process->pid)
 			proc->ppid = 1;
-			proc->image.vir_code_count--;
-		}
-		if (proc->pid == current_process->ppid)
-			proc->image.vir_code_count--;
 	}
 	current_process->root_fs->f_driver->fs_raw.fs_raw_iput(current_process->root_inode);
 	current_process->cwd_fs->f_driver->fs_raw.fs_raw_iput(current_process->cwd_inode);
