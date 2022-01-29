@@ -17,11 +17,17 @@
 #include <generic/string.h>
 #include <generic/unistd.h>
 
+#include <fs/fs.h>
+
+#include <kernel/elf.h>
+#include <kernel/exec.h>
 #include <kernel/debug.h>
 #include <kernel/proc.h>
 
 #include <mm/mm.h>
 #include <mm/vm.h>
+
+int elf32_read_ehdr(struct exec_elf_file *file, Elf32_Ehdr *hdr);
 
 void restart(void);
 
@@ -53,6 +59,7 @@ arch_processes_init(uint32_t start, uint32_t size)
 	register_syscall(__NR_fork, (size_t)kernel_fork, 0);
 	register_syscall(0, (size_t)kernel_test, 1);
 	register_syscall(__NR_exit, (size_t)kernel_exit, 1);
+	register_syscall(__NR_execve, (size_t)kernel_execve, 3);
 	current_page_directory = virt_map_chunk(start, size, NULL, PAGE_WRITABLE | PAGE_USER);
 	if (!current_page_directory)
 		return -1;
@@ -118,6 +125,34 @@ arch_exit(void)
 		virt_free_chunk(i->vir_data_base, i->vir_data_len, (uint32_t *)current_cpu_state->cr3);
 	if (i->vir_code_count == 0 && i->vir_code_len > 0)
 		virt_free_chunk(i->vir_code_base, i->vir_code_len, (uint32_t *)current_cpu_state->cr3);
+}
+
+int
+arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[])
+{
+	struct exec_elf_params param;
+	int type;
+	Elf32_Ehdr ehdr;
+
+	if (elf32_read_ehdr(file, &ehdr) != sizeof(ehdr))
+		return -ENOEXEC;
+	if (elf_verify_hdr(&ehdr) < 0)
+		return -ENOEXEC;
+	param.endian = ELFDATA2LSB;
+	param.bits = ELFCLASS32;
+	param.abi = ELFABI_SYSTEMV;
+	param.machine = EM_X86;
+	type = elf_check_hdr(&ehdr, &param);
+	if (type < 0)
+		return -ENOEXEC;
+	if (type != ET_EXEC)
+		return -ENOEXEC;
+	printk("arch_load_elf: number of program headers: %u\r\n", ehdr.e_phnum);
+	printk("arch_load_elf: entry point %x\r\n", ehdr.e_entry);
+	printk("arch_load_elf: program header table offset %u\r\n", ehdr.e_phoff);
+	printk("arch_load_elf: header size %u\r\n", ehdr.e_ehsize);
+	/* TODO: Implement rest of exec() */
+	return 0;
 }
 
 void
