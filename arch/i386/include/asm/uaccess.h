@@ -18,6 +18,10 @@
 #define put_uword(ptr, w)	(*(uint16_t *)(ptr) = (w))
 #define put_ulong(ptr, l)	(*(uint32_t *)(ptr) = (l))
 
+/*
+ * Don't need to worry about overlapping memory - kernel memory
+ * and user memory shouldn't be overlapping.
+ */
 static inline void *
 cp_to_user(void *dest, void *src, size_t count)
 {
@@ -32,6 +36,21 @@ cp_to_user(void *dest, void *src, size_t count)
 		srcp++;
 	}
 	return dest;
+}
+
+static inline void *
+cp_from_user(void *dest, void *src, size_t count)
+{
+	unsigned char *dstp, *srcp;
+
+	dstp = (unsigned char *)dest;
+	scrp = (unsigned char *)src;
+
+	while (count--) {
+		*dstp = get_ubyte(src);
+		dstp++;
+		srcp++;
+	}
 }
 
 #endif /* UACCESS_H */
