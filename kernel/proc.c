@@ -38,6 +38,7 @@ extern uint32_t _start_user_head, _end_user_head;
 
 int arch_processes_init(uint32_t start, uint32_t size);
 int arch_fork(int child, struct process *proc);
+int arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]);
 void arch_exit(void);
 
 static struct process *get_free_proc(void);
@@ -194,6 +195,39 @@ kernel_exit(int status)
 	}
 	adjust_proc_queues(current_process);
 	schedule();
+}
+
+int
+kernel_execve(const char *path, const char *argv[], const char *envp[])
+{
+	mode_t mode;
+	struct exec_elf_file file;
+	int err, ret;
+
+	if (path == NULL || !check_user_ptr((void *)path))
+		return -EFAULT;
+	if (argv == NULL || !check_user_ptr((void *)argv))
+		return -EFAULT;
+	if (envp == NULL || !check_user_ptr((void *)envp))
+		return -EFAULT;
+	file.fs = get_fs_from_path(path);
+	if (path == NULL)
+		return -EINVAL;
+	file.inode = file.fs->f_driver->fs_raw.fs_raw_namei(path, &err);
+	if (file.inode == NULL)
+		return err;
+	file.fs->f_driver->fs_raw.fs_raw_inode_ctl(file.inode, INODE_GET_MODE, &mode);
+	if (!S_ISREG(mode)) {
+		file.fs->f_driver->fs_raw.fs_raw_iput(file.inode);
+		return -EACCES;
+	}
+	if (file.fs->f_driver->fs_raw.fs_raw_permission(file.inode, PERM_EXEC) < 0) {
+		file.fs->f_driver->fs_raw.fs_raw_iput(file.inode);
+		return -EACCES;
+	}
+	ret = arch_exec_elf(&file, argv, envp);
+	file.fs->f_driver->fs_raw.fs_raw_iput(file.inode);
+	return ret;
 }
 
 pid_t
