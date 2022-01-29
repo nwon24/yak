@@ -28,6 +28,8 @@
 #include <mm/vm.h>
 
 int elf32_read_ehdr(struct exec_elf_file *file, Elf32_Ehdr *hdr);
+int elf_check_hdr(void *hdr, struct exec_elf_params *param);
+int elf32_load_elf(struct exec_image *image, struct exec_elf_file *file, Elf32_Ehdr *hdr);
 
 void restart(void);
 
@@ -119,18 +121,16 @@ arch_switch_to(struct process *prev, struct process *new)
 void
 arch_exit(void)
 {
-	struct proc_image *i = &current_process->image;
-
-	if (i->vir_data_len > 0)
-		virt_free_chunk(i->vir_data_base, i->vir_data_len, (uint32_t *)current_cpu_state->cr3);
-	if (i->vir_code_count == 0 && i->vir_code_len > 0)
-		virt_free_chunk(i->vir_code_base, i->vir_code_len, (uint32_t *)current_cpu_state->cr3);
+	printk("WARNING: Have not implemented reference counting on physical pages.\r\n");
+	printk("This means exiting will free the memory that may be used by child processes\r\n");
+	free_address_space(&current_process->image);
 }
 
 int
 arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[])
 {
 	struct exec_elf_params param;
+	struct exec_image image;
 	int type;
 	Elf32_Ehdr ehdr;
 
@@ -151,7 +151,7 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	printk("arch_load_elf: entry point %x\r\n", ehdr.e_entry);
 	printk("arch_load_elf: program header table offset %u\r\n", ehdr.e_phoff);
 	printk("arch_load_elf: header size %u\r\n", ehdr.e_ehsize);
-	/* TODO: Implement rest of exec() */
+	elf32_load_elf(&image, file, &ehdr);
 	return 0;
 }
 
