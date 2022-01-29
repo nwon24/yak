@@ -104,6 +104,7 @@ void add_multitasking_hook(multitasking_hook hook);
 void processes_init(void);
 int kernel_fork(void);
 void kernel_exit(int status);
+int kernel_execve(const char *path, const char *argv[], const char *envp[]);
 sighandler_t kernel_signal(int sig, sighandler_t handler);
 int kernel_kill(pid_t pid, int sig);
 int kernel_alarm(unsigned int seconds);
