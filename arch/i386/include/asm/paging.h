@@ -27,6 +27,9 @@ extern uint32_t current_page_directory;
 
 #define kernel_virt_put_page()	(kernel_virt_map_page(page_frame_alloc()))
 
+/* 2 MiB stack */
+#define USER_STACK_SIZE	0x200000
+
 #ifdef CONFIG_USE_INLINE_ASM
 static inline void
 tlb_flush(uint32_t page)
