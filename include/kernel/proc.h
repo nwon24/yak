@@ -15,18 +15,11 @@
 #include <generic/signal.h>
 
 #include <kernel/mutex.h>
+#include <kernel/exec.h>
 
 #define NR_PROC	64
 
 #define NO_ALARM	0
-
-struct proc_image {
-	uint32_t vir_code_base;	/* Only readable */
-	uint32_t vir_code_len;
-	uint32_t vir_code_count; /* Number of processes sharing text section */
-	uint32_t vir_data_base; /* Readable and writeable */
-	uint32_t vir_data_len;
-};
 
 enum sig_def_action {
 	SIGACTION_T,	/* Abnormal termination */
@@ -82,7 +75,7 @@ struct process {
 
 	struct context *context;
 
-	struct proc_image image;
+	struct exec_image image;
 	struct process *queue_next;
 	struct process *queue_prev;
 
