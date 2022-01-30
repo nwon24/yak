@@ -80,4 +80,9 @@ i386_move_to_user:
 	iret
 1:	ret
 
+	.global	get_faulting_address
+get_faulting_addr:
+	movl	%cr2, %eax
+	ret
+
 #endif /* CONFIG_USE_INLINE_ASM */
