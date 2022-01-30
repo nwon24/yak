@@ -160,7 +160,6 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 		return -ENOEXEC;
 	err = elf32_load_elf(&image, file, &ehdr);
 	init_stack_gap = 0;
-	printk("new exec sp in kernel %x\r\n", (new_sp = (uint32_t *)exec_set_up_stack(argv, envp, &init_stack_gap)));
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = KERNEL_VIRT_BASE - init_stack_gap;
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
 	/* free_address_space(current_process->image); */
@@ -190,7 +189,12 @@ exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap)
 
 	total_len = 0;
 	argv_count = exec_count_str(argv);
-	total_len += (argc = argv_count - 1) * sizeof(void *);
+	/*
+	 * -1 because 'argv_count' counts NULL, i.e.,
+	 *  { "/bin/foo", NULL } --> argc = 1
+	 */
+	argc = argv_count - 1;
+	total_len += argv_count * sizeof(void *);
 	envp_count = exec_count_str(envp);
 	total_len += envp_count * sizeof(void *);
 	for (p = argv; *p != NULL; p++)
