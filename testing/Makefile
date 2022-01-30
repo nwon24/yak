@@ -3,9 +3,8 @@ KERNEL_BIN := $(KERNEL_DIR)/kimage
 GRUBCFG := $(TESTING_DIR)/grub.cfg
 DISK := $(TESTING_DIR)/disk.img
 
-$(SYSROOT_DIR): $(GRUBCFG) $(KERNEL_BIN) $(CMDS)
+$(SYSROOT_DIR): $(GRUBCFG) $(KERNEL_BIN)
 	$(Q)$(TESTING_DIR)/build_sysroot.sh $@
-	$(Q)cp $(CMDS) $@/usr/bin/
 	$(Q)cp $(GRUBCFG) $@/boot/grub/
 	$(Q)cp $(KERNEL_BIN) $@/boot/
 	$(E) " GEN	" $@
