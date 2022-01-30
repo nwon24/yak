@@ -1,4 +1,4 @@
-.PHONY: kernel libc
+.PHONY: kernel libc cmds
 
 include make.config
 
@@ -10,12 +10,9 @@ TESTING_DIR := testing
 SYSROOT_DIR := $(SRC_DIR)/$(TESTING_DIR)/sysroot
 export SYSROOT_DIR
 
-CMDS := $(CMDS_DIR)/hello
-export CMDS CMDS_DIR
+all: kernel install-libc install-cmds
 
-all: kernel libc
-
-$(CMDS):
+cmds:
 	(cd $(CMDS_DIR); make)
 libc: install-kernel-headers
 	(cd $(LIBC_DIR); make)
@@ -25,13 +22,17 @@ install-kernel-headers:
 	(cd $(KERNEL_DIR); make install-kernel-headers)
 install-libc-headers:
 	(cd $(LIBC_DIR); make install-headers)
-install-libc:
+install-libc: libc
 	(cd $(LIBC_DIR); make install-libc)
+install-cmds: cmds
+	(cd $(CMDS_DIR); make install-cmd)
 install-headers: install-kernel-headers install-libc-headers
 kernel-clean:
 	(cd $(KERNEL_DIR); make clean)
 libc-clean:
 	(cd $(LIBC_DIR); make clean)
-clean: kernel-clean libc-clean
+cmds-clean:
+	(cd $(CMDS_DIR); make clean)
+clean: kernel-clean libc-clean cmds-clean
 
 include $(TESTING_DIR)/Makefile
