@@ -1,8 +1,8 @@
 #include <unistd.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	write(1, "Hello", 5);
+	write(1, argv[0], 14);
 	while (1);
 	return 0;
 }
