@@ -9,6 +9,8 @@
 
 #include <mm/mmap.h>
 
+#define MAX_MEM	0xFFFFFFFF
+
 /* External symbols from linker script. */
 extern uint32_t _start_kernel;
 extern uint32_t _end_kernel;
