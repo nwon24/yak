@@ -31,9 +31,18 @@ extern "C" {
 
 #ifndef __ASSEMBLER__
 
+#ifndef __DEFINED_UID_T
 typedef __uid_t uid_t;
+#define __DEFINED_UID_T
+#endif
+#ifndef __DFINED_GID_T
 typedef __gid_t gid_t;
+#define __DEFINED_GID_T
+#endif
+#ifndef __DEFINED_PID_T
 typedef __pid_t pid_t;
+#define __DEFINED_PID_T
+#endif
 #ifndef __SIZE_T_DEFINED
 typedef __size_t size_t;
 #endif
