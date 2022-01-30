@@ -38,7 +38,7 @@ int elf32_read_image(struct exec_image *image, struct exec_elf_file *file);
 
 static size_t exec_count_str(const char **str);
 static size_t exec_strlen(const char *s);
-static uint32_t exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap);
+static void *exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap);
 
 void restart(void);
 
@@ -160,6 +160,7 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 		return -ENOEXEC;
 	err = elf32_load_elf(&image, file, &ehdr);
 	init_stack_gap = 0;
+	new_sp = exec_set_up_stack(argv, envp, &init_stack_gap);
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = KERNEL_VIRT_BASE - init_stack_gap;
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
 	/* free_address_space(current_process->image); */
@@ -176,7 +177,7 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
  * Not easy to understand.
  * This function basically sets up the argv and envp tables in user memory.
  */
-static uint32_t
+static void *
 exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap)
 {
 	char *sp;
@@ -261,7 +262,7 @@ exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap)
 		roving++;
 	}
 	printk("argv_count %d envp_count %d total len %u\r\n", argv_count, envp_count, total_len);
-	return (uint32_t)sp;
+	return sp;
 }
 
 static size_t
