@@ -22,6 +22,7 @@ void copy_address_space(uint32_t from_pg_dir, uint32_t to_pg_dir);
 int check_user_ptr(void *addr);
 void free_address_space(struct exec_image *image);
 int arch_valloc_segments(struct exec_image *image);
+void copy_page_table(uint32_t *to_pg_dir, uint32_t *from_pg_dir);
 
 extern uint32_t current_page_directory;
 
