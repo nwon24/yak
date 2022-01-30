@@ -11,6 +11,7 @@
 #include <generic/stat.h>
 #include <generic/unistd.h>
 
+#include <kernel/elf.h>
 #include <kernel/mutex.h>
 
 #define DEFAULT_BLOCK_SIZE	1024
@@ -178,6 +179,9 @@ fs_init(void)
 struct exec_elf_file {
 	struct generic_filesystem *fs;
 	void *inode;
+	Elf32_Off text_off;
+	Elf32_Off data_off;
+	Elf32_Off rodata_off;
 };
 
 enum {
