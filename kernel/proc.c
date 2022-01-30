@@ -195,7 +195,7 @@ kernel_execve(const char *path, const char *argv[], const char *envp[])
 {
 	mode_t mode;
 	struct exec_elf_file file;
-	int err, ret;
+	int err, ret, i;
 
 	if (path == NULL || !check_user_ptr((void *)path))
 		return -EFAULT;
@@ -220,6 +220,10 @@ kernel_execve(const char *path, const char *argv[], const char *envp[])
 	}
 	ret = arch_exec_elf(&file, argv, envp);
 	file.fs->f_driver->fs_raw.fs_raw_iput(file.inode);
+	for (i = 0; i < NR_OPEN; i++) {
+		if (current_process->close_on_exec & (1 << i))
+			kernel_close(i);
+	}
 	return ret;
 }
 
