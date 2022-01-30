@@ -124,6 +124,7 @@ remove_from_queue(struct process *proc)
 	        } else {
 			proc->queue_next->queue_prev = proc->queue_prev;
 			proc->queue_prev->queue_next = proc->queue_next;
+			process_queues[proc->priority] = proc->queue_next;
 		}
 	}
 	/* Make it clear that it is not in a queue. */
@@ -145,6 +146,7 @@ add_to_queue(struct process *proc)
 	p->queue_next = proc;
 	proc->queue_prev = p;
 	proc->queue_next = tmp;
+	tmp->queue_prev = proc;
 }
 
 int
