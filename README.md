@@ -5,7 +5,7 @@ A hobby Unix-like kernel project.
 - [x] Basic ext2 implmentation (e.g., `open`, `read`, `write`, `close`, `link`, `unlink`, `rename`)
 - [x] Framebuffer console driver
 - [x] Higher half kernel
-- [ ] `exec` system call (with `ELF` files)
+- [x] `exec` system call (with `ELF` files - no dynamic linking)
 - [ ] Basic PS/2 keyboard driver (USB is very complicated)
 - [ ] OS Specific Toolchain
 - [ ] Port musl C library
@@ -58,6 +58,8 @@ make all-gcc all-target-libgcc
 make install-gcc install-target-libgcc
 ```
 **WARNING: We seem to be unable to build libstdc++-v3 right now. There's errors with the `include/basic_string.h`.**
+
+**WARNING: We haven't ported Musl Libc yet. It builds find with the above toolchain, but since it relies on so many system calls in Linux that we don't have, programs that are linked with it crash before entering main().**
 ## GRUB
 The kernel uses the GRUB bootloader.
 More specifically, it uses GRUB2, which you probably have. GRUB legacy is ancient.
