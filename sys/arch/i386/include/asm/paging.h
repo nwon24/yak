@@ -25,6 +25,7 @@ int check_user_ptr(void *addr);
 void free_address_space(struct exec_image *image);
 int arch_valloc_segments(struct exec_image *image);
 void copy_page_table(uint32_t *to_pg_dir, uint32_t *from_pg_dir);
+void handle_page_fault(uint32_t error);
 
 extern uint32_t current_page_directory;
 
@@ -45,6 +46,15 @@ tlb_flush(uint32_t page)
 #endif /* CONFIG_X86_ISA_I686 */
 }
 
+static inline uint32_t
+get_faulting_addr(void)
+{
+	uint32_t ret;
+
+	__asm__("movl %%cr2, %0\r\n" : "=r" (ret) :);
+	return ret;
+}
+
 static inline void
 load_cr3(uint32_t pg_dir)
 {
@@ -53,6 +63,7 @@ load_cr3(uint32_t pg_dir)
 #else
 void tlb_flush(uint32_t page);
 void load_cr3(uint32_t cr3);
+uint32_t get_faulting_addr();
 #endif /* CONFIG_USE_INLINE_ASM */
 
 #endif /* KERNEL */
@@ -78,6 +89,10 @@ void load_cr3(uint32_t cr3);
 #define PAGE_USER		0x4
 
 #define PG_ENABLE		0x80000001
+
+#define PF_PROTECTION		1
+#define PF_WRITE		2
+#define PF_USER			4
 
 /* Page directory entry is upper 10 bits of 32 bit virtual address */
 #define VIRT_ADDR_PG_DIR_SHIFT	22
