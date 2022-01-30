@@ -1,6 +1,8 @@
 #ifndef FCNTL_H
 #define FCNTL_H
 
+#ifndef __LIBRARY__
+
 #ifndef __ASSEMBLER__
 
 #include <asm/types.h>
@@ -8,6 +10,8 @@
 int open(const char *path, int flags, ...);
 
 #endif /* __ASSEMBLER__ */
+
+#endif
 
 #define O_ACCMODE	03	/* Lower 2 bits of mode */
 #define O_RDONLY	00
