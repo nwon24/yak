@@ -28,6 +28,7 @@ static uint32_t *current_pg_table = NULL;
 static int virt_map_entry = 1023;
 
 static void free_page_table(uint32_t page_table);
+static void pg_table_cow(uint32_t pg_table);
 
 static inline void
 tmp_map_page(uint32_t page)
@@ -242,14 +243,35 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 	if (current_process->pid == 0)
 		goto out;
 	/*
-	 * Setting the write bit to 0 makes the entire 4 MiB region mapped by the page
-	 * table unwritable.
+	 * Mark both page directories for copy on write.
 	 */
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
 		if (*p & PAGE_PRESENT && *p & PAGE_USER)
-			*p &= ~PAGE_WRITABLE;
+			pg_table_cow(*p);
+	}
+	tmp_map_page(from_page_dir);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
+		if (*p & PAGE_PRESENT && *p & PAGE_USER)
+			pg_table_cow(*p);
 	}
 out:
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+}
+
+static void
+pg_table_cow(uint32_t pg_table)
+{
+	uint32_t old, *p;
+
+	old = get_tmp_page();
+	tmp_map_page(pg_table & 0xFFFFF000);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)(VIRT_ADDR_TMP_PAGE + PAGE_SIZE); p++) {
+		if (*p & PAGE_PRESENT)
+			*p &= ~PAGE_WRITABLE;
+	}
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 }
@@ -400,6 +422,68 @@ copy_page_table(uint32_t *to, uint32_t *from)
 	tmp_map_page((uint32_t)to);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+}
+
+void
+handle_page_fault(uint32_t error)
+{
+	uint32_t addr, pg_table, pg_frame, old, new, *ptr;
+	int old_flags;
+	char tmp_page[PAGE_SIZE];
+	struct exec_image *image;
+
+	if (!(error & PF_PROTECTION)) {
+		printk("Segmentation fault\r\n");
+		kernel_exit(SIGSEGV);
+	}
+	if (!(error & PF_WRITE)) {
+		printk("Segmentation fault\r\n");
+		kernel_exit(SIGSEGV);
+	}
+	old = get_tmp_page();
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	addr = get_faulting_addr();
+	image = &current_process->image;
+	if (addr >= image->e_text_vaddr && addr < image->e_text_vaddr + image->e_text_size) {
+		printk("Segmentation fault\r\n");
+		kernel_exit(SIGSEGV);
+	}
+	if (image->e_rodata_size > 0) {
+		if (addr >= image->e_rodata_vaddr && addr < image->e_rodata_vaddr + image->e_rodata_size) {
+			printk("Segmentation fault\r\n");
+			kernel_exit(SIGSEGV);
+		}
+	}
+	tmp_map_page(current_cpu_state->cr3);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	pg_table = ((uint32_t *)VIRT_ADDR_TMP_PAGE)[addr >> VIRT_ADDR_PG_DIR_SHIFT];
+	if (!(pg_table & PAGE_PRESENT)) {
+		printk("Segmentation fault\r\n");
+		kernel_exit(SIGSEGV);
+	}
+	tmp_map_page(pg_table & 0xFFFFF000);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	ptr = &((uint32_t *)VIRT_ADDR_TMP_PAGE)[(addr >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK];
+	pg_frame = *ptr;
+	old_flags = pg_frame & 0xFFF;
+	new = page_frame_alloc();
+	if (new == NO_FREE_PAGE)
+		panic("Out of memory");
+	*ptr = new | old_flags | PAGE_WRITABLE;
+	if (!(pg_frame & PAGE_PRESENT)) {
+		page_frame_free(new);
+		printk("Segmentation fault\r\n");
+		kernel_exit(SIGSEGV);
+	}
+	tmp_map_page(pg_frame & 0xFFFFF000);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove(tmp_page, (void *)VIRT_ADDR_TMP_PAGE, PAGE_SIZE);
+	tmp_map_page(new);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
+	memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
+	tlb_flush(addr);
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 }
