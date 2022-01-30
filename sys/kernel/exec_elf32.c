@@ -31,7 +31,6 @@ elf32_load_elf(struct exec_image *image, struct exec_elf_file *file, Elf32_Ehdr 
 {
 	Elf32_Phdr phdr;
 	Elf32_Half phnum;
-	uint32_t c;
 
 	image->e_entry = ehdr->e_entry;
 	image->e_text_vaddr = image->e_text_size = 0;
