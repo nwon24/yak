@@ -15,7 +15,6 @@ OBJ_FILES += $(ARCH_DIR)/boot.o \
              $(ARCH_DIR)/switch_to.o \
              $(ARCH_DIR)/syscall_asm.o
 
-KERNEL_BIN := $(ARCH_DIR)/kimage
 LDSCRIPT := $(ARCH_DIR)/kernel.ld
 LDSCRIPT_SRC := $(ARCH_DIR)/kernel.ld.S
 
