@@ -1,3 +1,5 @@
+KERNEL_BIN := $(KERNEL_DIR)/kimage
+
 SYSROOT_DIR := $(TESTING_DIR)/sysroot
 
 GRUBCFG := $(TESTING_DIR)/grub.cfg
@@ -9,7 +11,7 @@ $(SYSROOT_DIR): $(GRUBCFG) $(KERNEL_BIN) $(CMDS)
 	$(Q)cp $(GRUBCFG) $@/boot/grub/
 	$(Q)cp $(KERNEL_BIN) $@/boot/
 	$(E) " GEN	" $@
-$(GRUBCFG):
+$(GRUBCFG): $(KERNEL_BIN)
 	$(Q)$(TESTING_DIR)/gen_grubcfg.sh $@ $(notdir $(KERNEL_BIN))
 	$(E) " GEN	" $@
 $(DISK):
