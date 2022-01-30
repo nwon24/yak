@@ -1,6 +1,8 @@
 #ifndef ARCH_UNISTD_H
 #define ARCH_UNISTD_H
 
+#ifndef __LIBRARY__
+
 #define SEEK_SET	0
 #define SEEK_CUR	1
 #define SEEK_END	2
@@ -9,6 +11,8 @@
 #define X_OK		1
 #define W_OK		2
 #define R_OK		4
+
+#endif
 
 #define __NR_exit	0x1
 #define __NR_fork	0x2
