@@ -1,7 +1,5 @@
 KERNEL_BIN := $(KERNEL_DIR)/kimage
 
-SYSROOT_DIR := $(TESTING_DIR)/sysroot
-
 GRUBCFG := $(TESTING_DIR)/grub.cfg
 DISK := $(TESTING_DIR)/disk.img
 
