@@ -1,8 +1,15 @@
 CMDS_CFLAGS := -std=c99 -Wall -Wextra -O2
 
-TARGETS :=$(patsubst $(CMDS_DIR)/%, %, $(CMDS))
+CMDS := hello
 
-all: $(TARGETS)
+all: $(CMDS)
+
+$(CMDS): $(SYSROOT_DIR)/usr/lib/libc.a
 
 %: %.c
 	$(CC) $< -o  $@ $(CMDS_CFLAGS)
+clean:
+	rm $(CMDS)
+install-cmd: $(CMDS)
+	mkdir -p $(SYSROOT_DIR)/usr/bin
+	cp $^ $(SYSROOT_DIR)/usr/bin/
