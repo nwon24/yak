@@ -3,13 +3,19 @@
  * Handles exceptions.
  * Mostly just for debugging.
  */
+#include <kernel/config.h>
+
 #include <stdint.h>
 
 #include <asm/cpu_state.h>
 #include <asm/idt.h>
 #include <asm/segment.h>
+#include <asm/paging.h>
 
 #include <kernel/debug.h>
+#include <kernel/proc.h>
+
+#include <generic/signal.h>
 
 void div_by_zero(void);
 void debug(void);
@@ -64,135 +70,142 @@ exceptions_init(void)
 }
 
 void
-handle_exception(char *msg, uint32_t eip, uint32_t error)
+handle_exception(char *msg, uint32_t eip, uint32_t error, void (*handler)(uint32_t))
 {
 	printk("Exception: %s\r\n", msg);
 	printk("eip: %x, error: %x\r\n", eip, error);
+#ifdef CONFIG_PANIC_ON_EXCEPTION
 	panic("");
+#else
+	if (handler != NULL)
+		(*handler)(error);
+	else
+		kernel_exit(SIGSEGV);
+#endif
 }
 
 void
 do_div_by_zero(void)
 {
-	handle_exception("Divide by zero", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Divide by zero", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_debug(void)
 {
-	handle_exception("Debug", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Debug", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_nmi(void)
 {
-	handle_exception("Non-maskable interrupt", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Non-maskable interrupt", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_breakpoint(void)
 {
-	handle_exception("Breakpoint", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Breakpoint", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_overflow(void)
 {
-	handle_exception("Overflow", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Overflow", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_bound_range_exceeded(void)
 {
-	handle_exception("Bound range exceeded", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Bound range exceeded", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_invalid_opcode(void)
 {
-	handle_exception("Invalid opcode", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Invalid opcode", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_dev_not_available(void)
 {
-	handle_exception("Device not available", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Device not available", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_double_fault(void)
 {
-	handle_exception("Double fault", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Double fault", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_invalid_tss(void)
 {
-	handle_exception("Invalid TSS", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Invalid TSS", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_segment_not_present(void)
 {
-	handle_exception("Segment not present", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Segment not present", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_stack_segment_fault(void)
 {
-	handle_exception("Stack segment fault", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Stack segment fault", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_gp_fault(void)
 {
-	handle_exception("General protection fault", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("General protection fault", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_page_fault(void)
 {
-	handle_exception("Page fault", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Page fault", current_cpu_state->eip, current_cpu_state->error, handle_page_fault);
 }
 
 void
 do_x87_floating_point(void)
 {
-	handle_exception("x87 floating point exception", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("x87 floating point exception", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_alignment_check(void)
 {
-	handle_exception("Alignment check", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Alignment check", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_machine_check(void)
 {
-	handle_exception("Machine check", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Machine check", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_simd_floating_point(void)
 {
-	handle_exception("SIMD Floating Point Exception", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("SIMD Floating Point Exception", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_virtualization(void)
 {
-	handle_exception("Virtualization Exception", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Virtualization Exception", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_control_protection(void)
 {
-	handle_exception("Control Protection Exception", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Control Protection Exception", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
 
 void
 do_reserved(void)
 {
-	handle_exception("Reserved", current_cpu_state->eip, current_cpu_state->error);
+	handle_exception("Reserved", current_cpu_state->eip, current_cpu_state->error, NULL);
 }
