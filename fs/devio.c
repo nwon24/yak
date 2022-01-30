@@ -21,6 +21,7 @@ static struct blk_dev_ops blk_dev_table[] = {
 };
 
 static struct chr_dev_ops chr_dev_table[] = {
+	[MEM_DEV] = { .d_open = memdev_open, .d_rw = memdev_rw, .d_close = memdev_close },
 	[TTY_DEV] = { .d_open = tty_open, .d_rw = tty_rw, .d_close = tty_close },
 	[TTYX_DEV] = { .d_open = tty_open, .d_rw = ttyx_rw, .d_close = tty_close},
 };
