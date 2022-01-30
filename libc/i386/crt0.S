@@ -14,8 +14,8 @@ _start:
 	pushl	%ebp
 	movl	%esp, %ebp
 
-	pushl	4(%ebp)
-	pushl	(%ebp)
+	pushl	12(%ebp)
+	pushl	8(%ebp)
 	call	__libc_init
 	call	_init
 	call	main
