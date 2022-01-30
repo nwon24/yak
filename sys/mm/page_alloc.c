@@ -15,6 +15,8 @@
 #include <mm/mm.h>
 #include <mm/mmap.h>
 
+static char reference_counts[MAX_MEM / PAGE_SIZE];
+
 static void set_bit(uint8_t *bitmap, uint32_t bit);
 static void clear_bit(uint8_t *bitmap, uint32_t bit);
 static void scan_bitmap(struct mmap_bitmap *bmap);
@@ -43,6 +45,7 @@ page_frame_alloc(void)
 		scan_bitmap(bmap);
 	else
 		bmap->next_free = NO_FREE_PAGE;
+	reference_counts[ret / PAGE_SIZE] = 1;
 	return ret;
 }
 
@@ -55,6 +58,9 @@ page_frame_free(uint32_t page)
 
 	if (!IS_PAGE_ALIGNED(page))
 		panic("page_frame_free: page has wrong alignment");
+	reference_counts[page / PAGE_SIZE]--;
+	if (reference_counts[page / PAGE_SIZE])
+		return;
 	for (bmap = mmap_bitmaps; bmap->mmap_entry->next != NULL; bmap++) {
 		if (bmap->mmap_entry->base + bmap->mmap_entry->size > page)
 			/* Found correct bitmap */
@@ -69,6 +75,12 @@ page_frame_free(uint32_t page)
 	bmap->free_pages++;
 	if (bit < bmap->next_free)
 		bmap->next_free = bit;
+}
+
+void
+page_increase_count(uint32_t page)
+{
+	reference_counts[page / PAGE_SIZE]++;
 }
 
 static void
