@@ -53,6 +53,7 @@ struct i386_cpu_state {
 	uint32_t kernel_stack;
 	uint32_t iret_frame;
 	uint32_t kernel_eflags;
+	uint32_t next_cr3;	/* Value of CR3 for newly exec'ed program */
 };
 
 #define NR_REGS	8
