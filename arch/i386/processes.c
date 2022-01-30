@@ -34,10 +34,11 @@
 int elf32_read_ehdr(struct exec_elf_file *file, Elf32_Ehdr *hdr);
 int elf_check_hdr(void *hdr, struct exec_elf_params *param);
 int elf32_load_elf(struct exec_image *image, struct exec_elf_file *file, Elf32_Ehdr *hdr);
+int elf32_read_image(struct exec_image *image, struct exec_elf_file *file);
 
 static size_t exec_count_str(const char **str);
 static size_t exec_strlen(const char *s);
-static int exec_set_up_stack(const char *argv[], const char *envp[]);
+static uint32_t exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap);
 
 void restart(void);
 
@@ -101,7 +102,7 @@ arch_fork(int child, struct process *proc)
 	memmove(new, current_cpu_state, sizeof(*new));
 	/* Return value for child process is 0 */
 	new->eax = 0;
-	new->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE) + PAGE_SIZE;
+	new->kernel_stack = (uint32_t)kvmalloc(PAGE_SIZE * 2) + (PAGE_SIZE * 2);
 	if ((new->cr3 = page_frame_alloc()) == NO_FREE_PAGE)
 		return -ENOMEM;
 	copy_address_space(current_cpu_state->cr3, new->cr3);
@@ -140,6 +141,8 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	struct exec_elf_params param;
 	struct exec_image image;
 	int type, err;
+	size_t init_stack_gap;
+	uint32_t *new_sp;
 	Elf32_Ehdr ehdr;
 
 	if (elf32_read_ehdr(file, &ehdr) != sizeof(ehdr))
@@ -156,30 +159,106 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	if (type != ET_EXEC)
 		return -ENOEXEC;
 	err = elf32_load_elf(&image, file, &ehdr);
-	//	exec_set_up_stack(argv, envp);
+	init_stack_gap = 0;
+	printk("new exec sp in kernel %x\r\n", (new_sp = (uint32_t *)exec_set_up_stack(argv, envp, &init_stack_gap)));
 	/* Subract 0x8000 just to give some space since we haven't set up the stack yet */
-	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = KERNEL_VIRT_BASE - 0x8000;
+	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = KERNEL_VIRT_BASE - init_stack_gap;
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
+	/* free_address_space(current_process->image); */
+	copy_page_table((uint32_t *)current_cpu_state->cr3, (uint32_t *)current_cpu_state->next_cr3);
+	page_frame_free((uint32_t)current_cpu_state->next_cr3);
+	memmove((void *)(KERNEL_VIRT_BASE - init_stack_gap), new_sp, init_stack_gap);
+	elf32_read_image(&image, file);
 	if (err < 0)
 		return err;
 	return 0;
 }
 
-static int
-exec_set_up_stack(const char *argv[], const char *envp[])
+/*
+ * Not easy to understand.
+ * This function basically sets up the argv and envp tables in user memory.
+ */
+static uint32_t
+exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap)
 {
 	char *sp;
+	uint32_t *roving, run, user_sp_base;
+	const char **p;
 	size_t argv_count, envp_count;
-	size_t total_len;
+	size_t total_len, i, j;
+	uint8_t c;
+	int argc;
 
 	total_len = 0;
-	sp = (char *)KERNEL_VIRT_BASE;
 	argv_count = exec_count_str(argv);
-	total_len += argv_count * sizeof(void *);
+	total_len += (argc = argv_count - 1) * sizeof(void *);
 	envp_count = exec_count_str(envp);
 	total_len += envp_count * sizeof(void *);
-	printk("argv_count %d envp_count %d\r\n", argv_count, envp_count);
-	return 0;
+	for (p = argv; *p != NULL; p++)
+		total_len += exec_strlen(*p);
+	for (p = envp; *p != NULL; p++)
+		total_len += exec_strlen(*p);
+	/* Size of argc, argv, and envp */
+	total_len += 3 * sizeof(void *);
+	*res_stack_gap = total_len;
+	user_sp_base = KERNEL_VIRT_BASE - total_len;
+	sp = kvmalloc(total_len);
+	/*
+	 * Perhaps this might help.
+	 * Value of sp that pgoram begins with is here.
+	 * | argc
+	 * | Pointer to first doubleword after this pointer and 'envp' pointer (argv)
+	 * | Pointer to first doubleword after this pointer and string pointer in argv (envp)
+	 * | Start of string pointers in argv (pointer to after end of argv and envp string pointers)
+	 * | ...
+	 * | Start of string pointers in envp (pointer to after envp string pointers)
+	 * | ...
+	 * | Strings themselves (first argv, then envp)
+	 * V KERNEL_VIRT_BASE
+	 */
+	sp -= 12;
+	roving = (uint32_t *)sp;
+	*roving = argc;
+	roving++;
+	*roving = (uint32_t)(user_sp_base + 3 * sizeof(void *));
+	roving++;
+	*roving = (uint32_t)user_sp_base + 3 * sizeof(void *) + argv_count * sizeof(void *);
+	roving++;
+	run = (uint32_t)(sp + 12 + argv_count * sizeof(void *) + envp_count * sizeof(void *));
+	for (i = 0; i < argv_count; i++) {
+		size_t tmp;
+
+		if (argv[i] != NULL) {
+			*roving = user_sp_base + run - (uint32_t)sp;
+			tmp = exec_strlen(argv[i]);
+			for (j = 0; j < tmp; j++) {
+				c = get_ubyte(argv[i] + j);
+				*(char *)(run + j) = c;
+			}
+			run += tmp;
+		} else {
+			*roving = 0;
+		}
+		roving++;
+	}
+	for (i = 0; i < envp_count; i++) {
+		size_t tmp;
+
+		if (envp[i] != NULL) {
+			*roving = user_sp_base + run - (uint32_t)sp;
+			tmp = exec_strlen(envp[i]);
+			for (j = 0; j < tmp; j++) {
+				c = get_ubyte(envp[i] + j);
+				*(char *)(run + j) = c;
+			}
+			run += tmp;
+		} else {
+			*roving = 0;
+		}
+		roving++;
+	}
+	printk("argv_count %d envp_count %d total len %u\r\n", argv_count, envp_count, total_len);
+	return (uint32_t)sp;
 }
 
 static size_t
