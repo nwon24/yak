@@ -49,6 +49,12 @@ $(LIBFONT): $(LIBFONT_OBJ)
 $(LDSCRIPT): $(LDSCRIPT_SRC)
 	$(Q)$(CPP) $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(CPPFLAGS)
 	$(E) " CPP	" $@
+
+install-kernel-headers:
+	$(Q)mkdir -p $(SYSROOT_DIR)/usr/include/hobbix
+	$(Q)cp $(INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ -r
+	$(Q)cp $(ARCH_INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ -r
+	$(E) " INSTALLED KERNEL HEADERS "
 clean:
 	$(Q)rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT) $(GRUBCFG)
 	$(E) " CLEAN"
