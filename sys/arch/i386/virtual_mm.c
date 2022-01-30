@@ -382,6 +382,8 @@ arch_valloc_segments(struct exec_image *image)
 	/* No going back after this */
 	/*	free_address_space(&current_process->image); */
 	current_cpu_state->next_cr3 = (uint32_t)pg_dir;
+	tmp_map_page(old);
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	return 0;
 }
 
