@@ -12,8 +12,15 @@
 #define FD_DEV	2
 #define HD_DEV	3
 /* Character device numbers */
+#define MEM_DEV		1
 #define TTY_DEV		4
 #define TTYX_DEV	5
+
+/*
+ * Minor device numbers for memory devices.
+ */
+#define MEMDEV_NULL	3
+#define MEMDEV_ZERO	5
 
 #define DEV_MAJOR(dev)	(((dev) >> 8) & 0xFF)
 #define DEV_MINOR(dev)	((dev) & 0xFF)
@@ -51,6 +58,9 @@ struct chr_dev_ops {
 	int (*d_close)(int minor);
 };
 
+int memdev_open(int minor);
+int memdev_close(int minor);
+int memdev_rw(int minor, char *buf, int count, int rw);
 int blk_devio(struct buffer *bp, int rw);
 int chr_devio(dev_t dev, char *buf, int count, int rw);
 int chr_dev_open(dev_t dev);
