@@ -1,20 +1,21 @@
 # Makefile
 
-include config.mk
+include make.config
 
 KERNEL_TAR := kernel_$$(date +%y%m%d%H%M%S).tar
 
 OBJ_FILES :=
 DEP_FILES :=
 
+ARCH_DIR := arch/$(TARGET_ARCH)
 LIB_DIR := lib
 INC_DIR := include
 KERNEL_DIR := kernel
 MM_DIR := mm
 FS_DIR := fs
-CMDS_DIR := cmd
 DRIVERS_DIR := drivers
-TESTING_DIR := testing
+
+KERNEL_BIN := kimage
 
 include $(ARCH_DIR)/Makefile
 include $(KERNEL_DIR)/Makefile
@@ -51,9 +52,6 @@ $(LDSCRIPT): $(LDSCRIPT_SRC)
 clean:
 	$(Q)rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT) $(GRUBCFG)
 	$(E) " CLEAN"
-
-include $(TESTING_DIR)/Makefile
-include $(CMDS_DIR)/Makefile
 
 distclean:
 	$(Q)make clean
