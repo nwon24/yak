@@ -161,7 +161,6 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	err = elf32_load_elf(&image, file, &ehdr);
 	init_stack_gap = 0;
 	printk("new exec sp in kernel %x\r\n", (new_sp = (uint32_t *)exec_set_up_stack(argv, envp, &init_stack_gap)));
-	/* Subract 0x8000 just to give some space since we haven't set up the stack yet */
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = KERNEL_VIRT_BASE - init_stack_gap;
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
 	/* free_address_space(current_process->image); */
