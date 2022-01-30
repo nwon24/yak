@@ -353,7 +353,6 @@ int
 arch_valloc_segments(struct exec_image *image)
 {
 	uint32_t *pg_dir, old;
-	uint32_t tmp_page[PAGE_SIZE / sizeof(uint32_t)];
 
 	pg_dir = (uint32_t *)page_frame_alloc();
 	if ((uint32_t)pg_dir == NO_FREE_PAGE)
@@ -382,16 +381,23 @@ arch_valloc_segments(struct exec_image *image)
 		return -1;
 	/* No going back after this */
 	/*	free_address_space(&current_process->image); */
-	tmp_map_page((uint32_t)pg_dir);
+	current_cpu_state->next_cr3 = (uint32_t)pg_dir;
+	return 0;
+}
+
+void
+copy_page_table(uint32_t *to, uint32_t *from)
+{
+	uint32_t old;
+	char tmp_page[PAGE_SIZE];
+
+	old = get_tmp_page();
+	tmp_map_page((uint32_t)from);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	memmove(tmp_page, (void *)VIRT_ADDR_TMP_PAGE, PAGE_SIZE);
-	tmp_map_page(current_cpu_state->cr3);
+	tmp_map_page((uint32_t)to);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
-	load_cr3(current_cpu_state->cr3);
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
-	page_frame_free((uint32_t)pg_dir);
-	memmove(&current_process->image, image, sizeof(*image));
-	return 0;
 }
