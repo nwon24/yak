@@ -10,6 +10,8 @@
 
 #define CONFIG_ARCH_X86
 
+/* #define CONFIG_PANIC_ON_EXCEPTION */
+
 /* If it is ever needed */
 #ifdef CONFIG_ARCH_X86
 #define CONFIG_X86_ISA_I686
