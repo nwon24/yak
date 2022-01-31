@@ -51,6 +51,19 @@ typedef __ssize_t ssize_t;
 #endif
 typedef __off_t off_t;
 
+int access(const char *path, int mode);
+unsigned int alarm(unsigned int seconds);
+int chdir(const char *path);
+int chown(const char *path, uid_t uid, gid_t gid);
+gid_t getegid(void);
+uid_t geteuid(void);
+gid_t getgid(void);
+pid_t getpgid(pid_t pid);
+pid_t getpgrp(void);
+pid_t getpid(void);
+pid_t getppid(void);
+pid_t getsid(pid_t pid);
+uid_t getuid(void);
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, void *buf, size_t count);
 int close(int fd);
