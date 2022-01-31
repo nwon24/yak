@@ -1,4 +1,4 @@
-LIBC_CFLAGS := -std=c99 -Wall -Wextra -pedantic -O2 -D__LIBRARY__
+LIBC_CFLAGS := -std=c99 -Wall -Wextra -pedantic -O2 -D__LIBRARY__ -MP -MMD
 LIBC_ASFLAGS := -MP -MMD
 
 CRT0_OBJ := $(TARGET_ARCH)/crt0.o
@@ -15,6 +15,7 @@ include unistd/Makefile
 include fcntl/Makefile
 include errno/Makefile
 include init/Makefile
+include sys/Makefile
 
 DEP_FILES := $(patsubst %.o, %.d, $(LIBC_OBJ)) $(patsubst %.o, %.d, $(CRT_OBJ))
 -include $(DEP_FILES)
@@ -33,6 +34,7 @@ install-headers:
 	mkdir -p $(SYSROOT_DIR)/usr/include
 	cp include/*.h $(SYSROOT_DIR)/usr/include/
 	cp include/bits $(SYSROOT_DIR)/usr/include/ -r
+	cp include/sys/ $(SYSROOT_DIR)/usr/include/ -r
 install-libc: libc.a
 	mkdir -p $(SYSROOT_DIR)/usr/lib
 	cp libc.a $(SYSROOT_DIR)/usr/lib
