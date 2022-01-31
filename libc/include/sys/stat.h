@@ -95,6 +95,40 @@ typedef __off_t off_t;
 #define __DEFINED_STRUCT_TIMESPEC
 #endif
 
+#if !defined(__DEFINED_MODE_T_FILE_BITS)
+
+#define S_IRWXU		__S_IRWXU
+#define S_IRUSR		__S_IRUSR
+#define S_IWUSR		__S_IWUSR
+#define S_IXUSR		__S_IXUSR
+#define S_IRWXG		__S_IRWXG
+#define S_IRGRP		__S_IRGRP
+#define S_IWGRP		__S_IWGRP
+#define S_IXGRP		__S_IXGRP
+#define S_IRWXO		__S_IRWXO
+#define S_IROTH		__S_IROTH
+#define S_IWOTH		__S_IWOTH
+#define S_IXOTH		__S_IXOTH
+
+#define __DEFINED_MODE_T_FILE_BITS
+#endif
+
+#define S_IFBLK		__S_IFBLK
+#define S_IFCHR		__S_IFCHR
+#define S_IFIFO		__S_IFIFO
+#define S_IFREG		__S_IFREG
+#define S_IFDIR		__S_IFDIR
+#define S_IFLNK		__S_IFLNK
+#define S_IFSOCK	__S_IFSOCK
+
+#define S_ISBLK(m)	__S_ISBLK(m)
+#define S_ISCHR(m)	__S_ISCHR(m)
+#define S_ISFIFO(m)	__S_ISFIFO(m)
+#define S_ISREG(m)	__S_ISREG(m)
+#define S_ISDIR(m)	__S_ISDIR(m)
+#define S_ISLNK(m)	__S_ISLNK(m)
+#define S_ISSOCK(m)	__S_ISSOCK(m)
+
 struct stat {
 	dev_t st_dev;
 	ino_t st_ino;
