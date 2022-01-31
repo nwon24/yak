@@ -53,6 +53,7 @@
 #define SYS_lstat	__NR_lstat
 #define SYS_fstat	__NR_fstat
 #define SYS_getpgid	__NR_getpgid
+#define SYS_getsid	__NR_getsid
 #define SYS_chown	__NR_chown
 
 #endif /* _BITS_UNISTD_H */
