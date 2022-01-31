@@ -9,9 +9,8 @@
 	.globl _start
 	.type	_start, @function
 _start:
-	xorl	%ebp, %ebp
-	pushl	%ebp
-	pushl	%ebp
+	pushl	$0
+	pushl	$0
 	movl	%esp, %ebp
 
 	pushl	12(%ebp)
@@ -20,6 +19,7 @@ _start:
 	call	_init
 	call	main
 
+	call	_fini
 	movl	%eax, %ebx
 	movl	$SYS_exit, %eax
 	int	$SYSCALL_IRQ
