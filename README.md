@@ -27,7 +27,7 @@ This has not been tested with LLVM**
 
 The kernel now uses its own hosted toolchain for the `i686-hobbix` target. Patches for GCC and Binutils are in the [toolchain](./toolchain) subdirectory.
 
-**WARNING: Our C library right now is not functional enough to to have compile GCC and Binutils against, yet. **
+**WARNING: Our C library right now is not functional enough to to have compile GCC and Binutils against, yet.**
 
 **NOTE: Soon there will be a script that does the following for you.**
 
