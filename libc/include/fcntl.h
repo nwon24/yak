@@ -42,6 +42,7 @@ typedef __pid_t pid_t;
 
 int open(const char *path, int mode, ...);
 int creat(const char *path, mode_t mode);
+int fcntl(int fd, int cmd, ...);
 
 #endif
 
