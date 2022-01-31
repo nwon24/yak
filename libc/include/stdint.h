@@ -1,6 +1,36 @@
 #ifndef _STDINT_H
 #define _STDINT_H
 
+#define __NEED_PRIVATE_INT_TYPES
+#define __NEED_UINT8_T
+#define __NEED_UINT16_T
+#define __NEED_UINT132_T
+#define __NEED_UINT1364_T
+#define __NEED_INT8_T
+#define __NEED_INT16_T
+#define __NEED_INT32_T
+#define __NEED_INT64_T
+#define __NEED_UINT_LEAST8_T
+#define __NEED_UINT_LEAST16_T
+#define __NEED_UINT_LEAST32_T
+#define __NEED_UINT_LEAST64_T
+#define __NEED_INT_LEAST8_T
+#define __NEED_INT_LEAST16_T
+#define __NEED_INT_LEAST32_T
+#define __NEED_INT_LEAST64_T
+#define __NEED_UINT_FAST8_T
+#define __NEED_UINT_FAST16_T
+#define __NEED_UINT_FAST32_T
+#define __NEED_UINT_FAST64_T
+#define __NEED_INT_FAST8_T
+#define __NEED_INT_FAST16_T
+#define __NEED_INT_FAST32_T
+#define __NEED_INT_FAST64_T
+#define __NEED_INTPTR_T
+#define __NEED_UINTPTR_T
+#define __NEED_INTMAX_T
+#define __NEED_UINTMAX_T
+
 #include <bits/decl_types.h>
 
 #if !defined(__DEFINED_UINT8_T)
