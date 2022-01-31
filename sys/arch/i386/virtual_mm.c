@@ -269,8 +269,10 @@ pg_table_cow(uint32_t pg_table)
 	tmp_map_page(pg_table & 0xFFFFF000);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)(VIRT_ADDR_TMP_PAGE + PAGE_SIZE); p++) {
-		if (*p & PAGE_PRESENT)
+		if (*p & PAGE_PRESENT) {
 			*p &= ~PAGE_WRITABLE;
+			page_increase_count(*p & 0xFFFFF000);
+		}
 	}
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
@@ -471,6 +473,7 @@ handle_page_fault(uint32_t error)
 	new = page_frame_alloc();
 	if (new == NO_FREE_PAGE)
 		panic("Out of memory");
+	page_frame_free(*ptr & 0xFFFFF000);
 	*ptr = new | old_flags | PAGE_WRITABLE;
 	if (!(pg_frame & PAGE_PRESENT)) {
 		page_frame_free(new);
