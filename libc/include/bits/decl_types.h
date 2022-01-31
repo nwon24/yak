@@ -35,7 +35,7 @@ typedef int __uid_t;
 #endif
 #if defined(__NEED_ID_T) && !defined(__DEFINED___ID_T)
 typedef int __id_t;
-#define __DEFINED___ID_T)
+#define __DEFINED___ID_T
 #endif
 #if defined(__NEED_GID_T) && !defined(__DEFINED___GID_T)
 typedef int __gid_t;
