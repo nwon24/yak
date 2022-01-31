@@ -77,6 +77,29 @@ kernel_setsid(void)
 	return current_process->pgrp_info.pgid;
 }
 
+pid_t
+kernel_getsid(pid_t pid)
+{
+	struct process *proc;
+	pid_t sid;
+
+	if (pid == 0)
+		sid = current_process->pgrp_info.sid;
+	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+		if (proc->state != PROC_EXITED && proc->pid == pid) {
+			sid = proc->pgrp_info.sid;
+			break;
+		}
+	}
+	if (proc >= LAST_PROC)
+		return -ESRCH;
+	for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
+		if (proc->state != PROC_EXITED && proc->pgrp_info.leader && proc->pgrp_info.sid == sid)
+			return proc->pgrp_info.pgid;
+	}
+	return -ESRCH;
+}
+
 mode_t
 kernel_umask(mode_t cmask)
 {

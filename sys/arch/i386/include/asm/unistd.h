@@ -64,6 +64,7 @@
 #define __NR_lstat	0x6B
 #define __NR_fstat	0x6C
 #define __NR_getpgid	0x84
+#define __NR_getsid	0x93
 #define __NR_chown	0xB6
 
 #endif /* ARCH_UNISTD_H */
