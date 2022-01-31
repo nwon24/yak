@@ -184,6 +184,11 @@ struct exec_elf_file {
 	Elf32_Off rodata_off;
 };
 
+struct generic_inode {
+	void *inode;
+	int count;
+};
+
 enum {
 	INODE_GET_MODE,
 	INODE_GET_MTIME,
