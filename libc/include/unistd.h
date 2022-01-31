@@ -5,13 +5,28 @@
 extern "C" {
 #endif
 
+#ifndef __NEED_SIZE_T
 #define __NEED_SIZE_T
+#endif
+#ifndef __NEED_SSIZE_T
 #define __NEED_SSIZE_T
+#endif
+#ifndef __NEED_UID_T
 #define __NEED_UID_T
+#endif
+#ifndef __NEED_GID_T
 #define __NEED_GID_T
+#endif
+#ifndef __NEED_OFF_T
 #define __NEED_OFF_T
+#endif
+#ifndef __NEED_PID_T
 #define __NEED_PID_T
+#endif
+#ifndef __NEED_INTPTR_T
 #define __NEED_INTPTR_T
+#endif
+
 #include <bits/decl_types.h>
 
 #include <bits/unistd.h>
@@ -56,21 +71,21 @@ typedef __gid_t gid_t;
 typedef __pid_t pid_t;
 #define __DEFINED_PID_T
 #endif
-#ifndef __SIZE_T_DEFINED
+#ifndef __DEFINED_SIZE_T
 typedef __size_t size_t;
-#define __SIZE_T_DEFINED
+#define __DEFINED_SIZE_T
 #endif
-#ifndef __SSIZE_T_DEFINED
+#ifndef __DEFINED_SSIZE_T
 typedef __ssize_t ssize_t;
-#define __SIZE_T_DEFINED
+#define __DEFINED_SSIZE_T
 #endif
-#ifndef __OFF_T_DEFINED
+#ifndef __DEFINED_OFF_T
 typedef __off_t off_t;
-#define __OFF_T_DEFINED;
+#define __DEFINED_OFF_T
 #endif
-#ifndef __INTPTR_T_DEFINED
-typedef __intptr_t inptr_t
-#define __INTPTR_T_DEFINED
+#ifndef __DEFINED_INTPTR_T
+typedef __intptr_t inptr_t;
+#define __DEFINED_INTPTR_T
 #endif
 
 int access(const char *path, int mode);

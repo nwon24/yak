@@ -1,6 +1,16 @@
 #ifndef _FCNTL_H
 #define _FCNTL_H
 
+#ifndef __NEED_MODE_T
+#define __NEED_MODE_T
+#endif
+#ifndef __NEED_OFF_T
+#define __NEED_OFF_T
+#endif
+#ifndef __NEED_PID_T
+#define __NEED_PID_T
+#endif
+
 #include <bits/fcntl.h>
 
 #include <bits/decl_types.h>
