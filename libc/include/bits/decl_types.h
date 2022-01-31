@@ -45,6 +45,10 @@ typedef int __gid_t;
 typedef signed int __blkcnt_t;
 #define __DEFINED___BLKCNT_T
 #endif
+#if defined(__NEED_BLKSIZE_T) && !defined(__DEFINED___BLKSIZE_T)
+typedef signed int __blksize_t;
+#define __DEFINED___BLKSIZE_T
+#endif
 #if defined(__NEED_OFF_T) && !defined(__DEFINED___OFF_T)
 typedef signed int __off_t;
 #define __DEFINED___OFF_T
@@ -61,7 +65,10 @@ typedef unsigned int __fsfilcnt_t;
 typedef unsigned int __ino_t;
 #define __DEFINED___INO_T
 #endif
-
+#if defined(__NEED_TIME_T) && !defined(__DEFINED___TIME_T)
+typedef long __time_t;
+#define __DEFINED___TIME_T
+#endif
 #if defined(__i386__)
 
 #if !defined(__DEFINED___SIZE_T) && defined(__NEED_SIZE_T)
