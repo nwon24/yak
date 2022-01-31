@@ -8,6 +8,7 @@
 void mm_init(void);
 
 uint32_t page_frame_alloc(void);
+void page_increase_count(uint32_t page);
 void page_frame_free(uint32_t page);
 /*
  * Since all page frames must be 4 KiB aligned, a value of 1 can mean an invalid page.
