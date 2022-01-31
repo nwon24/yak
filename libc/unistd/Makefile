@@ -20,5 +20,12 @@ LIBC_OBJ += unistd/read.o \
             unistd/getpid.o \
             unistd/getppid.o \
             unistd/getsid.o \
-            unistd/getuid.o
-
+            unistd/link.o \
+            unistd/unlink.o \
+            unistd/symlink.o \
+            unistd/rmdir.o \
+            unistd/setpgid.o \
+            unistd/setsid.o \
+            unistd/setuid.o \
+            unistd/nice.o \
+            unistd/lchown.o
