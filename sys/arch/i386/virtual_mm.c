@@ -28,7 +28,7 @@ static uint32_t *current_pg_table = NULL;
 static int virt_map_entry = 1023;
 
 static void free_page_table(uint32_t page_table);
-static void pg_table_cow(uint32_t pg_table);
+static void pg_table_cow(uint32_t pg_table, int inc_ref);
 
 static inline void
 tmp_map_page(uint32_t page)
@@ -224,7 +224,7 @@ error:
 void
 copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 {
-	uint32_t *p, old;
+	uint32_t *p, old, new;
 	uint32_t tmp_page[PAGE_SIZE / sizeof(uint32_t)];
 
 	/* Addresses passed are physical address so this is a bit of a pain. */
@@ -247,13 +247,22 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 	 */
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
 		if (*p & PAGE_PRESENT && *p & PAGE_USER)
-			pg_table_cow(*p);
+			pg_table_cow(*p, 0);
 	}
 	tmp_map_page(from_page_dir);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
-		if (*p & PAGE_PRESENT && *p & PAGE_USER)
-			pg_table_cow(*p);
+		if (*p & PAGE_PRESENT && *p & PAGE_USER) {
+			int old_flags;
+
+			new = page_frame_alloc();
+			if (new == NO_FREE_PAGE)
+				panic("Out of memory");
+			copy_page_table((uint32_t *)new, (uint32_t *)(*p & 0xFFFFF000));
+			pg_table_cow(new, 1);
+			old_flags = *p & 0xFFF;
+			*p = new | old_flags;
+		}
 	}
 out:
 	tmp_map_page(old);
@@ -261,7 +270,7 @@ out:
 }
 
 static void
-pg_table_cow(uint32_t pg_table)
+pg_table_cow(uint32_t pg_table, int inc_ref)
 {
 	uint32_t old, *p;
 
@@ -271,7 +280,8 @@ pg_table_cow(uint32_t pg_table)
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)(VIRT_ADDR_TMP_PAGE + PAGE_SIZE); p++) {
 		if (*p & PAGE_PRESENT) {
 			*p &= ~PAGE_WRITABLE;
-			page_increase_count(*p & 0xFFFFF000);
+			if (inc_ref)
+				page_increase_count(*p & 0xFFFFF000);
 		}
 	}
 	tmp_map_page(old);
@@ -347,9 +357,11 @@ virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir)
 	nr_tables = len / 0x400000 + 1;
 	p = ((uint32_t *)VIRT_ADDR_TMP_PAGE) + (start >> VIRT_ADDR_PG_DIR_SHIFT);
 	while (nr_tables--) {
-		pg_table = *p & 0xFFFFF000;
-		free_page_table(pg_table);
-		page_frame_free(pg_table);
+		if (*p & PAGE_PRESENT) {
+			pg_table = *p & 0xFFFFF000;
+			free_page_table(pg_table);
+			page_frame_free(pg_table);
+		}
 		p++;
 	}
 	tmp_map_page(old);
@@ -403,8 +415,6 @@ arch_valloc_segments(struct exec_image *image)
 	}
 	if (virt_map_chunk(KERNEL_VIRT_BASE - USER_STACK_SIZE, USER_STACK_SIZE, pg_dir, PAGE_USER | PAGE_WRITABLE, 0) == 0)
 		return -1;
-	/* No going back after this */
-	/*	free_address_space(&current_process->image); */
 	current_cpu_state->next_cr3 = (uint32_t)pg_dir;
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
