@@ -55,6 +55,7 @@ int access(const char *path, int mode);
 unsigned int alarm(unsigned int seconds);
 int chdir(const char *path);
 int chown(const char *path, uid_t uid, gid_t gid);
+int lchown(const char *path, uid_t uid, gid_t gid);
 gid_t getegid(void);
 uid_t geteuid(void);
 gid_t getgid(void);
@@ -64,6 +65,9 @@ pid_t getpid(void);
 pid_t getppid(void);
 pid_t getsid(pid_t pid);
 uid_t getuid(void);
+int setpgid(pid_t pid, pid_t pgid);
+pid_t setsid(void);
+int setuid(uid_t uid);
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, void *buf, size_t count);
 int close(int fd);
@@ -74,6 +78,11 @@ off_t lseek(int fd, off_t off, int whence);
 void sync(void);
 int dup(int fd);
 int dup2(int oldfd, int newfd);
+int link(const char *path1, const char *path2);
+int unlink(const char *path);
+int symlink(const char *path1, const char *path2);
+int rmdir(const char *path);
+int nice(int inc);
 
 #endif /* __ASSEMBLER__ */
 
