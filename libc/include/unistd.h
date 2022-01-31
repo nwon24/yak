@@ -5,6 +5,13 @@
 extern "C" {
 #endif
 
+#define __NEED_SIZE_T
+#define __NEED_SSIZE_T
+#define __NEED_UID_T
+#define __NEED_GID_T
+#define __NEED_OFF_T
+#define __NEED_PID_T
+#define __NEED_INTPTR_T
 #include <bits/decl_types.h>
 
 #include <bits/unistd.h>
@@ -16,9 +23,15 @@ extern "C" {
 #define STDOUT_FILENO	1
 #define STDERR_FILENO	2
 
+#ifndef SEEK_SET
 #define SEEK_SET	0
+#endif
+#ifndef SEEK_CUR
 #define SEEK_CUR	1
+#endif
+#ifndef SEEK_END
 #define SEEK_END	2
+#endif
 
 #define F_OK	0
 #define X_OK	1
@@ -45,11 +58,20 @@ typedef __pid_t pid_t;
 #endif
 #ifndef __SIZE_T_DEFINED
 typedef __size_t size_t;
+#define __SIZE_T_DEFINED
 #endif
 #ifndef __SSIZE_T_DEFINED
 typedef __ssize_t ssize_t;
+#define __SIZE_T_DEFINED
 #endif
+#ifndef __OFF_T_DEFINED
 typedef __off_t off_t;
+#define __OFF_T_DEFINED;
+#endif
+#ifndef __INTPTR_T_DEFINED
+typedef __intptr_t inptr_t
+#define __INTPTR_T_DEFINED
+#endif
 
 int access(const char *path, int mode);
 unsigned int alarm(unsigned int seconds);
