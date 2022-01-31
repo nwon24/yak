@@ -159,6 +159,10 @@ kernel_fork(void)
 		if (current_process->file_table[i] != NULL)
 			current_process->file_table[i]->f_count++;
 	}
+	if (current_process->root_inode.inode)
+		current_process->root_inode.count++;
+	if (current_process->cwd_inode.inode)
+		current_process->cwd_inode.count++;
 	return last_pid;
 }
 
@@ -176,8 +180,12 @@ kernel_exit(int status)
 		if (proc->state != PROC_EXITED && proc->ppid == current_process->pid)
 			proc->ppid = 1;
 	}
-	current_process->root_fs->f_driver->fs_raw.fs_raw_iput(current_process->root_inode);
-	current_process->cwd_fs->f_driver->fs_raw.fs_raw_iput(current_process->cwd_inode);
+	current_process->root_inode.count--;
+	if (current_process->root_inode.count == 0)
+		current_process->root_fs->f_driver->fs_raw.fs_raw_iput(current_process->root_inode.inode);
+	current_process->cwd_inode.count--;
+	if (current_process->cwd_inode.count == 0)
+		current_process->cwd_fs->f_driver->fs_raw.fs_raw_iput(current_process->cwd_inode.inode);
 	current_process->exit_code = status;
 	arch_exit();
 	if (current_process->ppid) {
