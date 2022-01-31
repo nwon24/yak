@@ -1,7 +1,7 @@
 #ifndef _BITS_STAT_H
 #define _BITS_STAT_H
 
-#ifndef __DEFINED__FILE_MODE_BITS
+#ifndef __DEFINED___FILE_MODE_BITS
 
 #define __S_IRWXU	0700
 #define __S_IRUSR	0400
@@ -37,7 +37,8 @@
 #define __S_ISCHR(m)	__S_ISFMT(m, __S_IFCHR)
 #define __S_ISFIFO(m)	__S_ISFMT(m, __S_IFIFO)
 
-#define __DEFINED__FILE_MODE_BITS
+#define __DEFINED___FILE_MODE_BITS
+
 #endif
 
 #endif /* _BITS_STAT_H */
