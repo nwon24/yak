@@ -1,6 +1,8 @@
 # Yak
 A hobby Unix-like kernel project.
 
+**HUGE WARNING: This is purely experimental. Not to be tested on real hardware. Will probably screw a lot of things up**
+
 # Goals
 - [x] Basic ext2 implmentation (e.g., `open`, `read`, `write`, `close`, `link`, `unlink`, `rename`)
 - [x] Framebuffer console driver
@@ -20,14 +22,12 @@ You can compile this with either the GNU toolchain or the LLVM toolchain.
 See the [GCC](https://gnu.org/software/gcc) and [binutils](https://gnu.org/software/binutils) pages for more information on the GNU toolchain.
 See the [LLVM](https://llvm.org) page for information on LLVM.
 
-**WARNING: Currently, compiling with `clang` and linking with `lld` seems to break the kernel.
-With the exact same code, a kernel compiled with `GCC` will run fine, while a kernel compiled with `clang` will hang
-early with a page fault.
-If you have the patience to hunt down why this is the case feel free.
-Otherwise, it is recommended to build a GCC cross compiler and use that to build the kernel.
-The rest of this section is for building a GCC cross compiler, as the LLVM toolchain is a cross compiler by default.**
+**WARNING: Building with the LLVM toolchain right now is not supported, as we have moved to an OS-specific toolchain.
+This has not been tested with LLVM**
 
 The kernel now uses its own hosted toolchain for the `i686-hobbix` target. Patches for GCC and Binutils are in the [toolchain](./toolchain) subdirectory.
+
+**WARNING: Our C library right now is not functional enough to to have compile GCC and Binutils against, yet. **
 
 **NOTE: Soon there will be a script that does the following for you.**
 
