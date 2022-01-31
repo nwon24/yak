@@ -214,11 +214,13 @@ ext2_mount_root(void)
 	struct ext2_superblock_m *sb;
 
 	ip = ext2_iget(CONFIG_FS_ROOT_DEV, EXT2_ROOT_INO);
-	current_process->root_inode = ip;
-	if (current_process->root_inode == NULL)
+	current_process->root_inode.inode = ip;
+	if (current_process->root_inode.inode == NULL)
 		panic("ext2_mount_root: unable to get root inode");
+	current_process->root_inode.count = 1;
 	ip->i_count++;
-	current_process->cwd_inode = current_process->root_inode;
+	current_process->cwd_inode.inode = current_process->root_inode.inode;
+	current_process->root_inode.count = 1;
 	current_process->root_fs = &ext2_fs_struct;
 	current_process->cwd_fs = &ext2_fs_struct;
 	sb = ext2_fs_struct.f_super;

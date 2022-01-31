@@ -218,7 +218,7 @@ ext2_chown(const char *path, uid_t uid, gid_t gid)
 	if (ip == NULL)
 		return err;
 	if (EXT2_S_ISLNK(ip->i_ino.i_mode)) {
-		target = ext2_follow_symlink(ip, current_process->root_inode, dp, &err);
+		target = ext2_follow_symlink(ip, current_process->root_inode.inode, dp, &err);
 		if (target == NULL) {
 			ext2_iput(ip);
 			if (dp != ip)
@@ -319,7 +319,7 @@ ext2_chroot(const char *path)
 		ext2_iput(ip);
 		return -ENOTDIR;
 	}
-	ext2_iput(current_process->root_inode);
-	current_process->root_inode = ip;
+	ext2_iput(current_process->root_inode.inode);
+	current_process->root_inode.inode = ip;
 	return 0;
 }

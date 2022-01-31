@@ -264,7 +264,7 @@ ext2_unlink(const char *pathname)
 			ext2_iput(dp);
 		return -EACCES;
 	}
-	if (ip == current_process->root_inode) {
+	if (ip == current_process->root_inode.inode) {
 		ext2_iput(ip);
 		if (ip != dp)
 			ext2_iput(dp);
@@ -333,8 +333,8 @@ ext2_chdir(const char *path)
 		ext2_iput(dp);
 		return err;
 	}
-	ext2_iput(current_process->cwd_inode);
-	current_process->cwd_inode = ip;
+	ext2_iput(current_process->cwd_inode.inode);
+	current_process->cwd_inode.inode = ip;
 	return 0;
 }
 
@@ -420,7 +420,7 @@ ext2_rmdir(const char *path)
 		ret = (err != 0) ? err : -ENOTEMPTY;
 		goto out;
 	}
-	if (ip == current_process->root_inode) {
+	if (ip == current_process->root_inode.inode) {
 		ret = -EBUSY;
 		goto out;
 	}

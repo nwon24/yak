@@ -51,7 +51,7 @@ ext2_stat(const char *path, struct stat *statp)
 		return err;
 	}
 	if (EXT2_S_ISLNK(ip->i_ino.i_mode)) {
-		tmp = ext2_follow_symlink(ip, current_process->root_inode, dp, &err);
+		tmp = ext2_follow_symlink(ip, current_process->root_inode.inode, dp, &err);
 		if (tmp == NULL && err == -EIO)
 			goto out;
 		ext2_iput(ip);

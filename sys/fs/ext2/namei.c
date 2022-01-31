@@ -109,7 +109,7 @@ ext2_namei(const char *path,
 	struct ext2_inode_m *ip, *dp, *start, *prev_dir = NULL;
 	const char *p1, *p2;
 
-	if (current_process->root_inode == NULL || current_process->cwd_inode == NULL)
+	if (current_process->root_inode.inode == NULL || current_process->cwd_inode.inode == NULL)
 		panic("Current process has no root directory or working directory");
 	if (current_process->root_fs->f_fs != EXT2 && current_process->root_fs->f_fs != EXT2) {
 		/*
@@ -120,9 +120,9 @@ ext2_namei(const char *path,
 		return NULL;
 	}
 	if (root == NULL)
-		root = current_process->root_inode;
+		root = current_process->root_inode.inode;
 	if (cwd == NULL)
-		cwd = current_process->cwd_inode;
+		cwd = current_process->cwd_inode.inode;
 	p1 = path;
 	ip = (get_ubyte(p1) == '/') ? root : cwd;
 	if (ip == NULL)
