@@ -130,8 +130,6 @@ arch_switch_to(struct process *prev, struct process *new)
 void
 arch_exit(void)
 {
-	printk("WARNING: Have not implemented reference counting on physical pages.\r\n");
-	printk("This means exiting will free the memory that may be used by child processes\r\n");
 	free_address_space(&current_process->image);
 }
 
@@ -143,6 +141,7 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	int type, err;
 	size_t init_stack_gap;
 	uint32_t *new_sp;
+	void *padded_sp;
 	Elf32_Ehdr ehdr;
 
 	if (elf32_read_ehdr(file, &ehdr) != sizeof(ehdr))
@@ -161,12 +160,13 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	err = elf32_load_elf(&image, file, &ehdr);
 	init_stack_gap = 0;
 	new_sp = exec_set_up_stack(argv, envp, &init_stack_gap);
-	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = KERNEL_VIRT_BASE - init_stack_gap;
+	padded_sp = (void *)(KERNEL_VIRT_BASE - init_stack_gap);
+	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = (uint32_t)padded_sp;
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
 	/* free_address_space(current_process->image); */
 	copy_page_table((uint32_t *)current_cpu_state->cr3, (uint32_t *)current_cpu_state->next_cr3);
 	page_frame_free((uint32_t)current_cpu_state->next_cr3);
-	memmove((void *)(KERNEL_VIRT_BASE - init_stack_gap), new_sp, init_stack_gap);
+	memmove(padded_sp, new_sp, init_stack_gap);
 	elf32_read_image(&image, file);
 	if (err < 0)
 		return err;
@@ -204,8 +204,9 @@ exec_set_up_stack(const char *argv[], const char *envp[], size_t *res_stack_gap)
 		total_len += exec_strlen(*p);
 	/* Size of argc, argv, and envp */
 	total_len += 3 * sizeof(void *);
-	*res_stack_gap = total_len;
 	user_sp_base = KERNEL_VIRT_BASE - total_len;
+	user_sp_base &= 0xFFFFFFF0;
+	*res_stack_gap = KERNEL_VIRT_BASE - user_sp_base;
 	sp = kvmalloc(total_len);
 	/*
 	 * Perhaps this might help.
