@@ -12,12 +12,31 @@
 #include <drivers/driver.h>
 #include <drivers/ps2.h>
 #include <drivers/keycode.h>
+#include <drivers/keyboard.h>
 
 #include <kernel/debug.h>
 
-static int ext_flag;
+#define SET_1_ESCAPE	0xE0
+#define SET_1_PAUSE_ESCAPE	0xE1
+#define SET_1_LSHIFT_MAKE	0x2A
+#define SET_1_LSHIFT_BREAK	0xAA
+
+enum kbd_state {
+	WAITING_FOR_SCAN,
+	WAITING_FOR_SECOND,
+	WAITING_FOR_THIRD,
+	WAITING_FOR_FOURTH,
+	WAITING_FOR_FIFTH,
+	WAITING_FOR_SIXTH,
+};
+
+static int state = WAITING_FOR_SCAN;
+static int pause_flag = 0;
 
 static void ps2_kbd_irq(void);
+static uint16_t get_keycode_set1(int scan, int *type);
+
+static uint16_t (*get_keycode)(int scan, int *type);
 
 static uint16_t scancode_set1[] = {
 	KEY_NONE, KEY_ESC, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0,
@@ -87,6 +106,7 @@ repeat:
 		return -1;
 	if (ps2_dev_send_wait(chan, PS2_DEV_CMD_ENABLE_SCAN) < 0)
 		return -1;
+	get_keycode = get_keycode_set1;
 	register_driver(&ps2_keyboard_driver);
 	if (chan == PS2_FIRST_PORT) {
 		set_idt_entry(PS2_FIRST_IRQ, (uint32_t)irq1_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
@@ -98,22 +118,56 @@ repeat:
 	return 0;
 }
 
+static uint16_t
+get_keycode_set1(int scan, int *type)
+{
+	if (scan > 0xE1)
+		return KEY_NONE;
+	if (pause_flag && state == WAITING_FOR_SIXTH) {
+		*type = MAKE;
+		return KEY_PAUSE_BREAK;
+	}
+	if (scan == 0xE1) {
+		pause_flag = 1;
+		state++;
+		return KEY_NONE;
+	}
+	if (scan == SET_1_ESCAPE) {
+		state++;
+		return KEY_NONE;
+	}
+	if (scan == SET_1_LSHIFT_MAKE && state == WAITING_FOR_SECOND) {
+		state++;
+		return KEY_NONE;
+	}
+	if (scan == 0x37 && state == WAITING_FOR_FOURTH) {
+		*type = MAKE;
+		return KEY_PRINT_SCREEN;
+	}
+	if (scan == 0xB7 && state == WAITING_FOR_SECOND) {
+		state++;
+		return KEY_NONE;
+	}
+	if (scan == SET_1_LSHIFT_BREAK && state == WAITING_FOR_FOURTH) {
+		*type = BREAK;
+		return KEY_PRINT_SCREEN;
+	}
+	if (scan & 0x80) {
+		*type = BREAK;
+		scan &= ~0x80;
+	}
+	return (state == WAITING_FOR_SCAN) ? scancode_set1[scan] : scancode_set1_ext[scan];
+}
+
 static void
 ps2_kbd_irq(void)
 {
 	int scan;
+	struct kbd_packet packet;
 
 	scan = inb(PS2_DATA_PORT);
-	if (scan == 0xE0) {
-		ext_flag = 1;
+	packet.keycode = (*get_keycode)(scan, &packet.type);
+	if (packet.keycode == KEY_NONE)
 		return;
-	}
-	if (scan > 0x80)
-		return;
-	if (ext_flag) {
-		ext_flag = 0;
-		kbd_keycode(scancode_set1_ext[scan]);
-	} else {
-		kbd_keycode(scancode_set1[scan]);
-	}
+	kbd_handle_packet(&packet);
 }
