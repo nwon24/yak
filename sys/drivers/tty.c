@@ -183,18 +183,21 @@ tty_close(int minor)
 }
 
 void
-do_update_tty(int c)
+do_update_tty(char *buf)
 {
 	struct tty *tp;
+	char *p;
 
 	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
 		tp = tty_tab + current_process->tty;
 		if (!tp->t_open)
 			return;
-		if (!tty_queue_full(&tp->t_readq))
-			tty_putch(c, &tp->t_readq);
-		if (!tty_queue_full(&tp->t_writeq))
-			tty_putch(c, &tp->t_writeq);
+		for (p = buf; *p != '\0'; p++) {
+			if (!tty_queue_full(&tp->t_readq))
+				tty_putch(*p, &tp->t_readq);
+			if (!tty_queue_full(&tp->t_writeq))
+				tty_putch(*p, &tp->t_writeq);
+		}
 		tty_flush(tp);
 		tty_queue_reset(&tp->t_writeq);
 	}
