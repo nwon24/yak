@@ -10,8 +10,26 @@
 #include <drivers/driver.h>
 #include <drivers/pci.h>
 #include <drivers/ps2.h>
+#include <drivers/tty.h>
 
 #include <kernel/debug.h>
+
+#include "defkeymap.h"
+
+#define RAW_KEYCODE(k)	((k) & 0xFF)
+
+uint8_t *loadedkeymap;
+
+typedef void (*k_handler)(uint16_t keycode);
+
+static void k_do_self(uint16_t keycode);
+static void k_do_fn(uint16_t keycode);
+static void k_do_mod(uint16_t keycode);
+static void k_do_none(uint16_t keycode);
+
+static k_handler handlers[] = {
+	k_do_self, k_do_fn, k_do_mod, k_do_none
+};
 
 int
 keyboard_init(void)
@@ -32,5 +50,38 @@ keyboard_init(void)
 	ps2_init();
 	if (ps2_kbd_init() < 0)
 		panic("Unable to initialise PS/2 keyboard");
+	loadedkeymap = defkeymap;
 	return 0;
+}
+
+static void
+k_do_self(uint16_t keycode)
+{
+	do_update_tty(loadedkeymap[RAW_KEYCODE(keycode)]);
+}
+
+static void
+k_do_fn(uint16_t keycode)
+{
+}
+
+
+static void
+k_do_mod(uint16_t keycode)
+{
+}
+
+
+static void
+k_do_none(uint16_t keycode)
+{
+}
+
+void
+kbd_keycode(uint16_t keycode)
+{
+	int handler;
+
+	handler = (keycode >> 8) & 0xF;
+	(*handlers[handler])(keycode);
 }
