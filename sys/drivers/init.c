@@ -14,6 +14,8 @@
 #include <drivers/timer.h>
 #include <drivers/virtual_console.h>
 
+int keyboard_init(void);
+
 #ifdef CONFIG_DRIVER_8250_UART
 #include <drivers/uart_8250.h>
 #endif /* CONFIG_DRIVER_8250_UART */
@@ -50,6 +52,7 @@ init_function init_func_table[] = {
 #ifdef CONFIG_FS_EXT2
 	ext2_init,
 #endif /* CONFIG_FS_EXT2 */
+	keyboard_init,
 	NULL,
 };
 
