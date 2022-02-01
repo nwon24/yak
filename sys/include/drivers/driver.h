@@ -18,6 +18,8 @@
 #error "No other timer driver supported yet."
 #endif /* DRIVERS_PIT_DRIVER */
 #define DRIVERS_DISK_DRIVER	4
+#define DRIVERS_KEYBOARD_DRIVER	5
+#define DRIVERS_MOUSE_DRIVER	6
 
 #ifndef __ASSEMBLER__
 struct driver {
