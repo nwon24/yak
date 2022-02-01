@@ -32,10 +32,10 @@ tty_queue_full(struct tty_queue *tq)
 }
 
 static inline int
-tty_putch(int c, struct tty *tp)
+tty_putch(int c, struct tty_queue *tq)
 {
-	if (!tty_queue_full(&tp->t_writeq)) {
-		*tp->t_writeq.tq_tail++ = (char)c;
+	if (!tty_queue_full(tq)) {
+		*tq->tq_tail++ = (char)c;
 		return c;
 	}
 	return 0;
@@ -51,10 +51,10 @@ tty_flush(struct tty *tp)
 }
 
 static inline int
-tty_getch(struct tty *tp)
+tty_getch(struct tty_queue *tq)
 {
-	if (!tty_queue_empty(&tp->t_readq))
-		return (int) *tp->t_readq.tq_head++;
+	if (!tty_queue_empty(tq))
+		return (int) *tq->tq_head++;
 	return 0;
 }
 
@@ -117,7 +117,7 @@ tty_write(int n, char *buf, int count)
 	i = count;
 	p = buf;
 	while (*p && i-- && !tty_queue_full(&tp->t_writeq))
-		tty_putch(*p++, tp);
+		tty_putch(*p++, &tp->t_writeq);
 	tty_flush(tp);
 	tty_queue_reset(&tp->t_writeq);
 	return p - buf;
@@ -137,7 +137,7 @@ tty_read(int n, char *buf, int count)
 	i = count;
 	p = buf;
 	while (i-- && !tty_queue_empty(&tp->t_readq))
-		*p++ = tty_getch(tp);
+		*p++ = tty_getch(&tp->t_readq);
 	return p - buf;
 }
 
@@ -180,4 +180,22 @@ tty_close(int minor)
 	tp = tty_tab + minor;
 	tp->t_open = 0;
 	return minor;
+}
+
+void
+do_update_tty(int c)
+{
+	struct tty *tp;
+
+	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
+		tp = tty_tab + current_process->tty;
+		if (!tp->t_open)
+			return;
+		if (!tty_queue_full(&tp->t_readq))
+			tty_putch(c, &tp->t_readq);
+		if (!tty_queue_full(&tp->t_writeq))
+			tty_putch(c, &tp->t_writeq);
+		tty_flush(tp);
+		tty_queue_reset(&tp->t_writeq);
+	}
 }
