@@ -13,6 +13,7 @@ A hobby Unix-like kernel project.
 - [ ] Port musl C library
 - [x] ext2 symlinks
 - [ ] mount/umount system calls
+- [ ] Abstract installation of IRQ handlers for easier porting
 - [ ] Port to x86_64
 # Prerequisites
 ## Operating system
