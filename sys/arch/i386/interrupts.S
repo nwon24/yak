@@ -117,6 +117,18 @@ irq0_handler:
 	addl	$4, %esp
 	jmp	restart
 
+	.global	irq1_handler
+irq1_handler:
+	pushl	$0
+	save_regs
+	restore_kernel_seg
+	save_state
+	call	acknowledge_int
+	pushl	$DRIVERS_KEYBOARD_DRIVER
+	call	driver_irq
+	addl	$4, %esp
+	jmp	restart
+
 	.global	irq3_handler, irq4_handler
 irq3_handler:
 irq4_handler:
@@ -126,6 +138,18 @@ irq4_handler:
 	save_state
 	call	acknowledge_int
 	pushl	$DRIVERS_UART8250_DRIVER
+	call	driver_irq
+	addl	$4, %esp
+	jmp	restart
+
+	.global	irq12_handler
+irq12_handler:
+	pushl	$0
+	save_regs
+	restore_kernel_seg
+	save_state
+	call	acknowledge_int
+	pushl	$DRIVERS_MOUSE_DRIVER
 	call	driver_irq
 	addl	$4, %esp
 	jmp	restart
