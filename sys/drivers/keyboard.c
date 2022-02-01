@@ -11,6 +11,7 @@
 #include <drivers/pci.h>
 #include <drivers/ps2.h>
 #include <drivers/tty.h>
+#include <drivers/keyboard.h>
 
 #include <kernel/debug.h>
 
@@ -18,18 +19,35 @@
 
 #define RAW_KEYCODE(k)	((k) & 0xFF)
 
-uint8_t *loadedkeymap;
+struct keymap {
+	uint8_t *map;
+	uint8_t *shiftmap;
+};
 
-typedef void (*k_handler)(uint16_t keycode);
+struct keymap loaded_key_map = {
+	.map = defkeymap,
+	.shiftmap = defkeymap_shift,
+};
 
-static void k_do_self(uint16_t keycode);
-static void k_do_fn(uint16_t keycode);
-static void k_do_mod(uint16_t keycode);
-static void k_do_none(uint16_t keycode);
+typedef void (*k_handler)(struct kbd_packet *packet);
+
+static void k_do_self(struct kbd_packet *packet);
+static void k_do_fn(struct kbd_packet *packet);
+static void k_do_mod(struct kbd_packet *packet);
+static void k_do_none(struct kbd_packet *packet);
 
 static k_handler handlers[] = {
 	k_do_self, k_do_fn, k_do_mod, k_do_none
 };
+
+struct kbd_state {
+	int modifiers;
+	int caps_lock;
+	int num_lock;
+	int scroll_lock;
+};
+
+static struct kbd_state state = { 0, 0, 0, 0 };
 
 int
 keyboard_init(void)
@@ -50,38 +68,89 @@ keyboard_init(void)
 	ps2_init();
 	if (ps2_kbd_init() < 0)
 		panic("Unable to initialise PS/2 keyboard");
-	loadedkeymap = defkeymap;
 	return 0;
 }
 
 static void
-k_do_self(uint16_t keycode)
+k_do_self(struct kbd_packet *packet)
 {
-	do_update_tty(loadedkeymap[RAW_KEYCODE(keycode)]);
+	uint16_t keycode;
+	uint8_t *map;
+	int c;
+	char buf[3];
+
+	if (packet->type == BREAK)
+		return;
+	keycode = packet->keycode;
+	map = (state.modifiers & SHIFT) ? loaded_key_map.shiftmap : loaded_key_map.map;
+	if (state.caps_lock)
+		map = (map == loaded_key_map.shiftmap) ? loaded_key_map.map : loaded_key_map.shiftmap;
+	c = map[RAW_KEYCODE(keycode)];
+	if (state.modifiers & CTRL)
+		c &= 0x1F;
+	if (state.modifiers & ALT) {
+		buf[0] = 27;
+		buf[1] = c;
+		buf[2] = '\0';
+	} else {
+		buf[0] = c;
+		buf[1] = '\0';
+	}
+	do_update_tty(buf);
 }
 
 static void
-k_do_fn(uint16_t keycode)
+k_do_fn(struct kbd_packet *packet)
 {
 }
 
 
 static void
-k_do_mod(uint16_t keycode)
+k_do_mod(struct kbd_packet *packet)
 {
+	switch (packet->keycode) {
+	case KEY_LSHIFT:
+	case KEY_RSHIFT:
+		if (packet->type == MAKE)
+			state.modifiers |= SHIFT;
+		else
+			state.modifiers &= ~SHIFT;
+		break;
+	case KEY_RCTRL:
+	case KEY_LCTRL:
+		if (packet->type == MAKE)
+			state.modifiers |= CTRL;
+		else
+			state.modifiers &= ~CTRL;
+		break;
+	case KEY_LALT:
+	case KEY_RALT:
+		if (packet->type == MAKE)
+			state.modifiers |= ALT;
+		else
+			state.modifiers &= ~ALT;
+		break;
+	case KEY_CAPS_LOCK:
+		state.caps_lock = 1 - state.caps_lock;
+		break;
+	case KEY_NUM_LOCK:
+		state.num_lock = 1 - state.num_lock;
+		break;
+	}
 }
 
 
 static void
-k_do_none(uint16_t keycode)
+k_do_none(struct kbd_packet *packet)
 {
+	printk("[KEYBOARD] Received keycode %x that has no effect\r\n", packet->keycode);
 }
 
 void
-kbd_keycode(uint16_t keycode)
+kbd_handle_packet(struct kbd_packet *packet)
 {
 	int handler;
 
-	handler = (keycode >> 8) & 0xF;
-	(*handlers[handler])(keycode);
+	handler = (packet->keycode >> 8) & 0xF;
+	(*handlers[handler])(packet);
 }
