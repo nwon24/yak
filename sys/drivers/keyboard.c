@@ -83,9 +83,13 @@ k_do_self(struct kbd_packet *packet)
 		return;
 	keycode = packet->keycode;
 	map = (state.modifiers & SHIFT) ? loaded_key_map.shiftmap : loaded_key_map.map;
-	if (state.caps_lock)
-		map = (map == loaded_key_map.shiftmap) ? loaded_key_map.map : loaded_key_map.shiftmap;
 	c = map[RAW_KEYCODE(keycode)];
+	if (state.caps_lock) {
+		if (c >= 'a' && c <= 'z')
+			c = 'A' + (c - 'a');
+		else if (c >= 'A' && c <= 'Z')
+			c = 'a' + (c - 'A');
+	}
 	if (state.modifiers & CTRL)
 		c &= 0x1F;
 	if (state.modifiers & ALT) {
@@ -131,10 +135,12 @@ k_do_mod(struct kbd_packet *packet)
 			state.modifiers &= ~ALT;
 		break;
 	case KEY_CAPS_LOCK:
-		state.caps_lock = 1 - state.caps_lock;
+		if (packet->type == MAKE)
+			state.caps_lock = 1 - state.caps_lock;
 		break;
 	case KEY_NUM_LOCK:
-		state.num_lock = 1 - state.num_lock;
+		if (packet->type == MAKE)
+			state.num_lock = 1 - state.num_lock;
 		break;
 	}
 }
