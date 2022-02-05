@@ -155,6 +155,8 @@ get_keycode_set1(int scan, int *type)
 	if (scan & 0x80) {
 		*type = BREAK;
 		scan &= ~0x80;
+	} else {
+		*type = MAKE;
 	}
 	return (state == WAITING_FOR_SCAN) ? scancode_set1[scan] : scancode_set1_ext[scan];
 }
