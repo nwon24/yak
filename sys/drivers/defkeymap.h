@@ -143,4 +143,29 @@ static uint8_t defkeymap_shift[] = {
 	[KEY_RAW_PAD_DOT] = '.',
 };
 
+const char *defkeymap_fn[] = {
+	[KEY_RAW_F1] = "\033OP",
+	[KEY_RAW_F2] = "\033OQ",
+	[KEY_RAW_F3] = "\033OR",
+	[KEY_RAW_F4] = "\033OS",
+	[KEY_RAW_F5] = "\033[15~",
+	[KEY_RAW_F6] = "\033[17~",
+	[KEY_RAW_F7] = "\033[18~",
+	[KEY_RAW_F8] = "\033[19~",
+	[KEY_RAW_F9] = "\033[20~",
+	[KEY_RAW_F10] = "\033[21~",
+	[KEY_RAW_F11] = "\033[23~",
+	[KEY_RAW_F12] = "\033[24~",
+	[KEY_RAW_INSERT] = "\033[2~",
+	[KEY_RAW_HOME] = "\033[H",
+	[KEY_RAW_PAGE_UP] = "\033[5~",
+	[KEY_RAW_DELETE] = "\033[3~",
+	[KEY_RAW_END] = "\033[F",
+	[KEY_RAW_PAGE_DOWN] = "\033[6~",
+	[KEY_RAW_ARROW_UP] = "\033[A",
+	[KEY_RAW_ARROW_DOWN] = "\033[B",
+	[KEY_RAW_ARROW_LEFT] = "\033[D",
+	[KEY_RAW_ARROW_RIGHT] = "\033[C",
+};
+
 #endif
