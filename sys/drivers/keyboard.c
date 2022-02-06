@@ -22,11 +22,13 @@
 struct keymap {
 	uint8_t *map;
 	uint8_t *shiftmap;
+	const char **fnmap;
 };
 
 struct keymap loaded_key_map = {
 	.map = defkeymap,
 	.shiftmap = defkeymap_shift,
+	.fnmap = defkeymap_fn,
 };
 
 typedef void (*k_handler)(struct kbd_packet *packet);
@@ -106,6 +108,12 @@ k_do_self(struct kbd_packet *packet)
 static void
 k_do_fn(struct kbd_packet *packet)
 {
+	const char **map;
+
+	if (packet->type == BREAK)
+		return;
+	map = loaded_key_map.fnmap;
+	do_update_tty(map[RAW_KEYCODE(packet->keycode)]);
 }
 
 
