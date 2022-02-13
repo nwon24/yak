@@ -103,6 +103,8 @@ tty_struct_init(int n)
 	tp->t_termios.c_cc[VSUSP] = 'y' & 0x1F;
 	tp->t_termios.c_cc[VTIME] = 0;
 	tp->t_termios.c_cc[VMIN] = 1;
+	tp->t_termios.c_oflag = OPOST | ONLCR;
+	tp->t_termios.c_Lflag = ICANON | ECHO | ECHOCTL | ECHOKE;
 	return tp;
 }
 
