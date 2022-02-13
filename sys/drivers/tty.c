@@ -15,6 +15,11 @@
 
 #define NR_TTY	6
 
+#define TERMIOS_OFLAG(tp, flag)	((tp)->t_termios.c_oflag & (flag))
+#define TERMIOS_LFLAG(tp, flag)	((tp)->t_termios.c_lflag & (flag))
+#define TERMIOS_IFLAG(tp, flag)	((tp)->t_termios.c_iflag & (flag))
+#define TERMIOS_CFLAG(tp, flag)	((tp)->t_termios.c_cflag & (flag))
+
 static struct tty tty_tab[NR_TTY];
 
 #define TTY_NUM(tp)	((tp) - tty_tab >= SERIAL_TTY_START ? (tp) - tty_tab - SERIAL_TTY_START : (tp) - tty_tab)
@@ -87,6 +92,17 @@ tty_struct_init(int n)
 	tty_queue_reset(&tp->t_writeq);
 	tty_queue_reset(&tp->t_readq);
 	tp->t_stopped = 0;
+	tp->t_termios.c_cc[VEOF] = 'd' & 0x1F;
+	tp->t_termios.c_cc[VEOL] = 0;
+	tp->t_termios.c_cc[VERASE] = 0x7F;
+	tp->t_termios.c_cc[VKILL] = 'u' & 0x1F;
+	tp->t_termios.c_cc[VINTR] = 'c' & 0x1F;
+	tp->t_termios.c_cc[VQUIT] = '|' & 0x1F;
+	tp->t_termios.c_cc[VSTART] = 'q' & 0x1F;
+	tp->t_termios.c_cc[VSTOP] = 's' & 0x1F;
+	tp->t_termios.c_cc[VSUSP] = 'y' & 0x1F;
+	tp->t_termios.c_cc[VTIME] = 0;
+	tp->t_termios.c_cc[VMIN] = 1;
 	return tp;
 }
 
