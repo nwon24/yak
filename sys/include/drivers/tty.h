@@ -3,6 +3,8 @@
 
 #include <drivers/virtual_console.h>
 
+#include <generic/termios.h>
+
 #define TTY_BUF_SIZE	512
 
 /* Serial ttys begin right after virtual consoles */
@@ -20,6 +22,7 @@ struct tty_driver {
 };
 
 struct tty {
+	struct termios t_termios;
 	struct tty_driver *t_driver;
 	struct tty_queue t_writeq;
 	struct tty_queue t_readq;
