@@ -7,6 +7,8 @@
 
 #define TTY_BUF_SIZE	512
 
+#define MAX_CANNON	TTY_BUF_SIZE
+
 /* Serial ttys begin right after virtual consoles */
 #define SERIAL_TTY_START	NR_VIRTUAL_CONSOLES
 
