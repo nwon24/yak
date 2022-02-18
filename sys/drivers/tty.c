@@ -9,6 +9,7 @@
 #include <fs/dev.h>
 
 #include <generic/errno.h>
+#include <generic/termios.h>
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
@@ -19,6 +20,22 @@
 #define TERMIOS_LFLAG(tp, flag)	((tp)->t_termios.c_lflag & (flag))
 #define TERMIOS_IFLAG(tp, flag)	((tp)->t_termios.c_iflag & (flag))
 #define TERMIOS_CFLAG(tp, flag)	((tp)->t_termios.c_cflag & (flag))
+
+#define TERMIOS_VEOF(tp)	((tp)->t_termios.c_cc[VEOF])
+#define TERMIOS_VEOL(tp)	((tp)->t_termios.c_cc[VEOL])
+#define TERMIOS_VERASE(tp)	((tp)->t_termios.c_cc[VERASE])
+#define TERMIOS_VERASE(tp)	((tp)->t_termios.c_cc[VERASE])
+#define TERMIOS_VINTR(tp)	((tp)->t_termios.c_cc[VINTR])
+#define TERMIOS_VKILL(tp)	((tp)->t_termios.c_cc[VKILL])
+#define TERMIOS_VMIN(tp)	((tp)->t_termios.c_cc[VMIN])
+#define TERMIOS_VTIME(tp)	((tp)->t_termios.c_cc[VTIME])
+#define TERMIOS_VQUIT(tp)	((tp)->t_termios.c_cc[VQUIT])
+#define TERMIOS_VSUSP(tp)	((tp)->t_termios.c_cc[VSUSP])
+#define TERMIOS_VSTART(tp)	((tp)->t_termios.c_cc[VSTART])
+#define TERMIOS_VSTOP(tp)	((tp)->t_termios.c_cc[VSTOP])
+
+static void tty_process_input(struct tty *tp, int c);
+static void tty_process_output(struct tty *tp, int c);
 
 static struct tty tty_tab[NR_TTY];
 
@@ -104,7 +121,7 @@ tty_struct_init(int n)
 	tp->t_termios.c_cc[VTIME] = 0;
 	tp->t_termios.c_cc[VMIN] = 1;
 	tp->t_termios.c_oflag = OPOST | ONLCR;
-	tp->t_termios.c_Lflag = ICANON | ECHO | ECHOCTL | ECHOKE;
+	tp->t_termios.c_lflag = ICANON | ECHO | ECHOK | ECHOE;
 	return tp;
 }
 
@@ -205,18 +222,55 @@ do_update_tty(char *buf)
 {
 	struct tty *tp;
 	char *p;
+	int c;
 
 	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
 		tp = tty_tab + current_process->tty;
 		if (!tp->t_open)
 			return;
 		for (p = buf; *p != '\0'; p++) {
-			if (!tty_queue_full(&tp->t_readq))
-				tty_putch(*p, &tp->t_readq);
-			if (!tty_queue_full(&tp->t_writeq))
-				tty_putch(*p, &tp->t_writeq);
+			tty_process_input(tp, *p);
+			if (TERMIOS_LFLAG(tp, ECHO)) {
+				if (tty_queue_full(&tp->t_writeq)) {
+					tty_flush(tp);
+					tty_queue_reset(&tp->t_writeq);
+				}
+				tty_process_output(tp, *p);
+			}
 		}
 		tty_flush(tp);
 		tty_queue_reset(&tp->t_writeq);
 	}
+}
+
+static void
+tty_process_input(struct tty *tp, int c)
+{
+	if (tty_queue_full(&tp->t_readq)) {
+		printk("WARNING: tty read input queue full\r\n");
+		return;
+	}
+	if (c == '\r') {
+		if (TERMIOS_IFLAG(tp, ICRNL))
+			c = '\n';
+		else if (TERMIOS_IFLAG(tp, IGNCR))
+			return;
+	}
+	if (c == '\n' && TERMIOS_IFLAG(tp, INLCR))
+		c = '\r';
+	if (TERMIOS_LFLAG(tp, ECHOE) && c == TERMIOS_VERASE(tp)) {
+		if (!tty_queue_empty(&tp->t_readq))
+			tp->t_readq.tq_tail--;
+	} else if (TERMIOS_LFLAG(tp, ECHOK) && c == TERMIOS_VKILL(tp)) {
+		while (!tty_queue_empty(&tp->t_readq) && *tp->t_readq.tq_tail != '\r')
+			tp->t_readq.tq_tail--;
+	}
+	tty_putch(c, &tp->t_readq);
+}
+
+static void
+tty_process_output(struct tty *tp, int c)
+{
+	(void) tp;
+	(void) c;
 }
