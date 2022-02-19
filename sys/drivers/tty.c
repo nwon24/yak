@@ -218,28 +218,30 @@ tty_close(int minor)
 }
 
 void
-do_update_tty(char *buf)
+do_update_tty(const char *buf)
 {
 	struct tty *tp;
-	char *p;
-	int c;
+	const char *p;
+	int out;
 
+	printk("tty lflag %x\r\n", tty_tab[0].t_termios.c_oflag);
+	out = 0;
 	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
 		tp = tty_tab + current_process->tty;
 		if (!tp->t_open)
 			return;
 		for (p = buf; *p != '\0'; p++) {
 			tty_process_input(tp, *p);
-			if (TERMIOS_LFLAG(tp, ECHO)) {
-				if (tty_queue_full(&tp->t_writeq)) {
-					tty_flush(tp);
-					tty_queue_reset(&tp->t_writeq);
-				}
+			if (!TERMIOS_LFLAG(tp, ECHO)) {
 				tty_process_output(tp, *p);
+				if (!out)
+					out = 1;
 			}
 		}
-		tty_flush(tp);
-		tty_queue_reset(&tp->t_writeq);
+		if (out) {
+			tty_flush(tp);
+			tty_queue_reset(&tp->t_writeq);
+		}
 	}
 }
 
@@ -271,6 +273,18 @@ tty_process_input(struct tty *tp, int c)
 static void
 tty_process_output(struct tty *tp, int c)
 {
-	(void) tp;
-	(void) c;
+	if (tty_queue_full(&tp->t_writeq)) {
+		tty_flush(tp);
+		tty_queue_reset(&tp->t_writeq);
+	}
+
+	if (TERMIOS_OFLAG(tp, OPOST)) {
+		if (c == '\n' && TERMIOS_OFLAG(tp, ONLCR))
+			tty_putch('\r', &tp->t_writeq);
+		else if (c == '\r' && TERMIOS_OFLAG(tp, ONLRET))
+			 return;
+		else if (c == '\r' && TERMIOS_OFLAG(tp, OCRNL))
+			c = '\n';
+	}
+	tty_putch(c, &tp->t_writeq);
 }
