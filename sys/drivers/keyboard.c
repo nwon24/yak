@@ -20,8 +20,8 @@
 #define RAW_KEYCODE(k)	((k) & 0xFF)
 
 struct keymap {
-	uint8_t *map;
-	uint8_t *shiftmap;
+	const uint8_t *map;
+	const uint8_t *shiftmap;
 	const char **fnmap;
 };
 
@@ -77,7 +77,7 @@ static void
 k_do_self(struct kbd_packet *packet)
 {
 	uint16_t keycode;
-	uint8_t *map;
+	const uint8_t *map;
 	int c;
 	char buf[3];
 

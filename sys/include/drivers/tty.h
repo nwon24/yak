@@ -39,6 +39,6 @@ int tty_open(int minor);
 int tty_close(int minor);
 int tty_rw(int minor, char *buf, int count, int rw);
 int ttyx_rw(int minor, char *buf, int count, int rw);
-void do_update_tty(char *buf);
+void do_update_tty(const char *buf);
 
 #endif /* TTY_H */

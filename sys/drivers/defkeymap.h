@@ -5,7 +5,7 @@
 
 #include <drivers/keycode.h>
 
-static uint8_t defkeymap[] = {
+static const uint8_t defkeymap[] = {
 	[KEY_RAW_1] = '1',
 	[KEY_RAW_2] = '2',
 	[KEY_RAW_3] = '3',
@@ -74,7 +74,7 @@ static uint8_t defkeymap[] = {
 	[KEY_RAW_PAD_DOT] = '.',
 };
 
-static uint8_t defkeymap_shift[] = {
+static const uint8_t defkeymap_shift[] = {
 	[KEY_RAW_1] = '!',
 	[KEY_RAW_2] = '@',
 	[KEY_RAW_3] = '#',

@@ -38,7 +38,7 @@ static uint16_t get_keycode_set1(int scan, int *type);
 
 static uint16_t (*get_keycode)(int scan, int *type);
 
-static uint16_t scancode_set1[] = {
+static const uint16_t scancode_set1[] = {
 	KEY_NONE, KEY_ESC, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0,
 	KEY_MINUS, KEY_EQUALS, KEY_BACKSPACE, KEY_TAB, KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y, KEY_U,
 	KEY_I, KEY_O, KEY_P, KEY_LSQR_BRACKET, KEY_RSQR_BRACKET, KEY_ENTER, KEY_LCTRL, KEY_A, KEY_S, KEY_D,
@@ -53,7 +53,7 @@ static uint16_t scancode_set1[] = {
 /*
  * Prefixed with 0xE0.
  */
-static uint16_t scancode_set1_ext[] = {
+static const uint16_t scancode_set1_ext[] = {
 	KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE,
 	KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_MM_PREVIOUS, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE, KEY_NONE,
 	KEY_NONE, KEY_MM_NEXT, KEY_NONE, KEY_NONE, KEY_PAD_ENTER, KEY_RCTRL, KEY_NONE, KEY_NONE, KEY_MM_MUTE, KEY_MM_CALCULATOR,
