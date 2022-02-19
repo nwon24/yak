@@ -10,7 +10,7 @@ A hobby Unix-like kernel project.
 - [x] `exec` system call (with `ELF` files - no dynamic linking)
 - [ ] Basic PS/2 keyboard driver (USB is very complicated)
 - [ ] OS Specific Toolchain
-- [ ] Port musl C library
+- [ ] Write a basic C library
 - [x] ext2 symlinks
 - [ ] mount/umount system calls
 - [ ] Abstract installation of IRQ handlers for easier porting
