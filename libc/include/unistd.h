@@ -109,6 +109,8 @@ ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, void *buf, size_t count);
 int close(int fd);
 int execve(const char *path, const char *argv[], const char *envp[]);
+int execv(const char *path, char *const argv[]);
+int execvp(const char *file, char *const argv[]);
 pid_t fork(void);
 void _exit(int status);
 off_t lseek(int fd, off_t off, int whence);
