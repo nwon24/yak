@@ -84,7 +84,7 @@ typedef __off_t off_t;
 #define __DEFINED_OFF_T
 #endif
 #ifndef __DEFINED_INTPTR_T
-typedef __intptr_t inptr_t;
+typedef __intptr_t intptr_t;
 #define __DEFINED_INTPTR_T
 #endif
 
