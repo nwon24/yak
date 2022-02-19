@@ -13,6 +13,7 @@ typedef __size_t size_t;
 
 void abort(void);
 void *malloc(size_t size);
+void *calloc(size_t nmemb, size_t size);
 void free(void *ptr);
 
 int atexit(void (*)(void));
