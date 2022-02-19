@@ -4,8 +4,8 @@
 #define __NEED_PRIVATE_INT_TYPES
 #define __NEED_UINT8_T
 #define __NEED_UINT16_T
-#define __NEED_UINT132_T
-#define __NEED_UINT1364_T
+#define __NEED_UINT32_T_T
+#define __NEED_UINT64_T
 #define __NEED_INT8_T
 #define __NEED_INT16_T
 #define __NEED_INT32_T
@@ -153,12 +153,12 @@ typedef __int_fast64_t int_fast64_t;
 #define __DEFINED_INT_FAST64_T
 #endif
 
-#if !defined(__DEFINED_INTPTR_t)
+#if !defined(__DEFINED_INTPTR_T)
 typedef __intptr_t intptr_t;
 #define __DEFINED_INTPTR_T
 #endif
 
-#if !defined(__DEFINED_UINTPTR_t)
+#if !defined(__DEFINED_UINTPTR_T)
 typedef __uintptr_t uintptr_t;
 #define __DEFINED_UINTPTR_T
 #endif
