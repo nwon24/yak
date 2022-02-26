@@ -286,7 +286,6 @@ tty_process_output(struct tty *tp, int c)
 		else if (c == '\r' && TERMIOS_OFLAG(tp, OCRNL))
 			c = '\n';
 	}
-	printk("termios verase %x, %x %x\r\n", tp->t_termios.c_lflag, c, TERMIOS_VERASE(tp));
 	if (TERMIOS_LFLAG(tp, ECHOE) && c == TERMIOS_VERASE(tp)) {
 		tty_flush(tp);
 		tty_queue_reset(&tp->t_writeq);
