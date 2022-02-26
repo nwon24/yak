@@ -224,7 +224,7 @@ do_update_tty(const char *buf)
 	const char *p;
 	int out;
 
-	printk("tty lflag %x\r\n", tty_tab[0].t_termios.c_oflag);
+	printk("tty lflag %x\r\n", tty_tab[0].t_termios.c_lflag);
 	out = 0;
 	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
 		tp = tty_tab + current_process->tty;
@@ -286,5 +286,20 @@ tty_process_output(struct tty *tp, int c)
 		else if (c == '\r' && TERMIOS_OFLAG(tp, OCRNL))
 			c = '\n';
 	}
-	tty_putch(c, &tp->t_writeq);
+	printk("termios verase %x, %x %x\r\n", tp->t_termios.c_lflag, c, TERMIOS_VERASE(tp));
+	if (TERMIOS_LFLAG(tp, ECHOE) && c == TERMIOS_VERASE(tp)) {
+		tty_flush(tp);
+		tty_queue_reset(&tp->t_writeq);
+		tty_putch('\b', &tp->t_writeq);
+		tty_putch(' ', &tp->t_writeq);
+		tty_putch('\b', &tp->t_writeq);
+	} else if (TERMIOS_LFLAG(tp, ECHOK) && c == TERMIOS_VKILL(tp)) {
+		const char *seq = "\033[1K";
+		tty_flush(tp);
+		tty_queue_reset(&tp->t_writeq);
+		while (*seq != '\0')
+			tty_putch(*seq++, &tp->t_writeq);
+	} else {
+		tty_putch(c, &tp->t_writeq);
+	}
 }
