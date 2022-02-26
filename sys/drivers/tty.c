@@ -224,7 +224,7 @@ do_update_tty(const char *buf)
 	const char *p;
 	int out;
 
-	printk("tty lflag %x\r\n", tty_tab[0].t_termios.c_lflag);
+	printk("tty lflag %x\r\n", tty_tab[0].t_termios.c_cflag);
 	out = 0;
 	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
 		tp = tty_tab + current_process->tty;
@@ -232,7 +232,7 @@ do_update_tty(const char *buf)
 			return;
 		for (p = buf; *p != '\0'; p++) {
 			tty_process_input(tp, *p);
-			if (!TERMIOS_LFLAG(tp, ECHO)) {
+			if (TERMIOS_LFLAG(tp, ECHO)) {
 				tty_process_output(tp, *p);
 				if (!out)
 					out = 1;
