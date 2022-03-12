@@ -16,6 +16,7 @@ include fcntl/Makefile
 include errno/Makefile
 include init/Makefile
 include sys/Makefile
+include string/Makefile
 
 DEP_FILES := $(patsubst %.o, %.d, $(LIBC_OBJ)) $(patsubst %.o, %.d, $(CRT_OBJ))
 -include $(DEP_FILES)
