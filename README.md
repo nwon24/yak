@@ -21,10 +21,13 @@ Any modern Linux operating system will do fine. The BSDs should also work, but m
 ## Toolchain
 The operating system now has its own toolchain, which is basically a hosted `i686-elf` toolchain.
 The tarballs for GCC and Binutils are in the [toolchain](./toolchain) folder.
-Follow instructions [here](https://wiki.osdev.org/OS_Specific_Toolchain) for how to build the toolchain.
+Follow instructions [here](https://wiki.osdev.org/Hosted_GCC_Cross_Compiler) for how to build the toolchain.
 Before building, remember to run `make headers-install`.
 
 **IMPORTANT: Do not install the toolchain into your system directories.**
+
+**IMPORTANT: Building libstdc++ does not work because our C Library is still really minimal.**
+
 ## GRUB
 The kernel uses the GRUB bootloader.
 More specifically, it uses GRUB2, which you probably have. GRUB legacy is ancient.
