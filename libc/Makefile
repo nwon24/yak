@@ -31,12 +31,12 @@ libc.a: $(LIBC_OBJ) $(CRT_OBJ)
 clean:
 	rm $(LIBC_OBJ) $(CRT_OBJ)
 
-install-headers:
+install-headers: $(SYSROOT_DIR)
 	mkdir -p $(SYSROOT_DIR)/usr/include
 	cp include/*.h $(SYSROOT_DIR)/usr/include/
 	cp include/bits $(SYSROOT_DIR)/usr/include/ -r
 	cp include/sys/ $(SYSROOT_DIR)/usr/include/ -r
-install-libc: libc.a
+install-libc: $(SYSROOT_DIR) libc.a
 	mkdir -p $(SYSROOT_DIR)/usr/lib
 	cp libc.a $(SYSROOT_DIR)/usr/lib
 	cp $(CRT0_OBJ) $(CRTI_OBJ) $(CRTN_OBJ) $(SYSROOT_DIR)/usr/lib

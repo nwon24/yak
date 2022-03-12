@@ -50,13 +50,13 @@ $(LDSCRIPT): $(LDSCRIPT_SRC)
 	$(Q)$(CPP) $< -o $@ -I$(INC_DIR) -I$(ARCH_INC_DIR) $(CPPFLAGS)
 	$(E) " CPP	" $@
 
-install-kernel-headers:
+install-kernel-headers: $(SYSROOT_DIR)
 	$(Q)mkdir -p $(SYSROOT_DIR)/usr/include/hobbix
 	$(Q)cp $(INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ -r
 	$(Q)cp $(ARCH_INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ -r
 	$(E) " INSTALLED KERNEL HEADERS "
 clean:
-	$(Q)rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT) $(GRUBCFG)
+	$(Q)rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT_DIR) $(GRUBCFG)
 	$(E) " CLEAN"
 
 distclean:

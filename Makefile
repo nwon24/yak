@@ -10,7 +10,7 @@ TESTING_DIR := testing
 SYSROOT_DIR := $(SRC_DIR)/$(TESTING_DIR)/sysroot
 export SYSROOT_DIR
 
-all: kernel install-libc install-cmds
+all: $(SYSROOT_DIR) install-headers kernel install-libc install-cmds
 
 cmds:
 	(cd $(CMDS_DIR); make)
@@ -18,6 +18,7 @@ libc: install-kernel-headers
 	(cd $(LIBC_DIR); make)
 kernel:
 	(cd $(KERNEL_DIR); make)
+install-headers: install-kernel-headers install-libc-headers
 install-kernel-headers:
 	(cd $(KERNEL_DIR); make install-kernel-headers)
 install-libc-headers:
