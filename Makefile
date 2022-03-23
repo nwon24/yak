@@ -18,7 +18,9 @@ libc: install-kernel-headers
 	(cd $(LIBC_DIR); make)
 kernel:
 	(cd $(KERNEL_DIR); make)
-install-headers: install-kernel-headers install-libc-headers
+install-headers: $(SYSROOT_DIR) install-kernel-headers install-libc-headers
+$(SYSROOT_DIR):
+	(cd $(TESTING_DIR); make $@)
 install-kernel-headers:
 	(cd $(KERNEL_DIR); make install-kernel-headers)
 install-libc-headers:
