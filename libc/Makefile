@@ -34,8 +34,8 @@ clean:
 install-headers: $(SYSROOT_DIR)
 	mkdir -p $(SYSROOT_DIR)/usr/include
 	cp include/*.h $(SYSROOT_DIR)/usr/include/
-	cp include/bits $(SYSROOT_DIR)/usr/include/ -r
-	cp include/sys/ $(SYSROOT_DIR)/usr/include/ -r
+	cp -r include/bits $(SYSROOT_DIR)/usr/include/
+	cp -r include/sys/ $(SYSROOT_DIR)/usr/include/
 install-libc: $(SYSROOT_DIR) libc.a
 	mkdir -p $(SYSROOT_DIR)/usr/lib
 	cp libc.a $(SYSROOT_DIR)/usr/lib

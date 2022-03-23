@@ -52,8 +52,8 @@ $(LDSCRIPT): $(LDSCRIPT_SRC)
 
 install-kernel-headers: $(SYSROOT_DIR)
 	$(Q)mkdir -p $(SYSROOT_DIR)/usr/include/hobbix
-	$(Q)cp $(INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ -r
-	$(Q)cp $(ARCH_INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ -r
+	$(Q)cp -r $(INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ 
+	$(Q)cp -r $(ARCH_INC_DIR)/* $(SYSROOT_DIR)/usr/include/hobbix/ 
 	$(E) " INSTALLED KERNEL HEADERS "
 clean:
 	$(Q)rm -rf $(CRTI_OBJ) $(CRTN_OBJ) $(OBJ_FILES) $(KERNEL_BIN) $(DEP_FILES) $(LDSCRIPT) $(LIBK) $(LIB_OBJ) $(SYSROOT_DIR) $(GRUBCFG)
