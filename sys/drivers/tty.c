@@ -1,9 +1,12 @@
 /*
  * tty.c
  * TTY driver.
+ * TODO: Implement the POSIX terminal interface as much as possible.
  */
 #include <stddef.h>
+#include <string.h>
 
+#include <drivers/timer.h>
 #include <drivers/tty.h>
 
 #include <fs/dev.h>
@@ -34,8 +37,19 @@
 #define TERMIOS_VSTART(tp)	((tp)->t_termios.c_cc[VSTART])
 #define TERMIOS_VSTOP(tp)	((tp)->t_termios.c_cc[VSTOP])
 
+#define CANON		0
+#define NONCANON	1
+
 static void tty_process_input(struct tty *tp, int c);
 static void tty_process_output(struct tty *tp, int c);
+static int tty_read_case1(struct tty *tp, char *buf, int c, int vmin, int vtime);
+static int tty_read_case2(struct tty *tp, char *buf, int c, int vmin);
+static int tty_read_case3(struct tty *tp, char *buf, int c, int vtime);
+static int tty_read_case4(struct tty *tp, char *buf, int c);
+static int tty_canon_read(struct tty *tp, char *buf, int c);
+static void tty_sleep(struct tty *tp, struct tty_queue *tq, int canon);
+static void tty_set_timer(int vtime);
+static void tty_clear_timer(void);
 
 static struct tty tty_tab[NR_TTY];
 
@@ -84,6 +98,7 @@ static inline void
 tty_queue_reset(struct tty_queue *tq)
 {
 	tq->tq_head = tq->tq_tail = tq->tq_buf;
+	memset(tq->tq_buf, 0, sizeof(tq->tq_buf));
 }
 
 struct tty *
@@ -172,16 +187,161 @@ int
 tty_read(int n, char *buf, int count)
 {
 	struct tty *tp;
-	char *p;
-	int i;
 
 	if ((tp = &tty_tab[n]) >= &tty_tab[NR_TTY])
 		return -1;
 	if (tp->t_open == 0 && n != DEBUG_TTY)
 		panic("tty_read: TTY is not open!");
-	i = count;
+	if (TERMIOS_LFLAG(tp, ICANON)) {
+		return tty_canon_read(tp, buf, count);
+	} else {
+		if (TERMIOS_VMIN(tp) > 0 && TERMIOS_VTIME(tp) > 0)
+			return tty_read_case1(tp, buf, count, TERMIOS_VMIN(tp), TERMIOS_VTIME(tp));
+		if (TERMIOS_VMIN(tp) > 0 && TERMIOS_VTIME(tp) == 0)
+			return tty_read_case2(tp, buf, count, TERMIOS_VMIN(tp));
+		if (TERMIOS_VMIN(tp) == 0 && TERMIOS_VTIME(tp) > 0)
+			return tty_read_case3(tp, buf, count, TERMIOS_VTIME(tp));
+		return tty_read_case4(tp, buf, count);
+	}
+	return 0;
+}
+
+/*
+ * tty_canon_read: Canonical read.
+ */
+static int
+tty_canon_read(struct tty *tp, char *buf, int c)
+{
+	char *p;
+
+	if (!tty_queue_empty(&tp->t_readq) && *tp->t_readq.tq_tail == TERMIOS_VEOF(tp))
+		return 0;
+	tty_sleep(tp, &tp->t_readq, CANON);
+	if (current_process->sigpending)
+		return -EINTR;
 	p = buf;
-	while (i-- && !tty_queue_empty(&tp->t_readq))
+	while (!tty_queue_empty(&tp->t_readq) && p - buf < c)
+		*p++ = tty_getch(&tp->t_readq);
+	return p - buf;
+}
+
+static void
+tty_sleep(struct tty *tp, struct tty_queue *tq, int canon)
+{
+	int block;
+
+	block = (current_process->tty_block != NO_TTY_BLOCK);
+	if (canon == NONCANON) {
+		while (tty_queue_empty(tq)) {
+			sleep(tq, PROC_SLEEP_INTERRUPTIBLE);
+			if (block && current_process->tty_block == NO_TTY_BLOCK)
+				return;
+		}
+	} else {
+		while (*tq->tq_tail != '\n' &&
+		       *tq->tq_tail != TERMIOS_VEOF(tp) &&
+		       *tq->tq_tail != TERMIOS_VEOL(tp))
+			sleep(tq, PROC_SLEEP_INTERRUPTIBLE);
+	}
+}
+
+static void
+tty_set_timer(int vtime)
+{
+	current_process->tty_block = timer_ticks + vtime * (HZ / 10);
+}
+
+static void tty_clear_timer(void)
+{
+	current_process->tty_block = NO_TTY_BLOCK;
+}
+
+/*
+ * tty_read_case1: non-canonical read when
+ * MIN>0, TIME>0.
+ */
+static int
+tty_read_case1(struct tty *tp, char *buf, int c, int vmin, int vtime)
+{
+	int req;
+	char *p;
+
+	p = buf;
+	req = (c < vmin) ? c : vmin;
+	if (tty_queue_empty(&tp->t_readq))
+		tty_sleep(tp, &tp->t_readq, NONCANON);
+ loop:
+	while (!tty_queue_empty(&tp->t_readq)) {
+		*p++ = tty_getch(&tp->t_readq);
+		if (p - buf == req)
+			return req;
+		tty_set_timer(vtime);
+	}
+	if (p - buf < req) {
+		tty_sleep(tp, &tp->t_readq, NONCANON);
+		if (current_process->sigpending)
+			return -EINTR;
+		if (current_process->tty_block == NO_TTY_BLOCK)
+			/* VTIME expired */
+			return p - buf;
+	}
+	goto loop;
+}
+
+/*
+ * tty_read_case2: non-canonical read when
+ * MIN>0 and TIME=0
+ */
+static int
+tty_read_case2(struct tty *tp, char *buf, int c, int vmin)
+{
+	int req;
+	char *p;
+
+	req = (c < vmin) ? c : vmin;
+	p = buf;
+ loop:
+	while (!tty_queue_empty(&tp->t_readq)) {
+		*p++ = tty_getch(&tp->t_readq);
+		if (p - buf == req)
+			return req;
+	}
+	tty_sleep(tp, &tp->t_readq, NONCANON);
+	if (current_process->sigpending)
+		return -EINTR;
+	goto loop;
+}
+
+/*
+ * tty_read_case3: non-canonical read when MIN=0, TIME>0.
+ */
+static int
+tty_read_case3(struct tty *tp, char *buf, int c, int vtime)
+{
+	(void) c;
+	tty_set_timer(vtime);
+	if (!tty_queue_empty(&tp->t_readq)) {
+		*buf = tty_getch(&tp->t_readq);
+		tty_clear_timer();
+		return 1;
+	}
+	tty_sleep(tp, &tp->t_readq, NONCANON);
+	if (current_process->sigpending)
+		return -EINTR;
+	return 0;
+}
+
+/*
+ * tty_read_case4: non-canonical read where MIN=0 and TIME=0
+ */
+static int
+tty_read_case4(struct tty *tp, char *buf, int c)
+{
+	char *p;
+
+	(void) c;
+	p = buf;
+	while (!tty_queue_empty(&tp->t_readq))
 		*p++ = tty_getch(&tp->t_readq);
 	return p - buf;
 }

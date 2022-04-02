@@ -35,6 +35,11 @@ schedule(void)
 			tmp->sigpending |= (1 << (SIGALRM - 1));
 			tmp->alarm = NO_ALARM;
 		}
+		if (tmp->tty_block != NO_TTY_BLOCK && tmp->tty_block < timer_ticks) {
+			tmp->state = PROC_RUNNABLE;
+			adjust_proc_queues(tmp);
+			tmp->tty_block = NO_TTY_BLOCK;
+		}
 		if (tmp->state == PROC_SLEEP_INTERRUPTIBLE && tmp->sigpending) {
 			tmp->state = PROC_RUNNABLE;
 			adjust_proc_queues(tmp);

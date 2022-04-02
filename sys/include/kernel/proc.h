@@ -20,6 +20,7 @@
 #define NR_PROC	64
 
 #define NO_ALARM	0
+#define NO_TTY_BLOCK	0
 
 enum sig_def_action {
 	SIGACTION_T,	/* Abnormal termination */
@@ -56,6 +57,7 @@ struct process {
 	int umask;
 	int state;
 	int tty;
+	unsigned int tty_block;
 	int priority;
 	int quanta;
 	int counter;
