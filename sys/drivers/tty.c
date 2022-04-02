@@ -151,8 +151,18 @@ tty_write(int n, char *buf, int count)
 		panic("tty_write: TTY is not open!");
 	i = count;
 	p = buf;
-	while (*p && i-- && !tty_queue_full(&tp->t_writeq))
-		tty_putch(*p++, &tp->t_writeq);
+	while (*p && i-- && !tty_queue_full(&tp->t_writeq)) {
+		int c;
+
+		c = *p++;
+		if (TERMIOS_OFLAG(tp, OPOST)) {
+			if (c == '\n' && TERMIOS_OFLAG(tp, ONLCR))
+				tty_putch('\r', &tp->t_writeq);
+			else if (c == '\r' && TERMIOS_OFLAG(tp, OCRNL))
+				c = '\n';
+		}
+		tty_putch(c, &tp->t_writeq);
+	}
 	tty_flush(tp);
 	tty_queue_reset(&tp->t_writeq);
 	return p - buf;
