@@ -1,20 +1,7 @@
-#include <sys/wait.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[])
 {
-	int status, fd;
-
-	write(1, argv[0], 14);
-	write(1, "\n", 1);
-	if (!fork()) {
-		write(1, "Hello again", 12);
-	} else {
-		waitpid(-1, &status, 0);
-		write(1, "Child has died", 14);
-		fd = open("/usr/include/unist.h", O_RDONLY | O_CREAT, S_IRWXU);
-		close(fd);
-	}
+	write(STDOUT_FILENO, "Hello, world!\n", 14);
 	return 0;
 }
