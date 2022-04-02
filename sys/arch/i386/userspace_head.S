@@ -36,7 +36,7 @@ first_user_code:
 
 file:	.asciz	"/dev/tty"
 msg:	.asciz	"Hello, world!"
-execf:	.asciz	"/usr/bin/hello"
+execf:	.asciz	"/usr/bin/init"
 argv:	.long	execf
 	.long	0
 envp:	.long	0
