@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 	int status, fd;
 
 	write(1, argv[0], 14);
-	write(1, "\r\n", 2);
+	write(1, "\n", 1);
 	if (!fork()) {
 		write(1, "Hello again", 12);
 	} else {
