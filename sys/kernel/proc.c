@@ -213,7 +213,7 @@ kernel_execve(const char *path, const char *argv[], const char *envp[])
 	if (envp == NULL || !check_user_ptr((void *)envp))
 		return -EFAULT;
 	file.fs = get_fs_from_path(path);
-	if (path == NULL)
+	if (file.fs == NULL)
 		return -EINVAL;
 	file.inode = file.fs->f_driver->fs_raw.fs_raw_namei(path, &err);
 	if (file.inode == NULL)
