@@ -3,6 +3,8 @@
 
 #include <drivers/virtual_console.h>
 
+#include <kernel/mutex.h>
+
 #include <generic/termios.h>
 
 #define TTY_BUF_SIZE	512
@@ -30,6 +32,7 @@ struct tty {
 	struct tty_queue t_readq;
 	int t_stopped;
 	int t_open;
+	mutex t_mutex;
 };
 
 struct tty *tty_driver_register(int n, struct tty_driver *driver);

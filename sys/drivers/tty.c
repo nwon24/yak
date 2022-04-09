@@ -21,6 +21,7 @@
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
+#include <kernel/mutex.h>
 
 #define NR_TTY	6
 
@@ -126,6 +127,7 @@ tty_struct_init(int n)
 	if (n >= NR_TTY)
 		return NULL;
 	tp = tty_tab + n;
+	mutex_init(&tp->t_mutex);
 	tty_queue_reset(&tp->t_writeq);
 	tty_queue_reset(&tp->t_readq);
 	tp->t_stopped = 0;
@@ -169,6 +171,7 @@ tty_write(int n, char *buf, int count)
 	 */
 	if (tp->t_open == 0 && n != DEBUG_TTY)
 		panic("tty_write: TTY is not open!");
+	mutex_lock(&tp->t_mutex);
 	i = count;
 	p = buf;
 	while (*p && i-- && !tty_queue_full(&tp->t_writeq)) {
@@ -185,6 +188,7 @@ tty_write(int n, char *buf, int count)
 	}
 	tty_flush(tp);
 	tty_queue_reset(&tp->t_writeq);
+	mutex_unlock(&tp->t_mutex);
 	return p - buf;
 }
 
@@ -197,6 +201,7 @@ tty_read(int n, char *buf, int count)
 		return -1;
 	if (tp->t_open == 0 && n != DEBUG_TTY)
 		panic("tty_read: TTY is not open!");
+	mutex_lock(&tp->t_mutex);
 	if (TERMIOS_LFLAG(tp, ICANON)) {
 		return tty_canon_read(tp, buf, count);
 	} else {
@@ -221,8 +226,10 @@ tty_canon_read(struct tty *tp, char *buf, int count)
 	char scratch[MAX_CANON];
 	int c, nr, i;
 
-	if (!tty_queue_empty(&tp->t_readq) && *(tp->t_readq.tq_tail - 1) == TERMIOS_VEOF(tp))
+	if (!tty_queue_empty(&tp->t_readq) && *(tp->t_readq.tq_tail - 1) == TERMIOS_VEOF(tp)) {
+		mutex_unlock(&tp->t_mutex);
 		return 0;
+	}
 	p = buf;
 	tmp = scratch;
 	/*
@@ -232,8 +239,10 @@ tty_canon_read(struct tty *tp, char *buf, int count)
 	 */
  loop:
 	tty_sleep(tp, &tp->t_readq, CANON);
-	if (current_process->sigpending)
+	if (current_process->sigpending) {
+		mutex_unlock(&tp->t_mutex);
 		return -EINTR;
+	}
 	/*
 	 * Looks a bit confusing - tp->t_t_readq.tq_tail points after the character just put in the queue.
 	 */
@@ -251,6 +260,7 @@ tty_canon_read(struct tty *tp, char *buf, int count)
 	i = nr;
 	while (i--)
 		*p++ = *tmp++;
+	mutex_unlock(&tp->t_mutex);
 	return nr;
 }
 
@@ -303,17 +313,23 @@ tty_read_case1(struct tty *tp, char *buf, int c, int vmin, int vtime)
  loop:
 	while (!tty_queue_empty(&tp->t_readq)) {
 		*p++ = tty_getch(&tp->t_readq);
-		if (p - buf == req)
+		if (p - buf == req) {
+			mutex_unlock(&tp->t_mutex);
 			return req;
+		}
 		tty_set_timer(vtime);
 	}
 	if (p - buf < req) {
 		tty_sleep(tp, &tp->t_readq, NONCANON);
-		if (current_process->sigpending)
+		if (current_process->sigpending) {
+			mutex_unlock(&tp->t_mutex);
 			return -EINTR;
-		if (current_process->tty_block == NO_TTY_BLOCK)
+		}
+		if (current_process->tty_block == NO_TTY_BLOCK) {
+			mutex_unlock(&tp->t_mutex);
 			/* VTIME expired */
 			return p - buf;
+		}
 	}
 	goto loop;
 }
@@ -333,12 +349,16 @@ tty_read_case2(struct tty *tp, char *buf, int c, int vmin)
  loop:
 	while (!tty_queue_empty(&tp->t_readq)) {
 		*p++ = tty_getch(&tp->t_readq);
-		if (p - buf == req)
+		if (p - buf == req) {
+			mutex_unlock(&tp->t_mutex);
 			return req;
+		}
 	}
 	tty_sleep(tp, &tp->t_readq, NONCANON);
-	if (current_process->sigpending)
+	if (current_process->sigpending) {
+		mutex_unlock(&tp->t_mutex);
 		return -EINTR;
+	}
 	goto loop;
 }
 
@@ -353,9 +373,11 @@ tty_read_case3(struct tty *tp, char *buf, int c, int vtime)
 	if (!tty_queue_empty(&tp->t_readq)) {
 		*buf = tty_getch(&tp->t_readq);
 		tty_clear_timer();
+		mutex_unlock(&tp->t_mutex);
 		return 1;
 	}
 	tty_sleep(tp, &tp->t_readq, NONCANON);
+	mutex_unlock(&tp->t_mutex);
 	if (current_process->sigpending)
 		return -EINTR;
 	return 0;
@@ -373,6 +395,7 @@ tty_read_case4(struct tty *tp, char *buf, int c)
 	p = buf;
 	while (!tty_queue_empty(&tp->t_readq))
 		*p++ = tty_getch(&tp->t_readq);
+	mutex_unlock(&tp->t_mutex);
 	return p - buf;
 }
 
@@ -423,7 +446,6 @@ do_update_tty(const char *buf)
 	struct tty *tp;
 	const char *p;
 
-	printk("tty lflag %x\r\n", tty_tab[0].t_termios.c_cflag);
 	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
 		tp = tty_tab + current_process->tty;
 		if (!tp->t_open)
@@ -452,6 +474,9 @@ do_update_tty(const char *buf)
 	}
 }
 
+/*
+ * Following two routines don't need lock held because interrupts are disabled.
+ */
 static void
 tty_process_input(struct tty *tp, int c)
 {
