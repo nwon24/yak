@@ -21,7 +21,7 @@ syscall:
 	int	$SYSCALL_IRQ
 
 	cmpl	$0, %eax
-	je	1f
+	jge	1f
 	movl	%eax, errno
 	movl	$-1, %eax
 1:	popl	%ebx
