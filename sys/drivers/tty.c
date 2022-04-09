@@ -2,6 +2,10 @@
  * tty.c
  * TTY driver.
  * TODO: Implement the POSIX terminal interface as much as possible.
+ * WARNING: This was one of the earliest drivers written - as such,
+ * it does not use 'get_ubyte' and friends, which it really should,
+ * because only on the current supported architecture do we not need
+ * a special function to get data from/to userspace.
  */
 #include <stddef.h>
 #include <string.h>
@@ -13,6 +17,7 @@
 
 #include <generic/errno.h>
 #include <generic/termios.h>
+#include <generic/limits.h>
 
 #include <kernel/debug.h>
 #include <kernel/proc.h>
@@ -210,19 +215,38 @@ tty_read(int n, char *buf, int count)
  * tty_canon_read: Canonical read.
  */
 static int
-tty_canon_read(struct tty *tp, char *buf, int c)
+tty_canon_read(struct tty *tp, char *buf, int count)
 {
-	char *p;
+	char *p, *tmp;
+	char scratch[MAX_CANON];
+	int c, nr, i;
 
-	if (!tty_queue_empty(&tp->t_readq) && *tp->t_readq.tq_tail == TERMIOS_VEOF(tp))
+	if (!tty_queue_empty(&tp->t_readq) && *(tp->t_readq.tq_tail - 1) == TERMIOS_VEOF(tp))
 		return 0;
+	p = buf;
+	tmp = scratch;
+	/*
+	 * The loop is fairly straightforward:
+	 * While we do not get a newline or EOF, fill up the scratch buffer with the chars.
+	 * Then, transfer the appropriate amount to the user buffer.
+	 */
+ loop:
 	tty_sleep(tp, &tp->t_readq, CANON);
 	if (current_process->sigpending)
 		return -EINTR;
-	p = buf;
-	while (!tty_queue_empty(&tp->t_readq) && p - buf < c)
-		*p++ = tty_getch(&tp->t_readq);
-	return p - buf;
+	/*
+	 * Looks a bit confusing - tp->t_t_readq.tq_tail points after the character just put in the queue.
+	 */
+	c = *(tp->t_readq.tq_tail - 1);
+	*tmp++ = c;
+	if (c != '\n' && c != TERMIOS_VEOF(tp) && tmp - scratch < MAX_CANON)
+		goto loop;
+	nr = (count > (tmp - scratch)) ? (tmp - scratch) : count;
+	tmp = scratch;
+	i = nr;
+	while (i--)
+		*p++ = *tmp++;
+	return nr;
 }
 
 static void
@@ -238,10 +262,11 @@ tty_sleep(struct tty *tp, struct tty_queue *tq, int canon)
 				return;
 		}
 	} else {
-		while (*tq->tq_tail != '\n' &&
-		       *tq->tq_tail != TERMIOS_VEOF(tp) &&
-		       *tq->tq_tail != TERMIOS_VEOL(tp))
-			sleep(tq, PROC_SLEEP_INTERRUPTIBLE);
+		/*
+		 * Just a basic 'sleep'.
+		 * 'tty_canon_read' will do the waiting for the newline or EOF.
+		 */
+		sleep(tq, PROC_SLEEP_INTERRUPTIBLE);
 	}
 }
 
@@ -392,26 +417,26 @@ do_update_tty(const char *buf)
 {
 	struct tty *tp;
 	const char *p;
-	int out;
 
 	printk("tty lflag %x\r\n", tty_tab[0].t_termios.c_cflag);
-	out = 0;
 	if (current_process->tty >= 0 && current_process->tty < NR_TTY) {
 		tp = tty_tab + current_process->tty;
 		if (!tp->t_open)
 			return;
-		for (p = buf; *p != '\0'; p++) {
-			tty_process_input(tp, *p);
-			if (TERMIOS_LFLAG(tp, ECHO)) {
+		if (TERMIOS_LFLAG(tp, ECHO)) {
+			for (p = buf; *p != '\0'; p++)
 				tty_process_output(tp, *p);
-				if (!out)
-					out = 1;
-			}
-		}
-		if (out) {
 			tty_flush(tp);
 			tty_queue_reset(&tp->t_writeq);
 		}
+			
+		/*
+		 * This must be done after output processing.
+		 * If it is not, a canonical read will result in the newline
+		 * not being echoed (which it should be).
+		 */
+		for (p = buf; *p != '\0'; p++)
+			tty_process_input(tp, *p);
 	}
 }
 
@@ -438,6 +463,7 @@ tty_process_input(struct tty *tp, int c)
 			tp->t_readq.tq_tail--;
 	}
 	tty_putch(c, &tp->t_readq);
+	wakeup(&tp->t_readq, WAKEUP_SWITCH);
 }
 
 static void
