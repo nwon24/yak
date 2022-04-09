@@ -433,6 +433,13 @@ do_update_tty(const char *buf)
 				tty_process_output(tp, *p);
 			tty_flush(tp);
 			tty_queue_reset(&tp->t_writeq);
+		} else {
+			for (p = buf; *p != '\0'; p++) {
+				if (*p == '\n' && TERMIOS_LFLAG(tp, ECHONL))
+					tty_process_output(tp, *p);
+			}
+			tty_flush(tp);
+			tty_queue_reset(&tp->t_writeq);
 		}
 
 		/*
@@ -485,18 +492,22 @@ tty_process_output(struct tty *tp, int c)
 		else if (c == '\r' && TERMIOS_OFLAG(tp, OCRNL))
 			c = '\n';
 	}
-	if (TERMIOS_LFLAG(tp, ECHOE) && c == TERMIOS_VERASE(tp)) {
-		tty_flush(tp);
-		tty_queue_reset(&tp->t_writeq);
-		tty_putch('\b', &tp->t_writeq);
-		tty_putch(' ', &tp->t_writeq);
-		tty_putch('\b', &tp->t_writeq);
-	} else if (TERMIOS_LFLAG(tp, ECHOK) && c == TERMIOS_VKILL(tp)) {
-		const char *seq = "\033[1K";
-		tty_flush(tp);
-		tty_queue_reset(&tp->t_writeq);
-		while (*seq != '\0')
-			tty_putch(*seq++, &tp->t_writeq);
+	if (TERMIOS_LFLAG(tp, ICANON)) {
+		if (TERMIOS_LFLAG(tp, ECHOE) && c == TERMIOS_VERASE(tp)) {
+			tty_flush(tp);
+			tty_queue_reset(&tp->t_writeq);
+			tty_putch('\b', &tp->t_writeq);
+			tty_putch(' ', &tp->t_writeq);
+			tty_putch('\b', &tp->t_writeq);
+		} else if (TERMIOS_LFLAG(tp, ECHOK) && c == TERMIOS_VKILL(tp)) {
+			tty_flush(tp);
+			tty_queue_reset(&tp->t_writeq);
+			tty_putch('\n', &tp->t_writeq);
+			if (TERMIOS_OFLAG(tp, OPOST) && TERMIOS_OFLAG(tp, ONLCR))
+				tty_putch('\r', &tp->t_writeq);
+		} else {
+			tty_putch(c, &tp->t_writeq);
+		}
 	} else {
 		tty_putch(c, &tp->t_writeq);
 	}
