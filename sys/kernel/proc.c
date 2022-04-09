@@ -163,6 +163,7 @@ kernel_fork(void)
 		current_process->root_inode.count++;
 	if (current_process->cwd_inode.inode)
 		current_process->cwd_inode.count++;
+	schedule();
 	return last_pid;
 }
 
