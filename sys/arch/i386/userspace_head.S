@@ -12,30 +12,37 @@
 first_user_code:
 	movl	$__NR_fork, %eax
 	int	$0x80
-	test	%eax, %eax
-	jz	2f
-1:	jmp	.
-2:	movl	$__NR_open, %eax
-	movl	$file, %ebx
-	movl	$O_RDWR, %ecx
-	movl	$0, %edx
-	int	$0x80
-	movl	$__NR_write, %eax
-	movl	$0, %ebx
-	movl	$msg, %ecx
-	movl	$13, %edx
-	int	$0x80
-	movl	$__NR_execve, %eax
+	cmpl	$0, %eax	/* Error? */
+	jl	1f		/* Yes, report it */
+	je	2f		/* No, child does exec */
+	jmp	.		/* Parent does nothing, becomes idle process */
+2:	movl	$__NR_execve, %eax
 	movl	$execf, %ebx
 	movl	$argv, %ecx
 	movl	$envp, %edx
 	int	$0x80
-	movl	$__NR_sync, %eax
+	/* Unreachable unless error in execve */
+	movl	$__NR_write, %eax
+	movl	$1, %ebx
+	movl	$execve_msg, %ecx
+	movl	$execve_msg_len, %edx
 	int	$0x80
-3:	jmp	.
+	jmp	.
+1:	movl	$__NR_write, %eax
+	movl	$1, %ebx
+	movl	$fork_msg, %ecx
+	movl	fork_msg_len, %edx
+	int	$0x80
+	jmp	.
 
-file:	.asciz	"/dev/tty"
-msg:	.asciz	"Hello, world!"
+fork_msg:
+	.asciz	"fork() failed in 'first_user_code'"
+fork_msg_len:
+	.long	.-fork_msg
+execve_msg:
+	.asciz	"execve() failed in 'first_user_code'"
+execve_msg_len:
+	.long	.-execve_msg
 execf:	.asciz	"/usr/bin/init"
 argv:	.long	execf
 	.long	0
