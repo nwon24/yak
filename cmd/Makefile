@@ -1,6 +1,6 @@
 CMDS_CFLAGS := -std=c99 -Wall -Wextra -O2
 
-CMDS := hello
+CMDS := init
 
 all: $(CMDS)
 
