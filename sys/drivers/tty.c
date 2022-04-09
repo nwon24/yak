@@ -242,7 +242,7 @@ tty_canon_read(struct tty *tp, char *buf, int count)
 		tmp--;
 	else if (c == TERMIOS_VKILL(tp))
 		tmp = scratch;
-	else
+	else if (c != TERMIOS_VEOF(tp))
 		*tmp++ = c;
 	if (c != '\n' && c != TERMIOS_VEOF(tp) && tmp - scratch < MAX_CANON)
 		goto loop;
@@ -479,18 +479,25 @@ tty_process_input(struct tty *tp, int c)
 static void
 tty_process_output(struct tty *tp, int c)
 {
+	int printable;
+
 	if (tty_queue_full(&tp->t_writeq)) {
 		tty_flush(tp);
 		tty_queue_reset(&tp->t_writeq);
 	}
-
+	printable = 1;
+	if (c < 32)
+		printable = 0;
 	if (TERMIOS_OFLAG(tp, OPOST)) {
-		if (c == '\n' && TERMIOS_OFLAG(tp, ONLCR))
+		if (c == '\n' && TERMIOS_OFLAG(tp, ONLCR)) {
 			tty_putch('\r', &tp->t_writeq);
-		else if (c == '\r' && TERMIOS_OFLAG(tp, ONLRET))
+			printable = 1;
+		} else if (c == '\r' && TERMIOS_OFLAG(tp, ONLRET)) {
 			 return;
-		else if (c == '\r' && TERMIOS_OFLAG(tp, OCRNL))
+		} else if (c == '\r' && TERMIOS_OFLAG(tp, OCRNL)) {
+			printable = 1;
 			c = '\n';
+		}
 	}
 	if (TERMIOS_LFLAG(tp, ICANON)) {
 		if (TERMIOS_LFLAG(tp, ECHOE) && c == TERMIOS_VERASE(tp)) {
@@ -506,9 +513,11 @@ tty_process_output(struct tty *tp, int c)
 			if (TERMIOS_OFLAG(tp, OPOST) && TERMIOS_OFLAG(tp, ONLCR))
 				tty_putch('\r', &tp->t_writeq);
 		} else {
-			tty_putch(c, &tp->t_writeq);
+			if (printable)
+				tty_putch(c, &tp->t_writeq);
 		}
 	} else {
-		tty_putch(c, &tp->t_writeq);
+		if (printable)
+			tty_putch(c, &tp->t_writeq);
 	}
 }
