@@ -238,7 +238,12 @@ tty_canon_read(struct tty *tp, char *buf, int count)
 	 * Looks a bit confusing - tp->t_t_readq.tq_tail points after the character just put in the queue.
 	 */
 	c = *(tp->t_readq.tq_tail - 1);
-	*tmp++ = c;
+	if (c == TERMIOS_VERASE(tp) && tmp != scratch)
+		tmp--;
+	else if (c == TERMIOS_VKILL(tp))
+		tmp = scratch;
+	else
+		*tmp++ = c;
 	if (c != '\n' && c != TERMIOS_VEOF(tp) && tmp - scratch < MAX_CANON)
 		goto loop;
 	nr = (count > (tmp - scratch)) ? (tmp - scratch) : count;
@@ -429,7 +434,7 @@ do_update_tty(const char *buf)
 			tty_flush(tp);
 			tty_queue_reset(&tp->t_writeq);
 		}
-			
+
 		/*
 		 * This must be done after output processing.
 		 * If it is not, a canonical read will result in the newline
@@ -455,13 +460,11 @@ tty_process_input(struct tty *tp, int c)
 	}
 	if (c == '\n' && TERMIOS_IFLAG(tp, INLCR))
 		c = '\r';
-	if (TERMIOS_LFLAG(tp, ECHOE) && c == TERMIOS_VERASE(tp)) {
-		if (!tty_queue_empty(&tp->t_readq))
-			tp->t_readq.tq_tail--;
-	} else if (TERMIOS_LFLAG(tp, ECHOK) && c == TERMIOS_VKILL(tp)) {
-		while (!tty_queue_empty(&tp->t_readq) && *tp->t_readq.tq_tail != '\r')
-			tp->t_readq.tq_tail--;
-	}
+	/*
+	 * Don't need to handle VERASE and VKILL.
+	 * The read queue stays as a raw queue; let 'tty_canon_read'
+	 * handle them.
+	 */
 	tty_putch(c, &tp->t_readq);
 	wakeup(&tp->t_readq, WAKEUP_SWITCH);
 }
