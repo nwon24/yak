@@ -447,11 +447,11 @@ handle_page_fault(uint32_t error)
 	struct exec_image *image;
 
 	if (!(error & PF_PROTECTION)) {
-		printk("Segmentation fault\r\n");
+		printk("Segmentation fault: PF_PROTECTION\r\n");
 		kernel_exit(SIGSEGV);
 	}
 	if (!(error & PF_WRITE)) {
-		printk("Segmentation fault\r\n");
+		printk("Segmentation fault: PF_WRITE\r\n");
 		kernel_exit(SIGSEGV);
 	}
 	old = get_tmp_page();
