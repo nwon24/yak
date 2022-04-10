@@ -122,6 +122,7 @@ int unlink(const char *path);
 int symlink(const char *path1, const char *path2);
 int rmdir(const char *path);
 int nice(int inc);
+int pause(void);
 
 #endif /* __ASSEMBLER__ */
 

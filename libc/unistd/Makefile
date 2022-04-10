@@ -28,4 +28,5 @@ LIBC_OBJ += unistd/read.o \
             unistd/setsid.o \
             unistd/setuid.o \
             unistd/nice.o \
-            unistd/lchown.o
+            unistd/lchown.o \
+            unistd/pause.o
