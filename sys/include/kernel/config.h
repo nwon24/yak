@@ -47,4 +47,6 @@
 
 #define CONFIG_FS_EXT2
 
+#define CONFIG_DEBUG
+
 #endif /* CONFIG_H */
