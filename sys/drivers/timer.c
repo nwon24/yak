@@ -49,13 +49,10 @@ timer_driver_irq_handler(void)
 	timer_driver->irq_handler();
 	if (system_is_panicing())
 		return;
-	if (current_process != FIRST_PROC && current_process->priority > 1) {
-		current_process->priority--;
-		adjust_proc_queues(current_process);
-	}
 	if (!current_process->counter--) {
 		current_process->counter = 0;
 		current_process->state = PROC_RUNNABLE;
+		adjust_proc_queues(current_process);
 	}
 	schedule();
 }

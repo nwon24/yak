@@ -50,11 +50,6 @@ schedule(void)
 		if (*proc == NULL)
 			continue;
 		(*proc)->state = PROC_RUNNING;
-		if (current_process->state != PROC_EXITED && current_process != FIRST_PROC && current_process->quanta != current_process->counter)
-			current_process->priority = current_process->quanta / (current_process->quanta - current_process->counter);
-		current_process->quanta = current_process->priority;
-		current_process->counter = current_process->quanta;
-		adjust_proc_queues(current_process);
 		current_process = *proc;
 		goto switch_proc;
 	}

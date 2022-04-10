@@ -142,12 +142,12 @@ kernel_fork(void)
 	proc->alarm = NO_ALARM;
 	if (!current_process->priority) {
 		/* First fork */
-		proc->priority = PROC_QUANTA - 1;
-		proc->quanta = proc->priority;
+		proc->priority = USER_PRIORITY;
 	} else {
 		proc->priority = current_process->priority;
-		proc->quanta = current_process->priority;
 	}
+	proc->quanta = PROC_QUANTA;
+	proc->counter = proc->quanta;
 	proc->pid = last_pid;
 	proc->ppid = current_process->pid;
 	proc->state = PROC_RUNNABLE;
