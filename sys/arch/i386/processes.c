@@ -166,12 +166,13 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = (uint32_t)padded_sp;
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
 	/*
-	 * Don't free if we are exec'ing from the first user space code, it's only page anyway.
+	 * Don't free if we are exec'ing from the first user space code, it's only one page anyway.
 	 */
-	if (current_process->image.e_text_vaddr != (uint32_t)&_start_user_head)
-		free_address_space(&current_process->image);
+	/* if (current_process->image.e_text_vaddr != (uint32_t)&_start_user_head) */
+	/*  	free_address_space(&current_process->image); */
 	copy_page_table((uint32_t *)current_cpu_state->cr3, (uint32_t *)current_cpu_state->next_cr3);
 	page_frame_free((uint32_t)current_cpu_state->next_cr3);
+	load_cr3(current_cpu_state->cr3);
 	memmove(padded_sp, new_sp, init_stack_gap);
 	elf32_read_image(&image, file);
 	if (err < 0)
