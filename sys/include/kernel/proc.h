@@ -150,6 +150,8 @@ enum {
 #define PROC_QUANTA	10
 
 #define HIGHEST_PRIORITY	(PROC_QUANTA - 1)
+#define USER_PRIORITY		(LOWEST_PRIORITY + 1)
+#define IO_PRIORITY		(USER_PRIORITY + 1)
 #define LOWEST_PRIORITY		0
 
 #endif /* PROC_H */
