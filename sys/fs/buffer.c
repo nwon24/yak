@@ -134,14 +134,14 @@ buffer_sync(void)
 void
 brelse(struct buffer *bp)
 {
-	if (!mutex_locked(&bp->b_mutex))
+	if (bp->b_mutex.lock != MUTEX_LOCKED)
 		return;
 	disable_intr();
 	put_into_free_list(bp);
 	wakeup(bp, WAKEUP_SWITCH);
 	wakeup(&free_list, WAKEUP_SWITCH);
 	mutex_unlock(&bp->b_mutex);
-	restore_intr_state();
+	enable_intr();
 }
 
 void
