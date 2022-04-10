@@ -112,6 +112,10 @@ k_do_fn(struct kbd_packet *packet)
 
 	if (packet->type == BREAK)
 		return;
+#ifdef CONFIG_DEBUG
+	if (packet->keycode == KEY_F12)
+		debug_dump();
+#endif
 	map = loaded_key_map.fnmap;
 	do_update_tty(map[RAW_KEYCODE(packet->keycode)]);
 }
