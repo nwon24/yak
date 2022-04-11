@@ -112,7 +112,7 @@ arch_fork(int child, struct process *proc)
 	memmove((void *)new->kernel_stack, new, IRET_FRAME_SIZE);
 	new->kernel_stack -= sizeof(*proc->context);
 	proc->context = (struct context *)new->kernel_stack;
-	memset(proc->context, 1, sizeof(uint32_t) * NR_REGS);
+	/* memmove((void *)proc->context, (void *)current_process->context, sizeof(*proc->context)); */
 	proc->context->eip = (uint32_t)restart;
 	return child;
 }
@@ -123,8 +123,14 @@ arch_fork(int child, struct process *proc)
 void
 arch_switch_to(struct process *prev, struct process *new)
 {
+	if (intr_enabled())
+		panic("arch_switch_to: interrupts should not be enabled");
 	current_cpu_state = cpu_states + new->pid;
 	load_cr3(current_cpu_state->cr3);
+	if (new->pid == 2) {
+		printk("%p\r\n", new->context);
+		__asm__("cli;hlt");
+	}
 	tss.esp0 = current_cpu_state->kernel_stack;
 	asm_switch_to(&prev->context, new->context);
 }
@@ -164,12 +170,13 @@ arch_exec_elf(struct exec_elf_file *file, const char *argv[], const char *envp[]
 	new_sp = exec_set_up_stack(argv, envp, &init_stack_gap);
 	padded_sp = (void *)(KERNEL_VIRT_BASE - init_stack_gap);
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->esp = (uint32_t)padded_sp;
+	printk("image.e_entry %x\r\n", image.e_entry);
 	((struct i386_cpu_state *)current_cpu_state->iret_frame)->eip = image.e_entry;
 	/*
 	 * Don't free if we are exec'ing from the first user space code, it's only one page anyway.
 	 */
-	/* if (current_process->image.e_text_vaddr != (uint32_t)&_start_user_head) */
-	/*  	free_address_space(&current_process->image); */
+	if (current_process->image.e_text_vaddr != (uint32_t)&_start_user_head)
+	 	free_address_space(&current_process->image);
 	copy_page_table((uint32_t *)current_cpu_state->cr3, (uint32_t *)current_cpu_state->next_cr3);
 	page_frame_free((uint32_t)current_cpu_state->next_cr3);
 	load_cr3(current_cpu_state->cr3);

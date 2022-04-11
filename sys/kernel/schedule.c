@@ -29,7 +29,13 @@ void
 schedule(void)
 {
 	struct process **proc, *old, *tmp;
+	int intr;
 
+	intr = 0;
+	if (intr_enabled()) {
+		intr = 1;
+		disable_intr();
+	}
 	for (tmp = FIRST_PROC; tmp < LAST_PROC; tmp++) {
 		if (tmp->alarm != NO_ALARM && (unsigned int)tmp->alarm < timer_ticks) {
 			tmp->sigpending |= (1 << (SIGALRM - 1));
@@ -58,6 +64,8 @@ schedule(void)
 switch_proc:
 	if (current_process != old)
 		arch_switch_to(old, current_process);
+	if (intr)
+		enable_intr();
 }
 
 
