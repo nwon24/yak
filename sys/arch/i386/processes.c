@@ -127,10 +127,6 @@ arch_switch_to(struct process *prev, struct process *new)
 		panic("arch_switch_to: interrupts should not be enabled");
 	current_cpu_state = cpu_states + new->pid;
 	load_cr3(current_cpu_state->cr3);
-	if (new->pid == 2) {
-		printk("%p\r\n", new->context);
-		__asm__("cli;hlt");
-	}
 	tss.esp0 = current_cpu_state->kernel_stack;
 	asm_switch_to(&prev->context, new->context);
 }
