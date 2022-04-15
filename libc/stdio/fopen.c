@@ -26,6 +26,7 @@ fopen(const char *restrict path, const char *restrict mode)
 		open_flags |= O_CREAT;
 	} else if (*mode == 'a') {
 		flags |= __WRITE;
+		open_flags |= O_CREAT;
 		append = 1;
 	} else {
 		__set_errno(EINVAL);
