@@ -3,4 +3,6 @@
 
 #include <hobbix/generic/errno.h>
 
+void __set_errno(int val);
+
 #endif

@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-void __set_errno(int err);
-
 FILE *
 fopen(const char *restrict path, const char *restrict mode)
 {
