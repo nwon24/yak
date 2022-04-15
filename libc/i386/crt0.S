@@ -19,7 +19,9 @@ _start:
 	call	_init
 	call	main
 
+	pushl	%eax
 	call	_fini
-	movl	%eax, %ebx
+	call	__libc_fini
+	popl	%ebx
 	movl	$SYS_exit, %eax
 	int	$SYSCALL_IRQ
