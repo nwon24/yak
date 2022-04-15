@@ -9,6 +9,6 @@ strncpy(char *restrict dest, const char *restrict src, size_t len)
 {
 	char *ret = dest;
 
-	while ((*dest++ = *src++) && len--);
+	while (len-- && (*dest++ = *src++));
 	return ret;
 }
