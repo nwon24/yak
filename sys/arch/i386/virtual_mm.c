@@ -244,6 +244,7 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 		goto out;
 	/*
 	 * Mark both page directories for copy on write.
+	 * Only need to increase reference count once, so we don't do it on the first 'page_table_cow'
 	 */
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
 		if (*p & PAGE_PRESENT && *p & PAGE_USER)
@@ -458,6 +459,10 @@ handle_page_fault(uint32_t error)
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	addr = get_faulting_addr();
 	image = &current_process->image;
+	/*
+	 * Now check if faulting address is within read-only memory.
+	 * It it is, then segfault because that is not allowed.
+	 */
 	if (addr >= image->e_text_vaddr && addr < image->e_text_vaddr + image->e_text_size) {
 		printk("Segmentation fault\r\n");
 		kernel_exit(SIGSEGV);
