@@ -36,14 +36,26 @@ typedef __ssize_t ssize_t;
 #define __DEFINED_SSIZE_T
 #endif
 
+#ifndef NULL
+#define NULL	((void *)0)
+#endif
+
 #define __need___v_list
 #include <stdarg.h>
+
+#include <bits/stdio.h>
 
 extern FILE __file_table[];
 
 extern FILE *stdin;
 extern FILE *stdout;
 extern FILE *stderr;
+
+#define putchar(c)	putc((c), stdout)
+#define getchar()	getc(stdin)
+
+#define getc(fp)	__getc_internal(fp)
+#define putc(c, fp)	__putc_internal(c, fp)
 
 int fprintf(FILE *restrict stream, const char *restrict format, ...);
 int vfprintf(FILE *restrict stream, const char *restrict format, va_list ap);

@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <libc_die.h>
 
 void
@@ -12,4 +13,5 @@ __libc_init(int argc, const char *argv[])
 		__libc_early_die();
 	dup(0);
 	dup(0);
+	__libc_stdio_init();
 }

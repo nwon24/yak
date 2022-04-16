@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <stdio_impl.h>
-
 FILE __file_table[FOPEN_MAX] = {
 	{ .flags = __READ, .fd = STDIN_FILENO, .rcount = 0, .wcount = 0 },
 	{ .flags = __WRITE, .fd = STDOUT_FILENO, .rcount = 0, .wcount = 0 },
