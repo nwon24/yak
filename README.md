@@ -44,8 +44,6 @@ Make sure you have the `ext2` filesystem tools installed, such as `mke2fs` and `
 `sfdisk` is used to partition the disk used for testing. That comes from `util-linux`.
 # Building
 To build, run: `make`.
-By default, it will use the GNU toolchain.
-You can use the LLVM toolchain by `make TOOLCHAIN=LLVM`.
 # Running
 To run in QEMU, run: `make run`.
 This will build the disk image if necessary (located in `testing/disk.img`) and then run QEMU.
