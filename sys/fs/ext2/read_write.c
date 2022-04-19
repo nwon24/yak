@@ -94,20 +94,22 @@ ext2_writei(void *inode, void *buf, size_t count, off_t *off)
 static ssize_t
 file_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 {
-	off_t c = count, off, nr;
+	off_t c, nr, off;
 	struct buffer *bp;
 	struct ext2_superblock_m *sb;
 	ext2_block block;
 	char *p, *s;
 	ssize_t err = 0;
 
+	printk("file read count %u\r\n", count);
+	c = count;
 	if (c < 0)
 		return -EOVERFLOW;
 	if (*pos < 0)
 		return -EFBIG;
 	sb = get_ext2_superblock(ip->i_dev);
 	p = buf;
-	while (c) {
+	while (c > 0) {
 		block = ext2_bmap(ip, *pos);
 		if (block) {
 			bp = bread(ip->i_dev, block);
@@ -115,15 +117,11 @@ file_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 				err = -EIO;
 				break;
 			}
-		} else {
-			bp = NULL;
-		}
-		off = *pos % EXT2_BLOCKSIZE(sb);
-		s = bp->b_data + off;
-		nr = (EXT2_BLOCKSIZE(sb) - off < c) ? EXT2_BLOCKSIZE(sb) - off: c;
-		c -= nr;
-		*pos += nr;
-		if (bp != NULL) {
+			off = *pos % EXT2_BLOCKSIZE(sb);
+			s = bp->b_data + off;
+			nr = (EXT2_BLOCKSIZE(sb) - off < (off_t)c) ? EXT2_BLOCKSIZE(sb) - off: c;
+			c -= nr;
+			*pos += nr;
 			while (nr--) {
 				put_ubyte(p, *s);
 				p++;
@@ -132,7 +130,7 @@ file_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 			brelse(bp);
 			bp = NULL;
 		} else {
-			while (nr--) {
+			while (c--) {
 				put_ubyte(p, 0);
 				p++;
 			}
