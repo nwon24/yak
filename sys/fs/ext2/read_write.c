@@ -101,7 +101,6 @@ file_read(struct ext2_inode_m *ip, void *buf, size_t count, off_t *pos)
 	char *p, *s;
 	ssize_t err = 0;
 
-	printk("file read count %u\r\n", count);
 	c = count;
 	if (c < 0)
 		return -EOVERFLOW;
