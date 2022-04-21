@@ -112,6 +112,7 @@ arch_fork(int child, struct process *proc)
 	memmove((void *)new->kernel_stack, new, IRET_FRAME_SIZE);
 	new->kernel_stack -= sizeof(*proc->context);
 	proc->context = (struct context *)new->kernel_stack;
+	memset(proc->context, 1, sizeof(uint32_t) * NR_REGS);
 	/* memmove((void *)proc->context, (void *)current_process->context, sizeof(*proc->context)); */
 	proc->context->eip = (uint32_t)restart;
 	return child;
