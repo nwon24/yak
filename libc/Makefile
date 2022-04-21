@@ -16,6 +16,7 @@ include fcntl/Makefile
 include errno/Makefile
 include init/Makefile
 include stdio/Makefile
+include stdlib/Makefile
 include sys/Makefile
 include string/Makefile
 
