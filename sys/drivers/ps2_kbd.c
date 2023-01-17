@@ -84,6 +84,19 @@ ps2_kbd_init(void)
 	enum ps2_channel chan = PS2_FIRST_PORT;
 	int timeout;
 
+	/*
+	 * HUGE NOTE: This long complicated setup 
+	 * seems to be broken now in some way (at least
+	 * on QEMU). It returns -1 even if a ps2 keyboard
+	 * exists. So we just assume that it exists for
+	 * now and read the data port to get things going.
+	 */
+	get_keycode = get_keycode_set1;
+	register_driver(&ps2_keyboard_driver);
+	inb(PS2_DATA_PORT);
+	set_idt_entry(PS2_FIRST_IRQ, (uint32_t)irq1_handler, KERNEL_CS_SELECTOR, DPL_0, IDT_32BIT_INT_GATE);
+	pic_clear_mask(PS2_FIRST_IRQ);
+	return 0;
 repeat:
 	timeout = 10000;
 	if (ps2_dev_send_wait(chan, PS2_DEV_CMD_DISABLE_SCAN) < 0)
@@ -91,7 +104,7 @@ repeat:
 	if (ps2_dev_send_wait(chan, PS2_DEV_CMD_IDENTIFY) == 0) {
 		while (!(inb(PS2_STAT_REG) & PS2_STAT_OUT_FULL)
 		       && timeout--);
-		if (timeout == 0)
+		if (timeout == 0 && (inb(PS2_STAT_REG) & PS2_STAT_OUT_FULL))
 			return -1;
 		if (inb(PS2_DATA_PORT) != PS2_MF2_KBD)
 			return -1;

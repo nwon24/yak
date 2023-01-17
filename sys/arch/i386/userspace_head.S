@@ -16,7 +16,8 @@ first_user_code:
 	jl	1f		/* Yes, report it */
 	je	2f		/* No, child does exec */
 	jmp	.		/* Parent does nothing, becomes idle process */
-2:	movl	$__NR_execve, %eax
+2:	
+	movl	$__NR_execve, %eax
 	movl	$execf, %ebx
 	movl	$argv, %ecx
 	movl	$envp, %edx

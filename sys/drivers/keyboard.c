@@ -6,6 +6,11 @@
  */
 #include <stdint.h>
 
+#include <asm/idt.h>
+#include <asm/segment.h>
+#include <asm/port_io.h>
+#include <asm/pic_8259.h>
+
 #include <drivers/acpi.h>
 #include <drivers/driver.h>
 #include <drivers/pci.h>
@@ -18,6 +23,8 @@
 #include "defkeymap.h"
 
 #define RAW_KEYCODE(k)	((k) & 0xFF)
+
+void irq1_handler(void);
 
 struct keymap {
 	const uint8_t *map;

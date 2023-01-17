@@ -37,12 +37,12 @@ ps2_dev_send_wait(enum ps2_channel chan, int data)
 	int retries, timeout, res;
 
 	retries = 3;
-	timeout = 10000;
 	while (retries--) {
+		timeout = 10000;
 		ps2_dev_send_data(chan, data);
 		while (!(inb(PS2_STAT_REG) & PS2_STAT_OUT_FULL)
 		       && timeout--);
-		if (timeout == 0)
+		if (timeout == 0 && !(inb(PS2_STAT_REG) & PS2_STAT_OUT_FULL))
 			return -1;
 		if ((res = inb(PS2_DATA_PORT)) == PS2_DEV_ACK)
 			break;
