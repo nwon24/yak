@@ -261,7 +261,7 @@ repeat:
 		}
 	} else if (pid > 0) {
 		for (proc = FIRST_PROC; proc < LAST_PROC; proc++) {
-			if (proc->ppid != current_process->pid)
+			if (proc->ppid != current_process->pid || !proc->state)
 				continue;
 			children++;
 			if (proc->pid == pid && proc->state == PROC_ZOMBIE) {
