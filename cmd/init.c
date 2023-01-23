@@ -3,26 +3,31 @@
 #include <sys/wait.h>
 #include <stdio.h>
 
-const char *hello = "/usr/bin/hello";
-const char *hello_argv[] = { NULL };
-const char *hello_envp[] = { NULL };
+char *null_argv[] = { NULL, NULL };
+char *null_envp[] = { NULL };
 
 int main(void)
 {
-	int i;
-	char buf[512];
+	int c, i, r;
+	char buf[512], *p;
 
 	write(1, "Hello\n", 6);
-	while ((i = read(STDIN_FILENO, buf, sizeof(buf))) > 0)
-		write(STDOUT_FILENO, buf, i);
-
+again:
+	write(1, "$ ", 2);
+	c = 0;
+	r = read(0, buf, 512);
+	if (r == 0)
+		goto out;
+	write(1, buf, r);
+	buf[r - 1] = '\0';
+	null_argv[0] = buf;
 	if (!fork()) {
-		execve(hello, hello_argv, hello_envp);	
-		write(1, "here?\n", 6);
+		execve(buf, (const char **)null_argv, (const char **)null_envp);
+		write(1, "?\n", 2);
 	} else {
 		wait(&i);
-		write(1, "blah\n", 5);
+		goto again;
 	}
-	write(STDOUT_FILENO, "Done!\n", 6); 
+out:
 	return 0;
 }
