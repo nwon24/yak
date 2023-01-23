@@ -110,11 +110,15 @@ arch_fork(int child, struct process *proc)
 	copy_address_space(current_cpu_state->cr3, new->cr3);
 	new->kernel_stack -= IRET_FRAME_SIZE;
 	memmove((void *)new->kernel_stack, new, IRET_FRAME_SIZE);
+	printk("new ebp %x\n", ((struct i386_cpu_state *)new->kernel_stack)->ebp);
 	new->kernel_stack -= sizeof(*proc->context);
 	proc->context = (struct context *)new->kernel_stack;
-	memset(proc->context, 1, sizeof(uint32_t) * NR_REGS);
-	/* memmove((void *)proc->context, (void *)current_process->context, sizeof(*proc->context)); */
+	memmove((void *)proc->context, (void *)current_process->context, sizeof(*proc->context));
 	proc->context->eip = (uint32_t)restart;
+	if (child== 2) {
+		printk("proc context %p\n", proc->context);
+	}
+/*	memset(proc->context, 1, sizeof(uint32_t) * NR_REGS); */
 	return child;
 }
 
