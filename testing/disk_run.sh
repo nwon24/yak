@@ -7,7 +7,7 @@ sudo mount $LOOP_UNUSED1 /mnt
 sudo cp -rf $2/* /mnt
 sudo sync
 sudo umount /mnt
-qemu-system-i386 -hda $1 -d int,cpu_reset -D qemu.log -no-reboot -no-shutdown -machine pc
+qemu-system-i386 -s -hda $1 -d int,cpu_reset -D qemu.log -no-reboot -no-shutdown -machine pc -monitor stdio
 #sudo mount $LOOP_UNUSED1 /mnt
 #sudo cp -rf /mnt/* $2/
 #sudo umount /mnt
