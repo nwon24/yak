@@ -83,6 +83,18 @@ page_increase_count(uint32_t page)
 	reference_counts[page / PAGE_SIZE]++;
 }
 
+void
+page_decrease_count(uintptr_t page)
+{
+	reference_counts[page / PAGE_SIZE]--;
+}
+
+int
+page_get_count(uintptr_t page)
+{
+	return reference_counts[page / PAGE_SIZE];
+}
+
 static void
 set_bit(uint8_t *bitmap, uint32_t bit)
 {
