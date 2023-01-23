@@ -60,10 +60,18 @@ load_cr3(uint32_t pg_dir)
 {
 	__asm__("movl %0, %%cr3" : : "r" (pg_dir));
 }
+
+static inline void
+reload_cr3(void)
+{
+	__asm__ volatile("movl %%cr3, %%eax\n\t"
+                "movl %%eax, %%cr3\n\t" : : : "%eax");
+}
 #else
 void tlb_flush(uint32_t page);
 void load_cr3(uint32_t cr3);
-uint32_t get_faulting_addr();
+uint32_t get_faulting_addr(void);
+void reload_cr3(void);
 #endif /* CONFIG_USE_INLINE_ASM */
 
 #endif /* KERNEL */
