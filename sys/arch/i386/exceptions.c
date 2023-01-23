@@ -70,10 +70,12 @@ exceptions_init(void)
 }
 
 void
-handle_exception(char *msg, uint32_t eip, uint32_t error, void (*handler)(uint32_t))
+handle_exception(const char *msg, uint32_t eip, uint32_t error, void (*handler)(uint32_t))
 {
 	printk("Exception: %s\r\n", msg);
 	printk("eip: %x, error: %x\r\n", eip, error);
+	if (handler != NULL)
+		printk("cr2: %x\r\n", get_faulting_addr());
 #ifdef CONFIG_PANIC_ON_EXCEPTION
 	panic("");
 #else
