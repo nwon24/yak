@@ -42,7 +42,7 @@ tlb_flush(uint32_t page)
         __asm__("invlpg (%0)" : : "r" (page) : "memory");
 #else
         __asm__("movl %%cr3, %%eax\r\n"
-                "movl %%eax, %%cr3\r\n" : :);
+                "movl %%eax, %%cr3\r\n" : : "%eax");
 #endif /* CONFIG_X86_ISA_I686 */
 }
 
@@ -88,7 +88,7 @@ uint32_t get_faulting_addr();
 #define PAGE_SUPERVISOR		0
 #define PAGE_USER		0x4
 
-#define PG_ENABLE		0x80010001
+#define PG_ENABLE		0x80000001
 
 #define PF_PROTECTION		1
 #define PF_WRITE		2
