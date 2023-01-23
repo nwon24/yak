@@ -30,6 +30,8 @@ static int virt_map_entry = 1023;
 static void free_page_table(uint32_t page_table);
 static void pg_table_cow(uint32_t pg_table, int inc_ref);
 
+static void page_set_writable(uintptr_t addr, int copy);
+
 static inline void
 tmp_map_page(uint32_t page)
 {
@@ -247,22 +249,23 @@ copy_address_space(uint32_t from_page_dir, uint32_t to_page_dir)
 	 * Only need to increase reference count once, so we don't do it on the first 'page_table_cow'
 	 */
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
-		if (*p & PAGE_PRESENT && *p & PAGE_USER)
+		if ((*p & PAGE_PRESENT) && (*p & PAGE_USER))
 			pg_table_cow(*p, 0);
 	}
 	tmp_map_page(from_page_dir);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	for (p = (uint32_t *)VIRT_ADDR_TMP_PAGE; p < (uint32_t *)VIRT_ADDR_TMP_PAGE + PAGE_SIZE / sizeof(uint32_t); p++) {
-		if (*p & PAGE_PRESENT && *p & PAGE_USER) {
+		if ((*p & PAGE_PRESENT) && (*p & PAGE_USER)) {
 			int old_flags;
 
 			new = page_frame_alloc();
 			if (new == NO_FREE_PAGE)
 				panic("Out of memory");
 			copy_page_table((uint32_t *)new, (uint32_t *)(*p & 0xFFFFF000));
-			pg_table_cow(new, 1);
+			pg_table_cow(new, 1); 
 			old_flags = *p & 0xFFF;
 			*p = new | old_flags;
+			*p &= ~PAGE_WRITABLE;
 		}
 	}
 out:
@@ -443,8 +446,6 @@ void
 handle_page_fault(uint32_t error)
 {
 	uint32_t addr, pg_table, pg_frame, old, new, *ptr;
-	int old_flags;
-	char tmp_page[PAGE_SIZE];
 	struct exec_image *image;
 
 	if (!(error & PF_PROTECTION)) {
@@ -455,8 +456,6 @@ handle_page_fault(uint32_t error)
 		printk("Segmentation fault: PF_WRITE\r\n");
 		kernel_exit(SIGSEGV);
 	}
-	old = get_tmp_page();
-	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	addr = get_faulting_addr();
 	image = &current_process->image;
 	/*
@@ -473,6 +472,23 @@ handle_page_fault(uint32_t error)
 			kernel_exit(SIGSEGV);
 		}
 	}
+	if (page_get_count(addr & 0xFFFFF000) > 1) {
+		page_set_writable(addr, 1);
+	} else {
+		page_set_writable(addr, 0);
+	}
+}
+
+static void
+page_set_writable(uintptr_t addr, int copy)
+{
+	uint32_t old, new, *ptr, pg_frame, pg_table;
+	char tmp_page[PAGE_SIZE];
+	int old_flags;
+	
+	new = 0;
+	old = get_tmp_page();
+	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	tmp_map_page(current_cpu_state->cr3);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	pg_table = ((uint32_t *)VIRT_ADDR_TMP_PAGE)[addr >> VIRT_ADDR_PG_DIR_SHIFT];
@@ -480,28 +496,36 @@ handle_page_fault(uint32_t error)
 		printk("Segmentation fault\r\n");
 		kernel_exit(SIGSEGV);
 	}
+	((uint32_t *)VIRT_ADDR_TMP_PAGE)[addr >> VIRT_ADDR_PG_DIR_SHIFT] |= PAGE_WRITABLE;
 	tmp_map_page(pg_table & 0xFFFFF000);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	ptr = &((uint32_t *)VIRT_ADDR_TMP_PAGE)[(addr >> VIRT_ADDR_PG_TAB_SHIFT) & VIRT_ADDR_PG_TAB_MASK];
 	pg_frame = *ptr;
 	old_flags = pg_frame & 0xFFF;
-	new = page_frame_alloc();
-	if (new == NO_FREE_PAGE)
-		panic("Out of memory");
-	page_frame_free(*ptr & 0xFFFFF000);
-	*ptr = new | old_flags | PAGE_WRITABLE;
 	if (!(pg_frame & PAGE_PRESENT)) {
-		page_frame_free(new);
+		if (new != 0)
+			page_frame_free(new);
 		printk("Segmentation fault\r\n");
 		kernel_exit(SIGSEGV);
 	}
-	tmp_map_page(pg_frame & 0xFFFFF000);
-	tlb_flush(VIRT_ADDR_TMP_PAGE);
-	memmove(tmp_page, (void *)VIRT_ADDR_TMP_PAGE, PAGE_SIZE);
-	tmp_map_page(new);
-	tlb_flush(VIRT_ADDR_TMP_PAGE);
-	memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
+	if (copy) {
+		new = page_frame_alloc();
+		if (new == NO_FREE_PAGE)
+			panic("Out of memory");
+		page_frame_free(*ptr & 0xFFFFF000);
+		*ptr = new | old_flags | PAGE_WRITABLE;
+		page_decrease_count(addr & 0xFFFFF000);
+		tmp_map_page(pg_frame & 0xFFFFF000);
+		tlb_flush(VIRT_ADDR_TMP_PAGE);
+		memmove(tmp_page, (void *)VIRT_ADDR_TMP_PAGE, PAGE_SIZE);
+		tmp_map_page(new);
+		tlb_flush(VIRT_ADDR_TMP_PAGE);
+		memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
+	} else {
+		*ptr |= PAGE_WRITABLE;
+	}
 	tlb_flush(addr);
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 }
+
