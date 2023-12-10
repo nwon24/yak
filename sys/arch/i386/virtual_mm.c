@@ -7,6 +7,7 @@
 
 #include <asm/cpu_state.h>
 #include <asm/paging.h>
+#include <asm/interrupts.h>
 
 #include <kernel/exec.h>
 #include <kernel/debug.h>
@@ -338,9 +339,15 @@ free_page_table(uint32_t pg_table)
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	p = (uint32_t *)VIRT_ADDR_TMP_PAGE;
 	while (p < (uint32_t *)VIRT_ADDR_TMP_PAGE + (PAGE_SIZE / sizeof(uint32_t))) {
-		if (*p & PAGE_PRESENT) {
-			*p &= ~PAGE_PRESENT;
-			page_frame_free(*p & 0xFFFFF000);
+		if ((*p & PAGE_PRESENT) && (*p & PAGE_USER)) {
+			uint32_t alignedp;
+			
+			alignedp = *p & 0xFFFFF000;
+			page_decrease_count(alignedp);
+			if (page_get_count(alignedp) == 0) {
+				*p &= ~PAGE_PRESENT;
+				page_frame_free(alignedp);
+			}
 		}
 		p++;
 	}
@@ -367,7 +374,9 @@ virt_free_chunk(uint32_t start, uint32_t len, uint32_t *pg_dir)
 		if (*p & PAGE_PRESENT) {
 			pg_table = *p & 0xFFFFF000;
 			free_page_table(pg_table);
-			page_frame_free(pg_table);
+			page_decrease_count(pg_table);
+			if (page_get_count(pg_table) == 0)
+				page_frame_free(pg_table);
 		}
 		p++;
 	}
@@ -451,6 +460,7 @@ handle_page_fault(uint32_t error)
 	uint32_t addr, pg_table, pg_frame, old, new, *ptr;
 	struct exec_image *image;
 
+	disable_intr();
 	if (!(error & PF_PROTECTION)) {
 		printk("Segmentation fault: PF_PROTECTION\r\n");
 		kernel_exit(SIGSEGV);
@@ -519,8 +529,10 @@ page_set_writable(uintptr_t addr)
 		tmp_map_page(new);
 		tlb_flush(VIRT_ADDR_TMP_PAGE);
 		memmove((void *)VIRT_ADDR_TMP_PAGE, tmp_page, PAGE_SIZE);
-		if (page_get_count(pg_frame & 0xFFFFF000) == 0)
+		if (page_get_count(pg_frame & 0xFFFFF000) == 0) {
+			__asm__("cli; hlt");
 			page_frame_free(pg_frame & 0xFFFFF000);
+		}
 	} else {
 		*ptr |= PAGE_WRITABLE;
 	}
@@ -528,5 +540,6 @@ page_set_writable(uintptr_t addr)
 	tmp_map_page(old);
 	tlb_flush(VIRT_ADDR_TMP_PAGE);
 	reload_cr3();
+	enable_intr();
 }
 

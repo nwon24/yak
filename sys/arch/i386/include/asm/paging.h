@@ -96,7 +96,7 @@ void reload_cr3(void);
 #define PAGE_SUPERVISOR		0
 #define PAGE_USER		0x4
 
-#define PG_ENABLE		0x80000001
+#define PG_ENABLE		0x80010001
 
 #define PF_PROTECTION		1
 #define PF_WRITE		2

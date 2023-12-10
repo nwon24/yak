@@ -56,6 +56,8 @@ page_frame_free(uint32_t page)
 	uint32_t bit;
 	uint8_t *ptr;
 
+	if (--reference_counts[page / PAGE_SIZE] > 0)
+		return;
 	if (!IS_PAGE_ALIGNED(page))
 		panic("page_frame_free: page has wrong alignment");
 	reference_counts[page / PAGE_SIZE]--;
